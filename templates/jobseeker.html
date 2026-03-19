@@ -415,9 +415,162 @@ nav{
   line-height:1.55;max-width:210px;box-shadow:3px 3px 0 rgba(0,0,0,.14);
 }
 
+/* ── Task complete button on next-step items ── */
+.ns-complete-btn{
+  padding:4px 10px;border-radius:4px;cursor:pointer;flex-shrink:0;
+  background:linear-gradient(180deg,#5cd45c 0%,#3aba3a 100%);
+  border:2px solid #1e7a1e;border-bottom:3px solid #146414;
+  color:#fff;font-family:'Nunito',sans-serif;font-weight:800;font-size:10px;
+  text-shadow:1px 1px 0 #0e4a0e;white-space:nowrap;
+}
+.ns-complete-btn:hover{filter:brightness(1.07);}
+.ns-complete-btn:active{transform:translateY(1px);border-bottom-width:2px;}
+.ns-done{opacity:.5;pointer-events:none;}
+.ns-done .ns-title{text-decoration:line-through;}
+
+/* ── New timeline entry animation ── */
+@keyframes tl-slide-in{
+  from{opacity:0;transform:translateY(-10px);}
+  to{opacity:1;transform:translateY(0);}
+}
+.tl-item-new{animation:tl-slide-in .4s ease;}
+
+/* ── Level up flash ── */
+@keyframes levelup-flash{
+  0%,100%{box-shadow:none;}
+  40%{box-shadow:0 0 0 6px rgba(255,220,60,.6),0 0 16px rgba(255,200,0,.5);}
+}
+.levelup-flash{animation:levelup-flash 1.4s ease;}
+
 /* scrollbar */
 ::-webkit-scrollbar{width:5px;}
 ::-webkit-scrollbar-thumb{background:#9b7040;}
+
+/* ── Career Strategy Modal ── */
+.cs-overlay{
+  display:none;position:fixed;inset:0;z-index:200;
+  background:rgba(20,8,0,.65);backdrop-filter:blur(3px);
+  align-items:center;justify-content:center;
+}
+.cs-overlay.open{display:flex;}
+
+.cs-modal{
+  width:min(520px,96vw);height:min(640px,92vh);
+  background:linear-gradient(150deg,#f8ecd0 0%,#f0e0b4 55%,#f5e8c4 100%);
+  border:4px solid #7a4e20;border-radius:14px;
+  box-shadow:8px 8px 0 #3a1a00,inset 0 3px 0 rgba(255,220,140,.4);
+  display:flex;flex-direction:column;overflow:hidden;
+  position:relative;
+}
+
+.cs-modal-header{
+  background:linear-gradient(180deg,#9b6c36 0%,#7a4e20 100%);
+  border-bottom:3px solid #5a3010;
+  padding:12px 16px;
+  display:flex;align-items:center;gap:10px;flex-shrink:0;
+}
+.cs-modal-avatar{font-size:28px;animation:float 3s ease-in-out infinite;}
+.cs-modal-title{flex:1;}
+.cs-modal-title-main{font-family:'Press Start 2P',monospace;font-size:9px;color:#f5c842;text-shadow:1px 1px 0 #5a2800;}
+.cs-modal-title-sub{font-size:10px;color:#e8c87a;font-weight:700;margin-top:3px;}
+.cs-modal-close{
+  background:rgba(0,0,0,.25);border:2px solid #9a6030;border-radius:5px;
+  color:#f5e8c0;font-size:14px;font-weight:800;padding:3px 9px;cursor:pointer;
+  font-family:'Nunito',sans-serif;
+}
+.cs-modal-close:hover{background:rgba(0,0,0,.4);}
+
+.cs-chat-area{
+  flex:1;overflow-y:auto;padding:14px;
+  display:flex;flex-direction:column;gap:10px;
+}
+.cs-chat-area::-webkit-scrollbar{width:4px;}
+.cs-chat-area::-webkit-scrollbar-thumb{background:#c8a060;}
+
+.cs-msg{display:flex;gap:8px;align-items:flex-start;}
+.cs-msg-agent{flex-direction:row;}
+.cs-msg-user{flex-direction:row-reverse;}
+
+.cs-msg-av{
+  width:32px;height:32px;border-radius:5px;border:2px solid;
+  display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0;
+}
+.cs-av-agent{background:linear-gradient(135deg,#e0d0f0,#c0a0e0);border-color:#8050b0;}
+.cs-av-user {background:linear-gradient(135deg,#d0e8f0,#a0c8e0);border-color:#3070a0;}
+
+.cs-bubble{
+  max-width:78%;padding:9px 13px;border-radius:10px;
+  font-size:12px;font-weight:600;line-height:1.6;
+}
+.cs-bubble-agent{
+  background:linear-gradient(135deg,rgba(140,80,200,.12),rgba(100,60,160,.08));
+  border:2px solid #b080d0;color:#2a1040;
+  border-radius:10px 10px 10px 2px;
+}
+.cs-bubble-user{
+  background:linear-gradient(135deg,rgba(40,100,200,.15),rgba(30,80,170,.1));
+  border:2px solid #5090c0;color:#0a1a40;
+  border-radius:10px 10px 2px 10px;
+  text-align:right;
+}
+
+.cs-typing{display:flex;gap:4px;align-items:center;padding:4px 0;}
+.cs-dot{width:7px;height:7px;background:#9060c0;border-radius:0;animation:cs-blink 1.2s ease-in-out infinite;}
+.cs-dot:nth-child(2){animation-delay:.2s;}
+.cs-dot:nth-child(3){animation-delay:.4s;}
+@keyframes cs-blink{0%,80%,100%{opacity:.2;}40%{opacity:1;}}
+
+.cs-input-area{
+  border-top:3px solid #9a7040;padding:12px;
+  background:rgba(200,160,80,.12);flex-shrink:0;
+}
+.cs-input-row{display:flex;gap:8px;}
+.cs-input{
+  flex:1;padding:9px 13px;border:2px solid #9a7030;border-radius:7px;
+  background:rgba(255,252,240,.9);font-family:'Nunito',sans-serif;
+  font-size:12px;font-weight:600;color:#2a1000;resize:none;
+  outline:none;line-height:1.5;
+}
+.cs-input:focus{border-color:#7040a0;box-shadow:0 0 0 2px rgba(120,60,180,.15);}
+.cs-send-btn{
+  padding:9px 16px;border-radius:7px;cursor:pointer;
+  background:linear-gradient(180deg,#9060c0 0%,#6838a0 100%);
+  border:2px solid #4a2080;border-bottom:4px solid #2a1060;
+  color:#fff;font-family:'Nunito',sans-serif;font-weight:800;font-size:12px;
+  text-shadow:1px 1px 0 #2a0860;flex-shrink:0;
+}
+.cs-send-btn:hover{filter:brightness(1.1);}
+.cs-send-btn:active{transform:translateY(2px);border-bottom-width:2px;}
+.cs-send-btn:disabled{opacity:.5;cursor:not-allowed;}
+
+/* Strategy result card */
+.cs-strategy-card{
+  margin:4px;border-radius:9px;overflow:hidden;
+  border:2px solid #9060c0;
+  background:linear-gradient(135deg,rgba(140,80,200,.12),rgba(100,60,160,.06));
+}
+.cs-strategy-header{
+  background:linear-gradient(135deg,#9060c0,#6838a0);
+  padding:9px 14px;font-size:11px;font-weight:800;color:#fff;
+  display:flex;align-items:center;gap:6px;
+}
+.cs-strategy-body{padding:12px 14px;display:flex;flex-direction:column;gap:10px;}
+.cs-strategy-summary{font-size:12px;font-weight:700;color:#2a1040;line-height:1.6;
+  padding:8px 10px;background:rgba(140,80,200,.1);border-radius:6px;
+  border-left:3px solid #9060c0;}
+.cs-direction{background:rgba(255,255,255,.6);border:1px solid #c0a0d8;border-radius:7px;padding:9px 11px;}
+.cs-dir-title{font-weight:800;font-size:12px;color:#5030a0;margin-bottom:4px;}
+.cs-dir-reason{font-size:11px;color:#3a1860;line-height:1.55;margin-bottom:5px;}
+.cs-dir-action{font-size:10px;font-weight:800;color:#8050b0;
+  background:rgba(140,80,200,.12);border:1px solid rgba(120,60,180,.3);
+  border-radius:4px;padding:3px 9px;display:inline-block;}
+.cs-skills-row{display:flex;flex-wrap:wrap;gap:5px;}
+.cs-skill-tag{font-size:10px;font-weight:700;padding:3px 9px;border-radius:3px;
+  color:#3a1060;background:rgba(140,80,200,.14);border:1px solid rgba(120,60,180,.35);}
+.cs-avoid{font-size:11px;color:#5a2020;background:rgba(200,60,60,.08);
+  border:1px solid rgba(180,50,50,.25);border-radius:6px;padding:7px 10px;line-height:1.55;}
+.cs-encourage{font-size:12px;font-weight:700;color:#2a1860;line-height:1.6;text-align:center;
+  padding:8px;border-top:1px dashed #c0a0d8;margin-top:2px;}
 </style>
 </head>
 <body>
@@ -442,7 +595,7 @@ nav{
   <a href="/" class="nav-back">← 返回</a>
   <span class="nav-logo">🌱 HIRE NET</span>
   <span class="nav-sub">我的成长旅程</span>
-  <div class="nav-exp">⭐ Lv.2 &nbsp;|&nbsp; 300 / 500 EXP</div>
+  <div class="nav-exp" id="nav-exp">⭐ Lv.2 &nbsp;|&nbsp; 300 / 500 EXP</div>
   <div class="nav-badge">🧑‍🌾 JOB SEEKER</div>
 </nav>
 
@@ -462,10 +615,10 @@ nav{
           </div>
         </div>
         <div class="wb-right">
-          <div class="level-pill">⚔️ Level 2</div>
+          <div class="level-pill" id="level-pill">⚔️ Level 2</div>
           <div class="level-bar-wrap">
             <div class="level-bar-label">
-              <span>经验值</span><span>300/500</span>
+              <span>经验值</span><span id="exp-label">300/500</span>
             </div>
             <div class="level-bar-bg">
               <div class="level-bar-fill" id="main-lvl-bar" style="width:0%"></div>
@@ -610,7 +763,7 @@ nav{
             <div class="prof-avatar">🧑‍💻</div>
             <div class="prof-name">我的 Second Me</div>
             <div class="prof-role">AI 产品方向 · 2年经验</div>
-            <div class="prof-skills">
+            <div class="prof-skills" id="profile-skills-row">
               <span class="prof-skill">需求分析</span>
               <span class="prof-skill">PRD写作</span>
               <span class="prof-skill">AI产品</span>
@@ -630,7 +783,7 @@ nav{
               <div class="skill-bar-bg"><div class="skill-bar-fill prof-bar" data-w="70%" style="width:0%"></div></div>
             </div>
             <div class="completeness-row">
-              <div class="comp-num">78%</div>
+              <div class="comp-num" id="profile-completeness-num">78%</div>
               <div class="comp-text">画像完整度<br>补充 GitHub 可 +15%</div>
             </div>
           </div>
@@ -646,8 +799,17 @@ nav{
               <div style="font-weight:800;font-size:14px;color:#2a1000;">下一步建议</div>
               <div style="font-size:10px;color:#8a6030;font-weight:700;">Career Strategy Agent</div>
             </div>
+            <button onclick="openCareerChat()"
+              style="margin-left:auto;padding:5px 11px;border-radius:5px;cursor:pointer;
+                background:linear-gradient(180deg,#9060c0 0%,#6838a0 100%);
+                border:2px solid #4a2080;border-bottom:3px solid #2a1060;
+                color:#fff;font-family:'Nunito',sans-serif;font-weight:800;font-size:10px;
+                text-shadow:1px 1px 0 #2a0860;">
+              💬 开始咨询
+            </button>
           </div>
           <div class="sec-divider"></div>
+          <div id="next-steps-list">
           <div class="next-step-item">
             <span class="ns-icon">🔗</span>
             <div class="ns-text">
@@ -680,6 +842,7 @@ nav{
             </div>
             <span class="ns-arrow">→</span>
           </div>
+          </div><!-- end next-steps-list -->
         </div>
       </div>
 
@@ -700,7 +863,7 @@ nav{
           </div>
         </div>
         <div class="sec-divider"></div>
-        <div class="timeline">
+        <div class="timeline" id="journey-timeline">
 
           <div class="tl-item">
             <div class="tl-left">
@@ -851,6 +1014,40 @@ nav{
 
 </div><!-- end page-scroll -->
 
+<!-- Career Strategy Modal -->
+<div class="cs-overlay" id="cs-overlay" onclick="handleOverlayClick(event)">
+  <div class="cs-modal">
+    <div class="cs-modal-header">
+      <div class="cs-modal-avatar">🧭</div>
+      <div class="cs-modal-title">
+        <div class="cs-modal-title-main">Career Strategy Agent</div>
+        <div class="cs-modal-title-sub">你的专属职业成长顾问</div>
+      </div>
+      <button class="cs-modal-close" onclick="closeCareerChat()">✕</button>
+    </div>
+
+    <div class="cs-chat-area" id="cs-chat-area"></div>
+
+    <div class="cs-input-area">
+      <div id="cs-generate-row" style="display:none;margin-bottom:8px;">
+        <button onclick="generateStrategy()"
+          style="width:100%;padding:8px;border-radius:6px;cursor:pointer;
+            background:linear-gradient(180deg,#f0c840 0%,#d4a020 100%);
+            border:2px solid #9a7010;border-bottom:3px solid #6a5010;
+            color:#2a1800;font-family:'Nunito',sans-serif;font-weight:800;font-size:11px;">
+          ⭐ 信息够了，立即生成我的职业策略方案
+        </button>
+      </div>
+      <div class="cs-input-row">
+        <textarea class="cs-input" id="cs-input" rows="2"
+          placeholder="聊聊你的职业困惑、目标或现状……"
+          onkeydown="handleCsKey(event)"></textarea>
+        <button class="cs-send-btn" id="cs-send" onclick="sendCareerMsg()">发送</button>
+      </div>
+    </div>
+  </div>
+</div>
+
 <!-- Mascot -->
 <div class="mascot-chat">
   <div class="mc-av">🤖</div>
@@ -868,6 +1065,335 @@ window.addEventListener('load', () => {
     document.querySelectorAll('.prof-bar').forEach(el => { el.style.width = el.dataset.w; });
   }, 400);
 });
+
+// ── Career Strategy Agent Chat ──────────────────────────────────────────────
+
+let csSessionId = null;
+let csWaiting = false;
+let csRounds = 0;  // number of completed exchanges
+
+function openCareerChat() {
+  document.getElementById('cs-overlay').classList.add('open');
+  if (!csSessionId) {
+    // Show welcome message on first open
+    appendAgentMsg('你好！我是 Career Strategy Agent 🧭\n\n我可以帮你梳理职业方向、分析优劣势、制定行动计划。\n\n先聊聊你现在的情况吧——你目前在做什么，或者最近有什么职业上的困惑？');
+  }
+  setTimeout(() => document.getElementById('cs-input').focus(), 100);
+}
+
+function closeCareerChat() {
+  document.getElementById('cs-overlay').classList.remove('open');
+}
+
+function handleOverlayClick(e) {
+  if (e.target === document.getElementById('cs-overlay')) closeCareerChat();
+}
+
+function handleCsKey(e) {
+  if (e.key === 'Enter' && !e.shiftKey) {
+    e.preventDefault();
+    sendCareerMsg();
+  }
+}
+
+function appendAgentMsg(text) {
+  const area = document.getElementById('cs-chat-area');
+  const div = document.createElement('div');
+  div.className = 'cs-msg cs-msg-agent';
+  div.innerHTML = `
+    <div class="cs-msg-av cs-av-agent">🧭</div>
+    <div class="cs-bubble cs-bubble-agent">${text.replace(/\n/g,'<br>')}</div>`;
+  area.appendChild(div);
+  area.scrollTop = area.scrollHeight;
+}
+
+function appendUserMsg(text) {
+  const area = document.getElementById('cs-chat-area');
+  const div = document.createElement('div');
+  div.className = 'cs-msg cs-msg-user';
+  div.innerHTML = `
+    <div class="cs-msg-av cs-av-user">🧑</div>
+    <div class="cs-bubble cs-bubble-user">${text.replace(/\n/g,'<br>')}</div>`;
+  area.appendChild(div);
+  area.scrollTop = area.scrollHeight;
+}
+
+function showTyping() {
+  const area = document.getElementById('cs-chat-area');
+  const div = document.createElement('div');
+  div.className = 'cs-msg cs-msg-agent';
+  div.id = 'cs-typing-indicator';
+  div.innerHTML = `
+    <div class="cs-msg-av cs-av-agent">🧭</div>
+    <div class="cs-bubble cs-bubble-agent">
+      <div class="cs-typing">
+        <span class="cs-dot"></span><span class="cs-dot"></span><span class="cs-dot"></span>
+      </div>
+    </div>`;
+  area.appendChild(div);
+  area.scrollTop = area.scrollHeight;
+}
+
+function removeTyping() {
+  const el = document.getElementById('cs-typing-indicator');
+  if (el) el.remove();
+}
+
+function showStrategyCard(strategy) {
+  const area = document.getElementById('cs-chat-area');
+  const dirs = (strategy.directions || []).map(d => `
+    <div class="cs-direction">
+      <div class="cs-dir-title">🎯 ${d.title}</div>
+      <div class="cs-dir-reason">${d.reason}</div>
+      <span class="cs-dir-action">▶ ${d.next_action}</span>
+    </div>`).join('');
+
+  const skills = (strategy.focus_skills || []).map(s =>
+    `<span class="cs-skill-tag">${s}</span>`).join('');
+
+  const card = document.createElement('div');
+  card.className = 'cs-strategy-card';
+  card.innerHTML = `
+    <div class="cs-strategy-header">⭐ 你的职业策略方案已生成</div>
+    <div class="cs-strategy-body">
+      <div class="cs-strategy-summary">${strategy.summary || ''}</div>
+      ${dirs}
+      ${skills ? `<div><div style="font-size:10px;font-weight:800;color:#7040a0;margin-bottom:5px;">🔧 重点提升技能</div><div class="cs-skills-row">${skills}</div></div>` : ''}
+      ${strategy.avoid ? `<div class="cs-avoid">⚠️ 需要注意：${strategy.avoid}</div>` : ''}
+      ${strategy.encouragement ? `<div class="cs-encourage">✨ ${strategy.encouragement}</div>` : ''}
+    </div>`;
+  area.appendChild(card);
+  area.scrollTop = area.scrollHeight;
+
+  // Disable input after strategy delivered
+  document.getElementById('cs-input').placeholder = '策略已生成，关闭窗口查看建议';
+  document.getElementById('cs-input').disabled = true;
+  document.getElementById('cs-send').disabled = true;
+
+  // Update mascot
+  document.getElementById('mc-text').textContent = 'Career Strategy Agent 已为你生成职业策略方案！查看对话框了解详情 🧭';
+
+  // ── Linkage: push tasks to Next Steps panel ──
+  if (strategy.directions && strategy.directions.length > 0) {
+    updateNextSteps(strategy.directions, strategy.focus_skills || []);
+  }
+}
+
+async function generateStrategy() {
+  if (!csSessionId) return;
+  document.getElementById('cs-generate-row').style.display = 'none';
+  showTyping();
+  document.getElementById('cs-send').disabled = true;
+
+  try {
+    const res = await fetch('/api/career/generate', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ session_id: csSessionId }),
+    });
+    const data = await res.json();
+    removeTyping();
+
+    if (data.success && data.strategy) {
+      appendAgentMsg('好的，根据我们的对话，我为你整理了以下职业策略方案：');
+      showStrategyCard(data.strategy);
+    } else {
+      appendAgentMsg('生成策略时出了点问题，请再多聊几句后重试。');
+      document.getElementById('cs-generate-row').style.display = 'block';
+    }
+  } catch (e) {
+    removeTyping();
+    appendAgentMsg('网络错误，请稍后重试。');
+    document.getElementById('cs-generate-row').style.display = 'block';
+  } finally {
+    document.getElementById('cs-send').disabled = false;
+  }
+}
+
+// ── Tracker Agent + Candidate Profile Agent linkage ──────────────────────────
+
+let strategyTasks = [];   // store directions from Career Strategy Agent
+
+function updateNextSteps(directions, focusSkills) {
+  strategyTasks = directions.map(d => ({ ...d, focus_skills: focusSkills }));
+  const list = document.getElementById('next-steps-list');
+  list.innerHTML = '';
+
+  directions.forEach((dir, i) => {
+    const item = document.createElement('div');
+    item.className = 'next-step-item';
+    item.id = 'task-item-' + i;
+    item.innerHTML = `
+      <span class="ns-icon">🎯</span>
+      <div class="ns-text">
+        <div class="ns-title">${dir.next_action}</div>
+        <div class="ns-sub">${dir.title} · Career Strategy 已规划</div>
+      </div>
+      <button class="ns-complete-btn" onclick="completeTask(${i}, this)">✓ 完成</button>`;
+    list.appendChild(item);
+  });
+
+  document.getElementById('mc-text').textContent =
+    `Career Strategy Agent 已规划 ${directions.length} 个行动任务！完成后可获得 EXP 奖励 🎯`;
+}
+
+async function completeTask(taskIndex, btn) {
+  const task = strategyTasks[taskIndex];
+  if (!task) return;
+
+  btn.textContent = '完成中...';
+  btn.disabled = true;
+
+  try {
+    const res = await fetch('/api/tracker/task-complete', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        task_title:     task.next_action,
+        task_direction: task.title,
+        related_skills: task.focus_skills || [],
+        exp_reward:     50,
+      }),
+    });
+    const data = await res.json();
+
+    if (data.success) {
+      // Mark item done
+      const item = document.getElementById('task-item-' + taskIndex);
+      item.classList.add('ns-done');
+      btn.textContent = '✓ 已完成';
+
+      // Tracker Agent: add timeline entry
+      addTimelineEntry(data.timeline_entry, data.exp_gained);
+
+      // Candidate Profile Agent: update EXP + profile
+      updateExpDisplay(data.total_exp, data.exp_to_next, data.level, data.leveled_up);
+      updateProfileCompleteness(data.profile_completeness);
+      maybeAddSkillTag(task.focus_skills || []);
+    }
+  } catch (e) {
+    btn.textContent = '✓ 完成';
+    btn.disabled = false;
+  }
+}
+
+function addTimelineEntry(entry, expGained) {
+  const timeline = document.getElementById('journey-timeline');
+  const div = document.createElement('div');
+  div.className = 'tl-item tl-item-new';
+  div.innerHTML = `
+    <div class="tl-left">
+      <div class="tl-dot tl-dot-done">✓</div>
+      <div class="tl-line"></div>
+    </div>
+    <div class="tl-content">
+      <div class="tl-title">${entry.title} · 已完成</div>
+      <div class="tl-sub">Tracker Agent 已记录此项成长任务「${entry.direction}」</div>
+      <div class="tl-time">刚刚</div>
+      <span class="tl-badge tb-done">+${expGained} EXP ✓</span>
+    </div>`;
+  timeline.insertBefore(div, timeline.firstChild);
+}
+
+function updateExpDisplay(totalExp, expToNext, level, leveledUp) {
+  document.getElementById('nav-exp').textContent =
+    `⭐ Lv.${level}  |  ${totalExp} / ${expToNext} EXP`;
+  document.getElementById('level-pill').innerHTML = `⚔️ Level ${level}`;
+  document.getElementById('exp-label').textContent = `${totalExp}/${expToNext}`;
+
+  const pct = Math.round((totalExp / expToNext) * 100);
+  document.getElementById('main-lvl-bar').style.width = pct + '%';
+
+  if (leveledUp) {
+    const pill = document.getElementById('level-pill');
+    pill.classList.remove('levelup-flash');
+    void pill.offsetWidth; // reflow to restart animation
+    pill.classList.add('levelup-flash');
+    document.getElementById('mc-text').textContent =
+      `🎉 恭喜升级！你已达到 Level ${level}！Candidate Profile Agent 已更新你的画像`;
+  } else {
+    document.getElementById('mc-text').textContent =
+      `+50 EXP 已入账！Tracker Agent 已记录此次成长 📈`;
+  }
+}
+
+function updateProfileCompleteness(pct) {
+  const el = document.getElementById('profile-completeness-num');
+  if (el) el.textContent = pct + '%';
+}
+
+function maybeAddSkillTag(skills) {
+  const row = document.getElementById('profile-skills-row');
+  if (!row || !skills.length) return;
+  const existing = Array.from(row.querySelectorAll('.prof-skill')).map(el => el.textContent);
+  skills.forEach(skill => {
+    if (!existing.includes(skill)) {
+      const span = document.createElement('span');
+      span.className = 'prof-skill';
+      span.textContent = skill;
+      row.appendChild(span);
+      existing.push(skill);
+    }
+  });
+}
+
+async function sendCareerMsg() {
+  if (csWaiting) return;
+  const input = document.getElementById('cs-input');
+  const text = input.value.trim();
+  if (!text) return;
+
+  input.value = '';
+  appendUserMsg(text);
+  csWaiting = true;
+  document.getElementById('cs-send').disabled = true;
+  showTyping();
+
+  try {
+    let url, body;
+    if (!csSessionId) {
+      url = '/api/career/start';
+      body = JSON.stringify({ message: text });
+    } else {
+      url = '/api/career/reply';
+      body = JSON.stringify({ session_id: csSessionId, message: text });
+    }
+
+    const res = await fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body,
+    });
+    const data = await res.json();
+
+    removeTyping();
+
+    if (data.error) {
+      appendAgentMsg('抱歉，出现了一点问题：' + data.error);
+    } else {
+      csSessionId = data.session_id;
+      if (data.response) appendAgentMsg(data.response);
+      if (data.is_complete && data.strategy) {
+        showStrategyCard(data.strategy);
+      } else {
+        csRounds++;
+        // Show "generate now" button after 2 exchanges
+        if (csRounds >= 2) {
+          document.getElementById('cs-generate-row').style.display = 'block';
+        }
+      }
+    }
+  } catch (e) {
+    removeTyping();
+    appendAgentMsg('网络错误，请稍后重试。');
+  } finally {
+    csWaiting = false;
+    if (!document.getElementById('cs-input').disabled) {
+      document.getElementById('cs-send').disabled = false;
+      document.getElementById('cs-input').focus();
+    }
+  }
+}
 
 // Module E: Apply button
 async function applyJob(btn, agentMsg) {

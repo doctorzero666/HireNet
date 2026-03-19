@@ -315,6 +315,116 @@ def _filter_resources_for_task(task: dict, resources: list[dict]) -> list[dict]:
     return selected[:3]
 
 
+# ─── Career Strategy Agent ────────────────────────────────────────────────────
+
+CAREER_STRATEGY_SYSTEM_PROMPT = """你是 HireNet 的 Career Strategy Agent，一个真正关心求职者成长的职业顾问。
+
+你的目标：通过 3-5 轮对话，深入了解用户的现状、困惑和期望，给出个性化、可落地的职业发展建议。
+
+对话规则：
+1. 每次最多问 1-2 个最关键的问题，不要一次问太多
+2. 先倾听，再建议。前几轮专注了解现状，不要急着给建议
+3. 语气温暖、具体、有力量感，避免空洞的励志话
+4. 结合用户描述的真实技能和经历给出具体建议，不要泛泛而谈
+5. 当你认为信息足够了（通常 3-5 轮对话后），输出结构化的职业策略
+6. 输出结构化策略时，必须以 [STRATEGY_READY] 开头，然后是 JSON
+
+结构化策略 JSON 格式：
+{
+  "summary": "一句话总结这个人的核心优势和方向",
+  "directions": [
+    {
+      "title": "推荐方向名称",
+      "reason": "为什么适合你（结合用户具体情况）",
+      "next_action": "明天就能做的第一步行动"
+    }
+  ],
+  "focus_skills": ["最值得投入的技能1", "技能2"],
+  "avoid": "需要规避的陷阱或常见误区",
+  "encouragement": "个性化的鼓励语（不要套话）"
+}"""
+
+
+class CareerStrategyAgent:
+    def __init__(self):
+        self.client = get_llm_client()
+        self.history = []
+
+    def start(self, initial_input: str) -> str:
+        """开始职业策略对话"""
+        self.history = [
+            {"role": "system", "content": CAREER_STRATEGY_SYSTEM_PROMPT},
+            {"role": "user", "content": initial_input},
+        ]
+        return self._call_llm()
+
+    def reply(self, user_message: str) -> str:
+        """继续对话"""
+        self.history.append({"role": "user", "content": user_message})
+        return self._call_llm()
+
+    def _call_llm(self) -> str:
+        resp = self.client.chat.completions.create(
+            model=get_model(),
+            messages=self.history,
+            temperature=0.5,
+        )
+        assistant_msg = resp.choices[0].message.content
+        self.history.append({"role": "assistant", "content": assistant_msg})
+        return assistant_msg
+
+    def is_complete(self, response: str) -> bool:
+        return "[STRATEGY_READY]" in response
+
+    def extract_strategy(self, response: str) -> dict:
+        if "[STRATEGY_READY]" not in response:
+            raise ValueError("Strategy not ready yet")
+        json_str = response.split("[STRATEGY_READY]")[1].strip()
+        json_str = json_str.replace("```json", "").replace("```", "").strip()
+        return json.loads(json_str)
+
+    def force_generate_strategy(self) -> dict:
+        """
+        Force the LLM to output a structured strategy JSON based on the
+        conversation so far — bypassing the [STRATEGY_READY] detection.
+        """
+        force_prompt = """根据我们刚才的对话，现在请直接输出你对我的职业策略建议。
+只输出以下 JSON，不要有任何其他文字：
+{
+  "summary": "一句话总结这个人的核心优势和方向",
+  "directions": [
+    {
+      "title": "推荐方向名称",
+      "reason": "为什么适合你（结合对话中的具体情况）",
+      "next_action": "明天就能做的第一步行动"
+    }
+  ],
+  "focus_skills": ["最值得投入的技能1", "技能2"],
+  "avoid": "需要规避的陷阱或常见误区",
+  "encouragement": "个性化的鼓励语（不要套话）"
+}"""
+        messages = list(self.history) + [{"role": "user", "content": force_prompt}]
+        resp = self.client.chat.completions.create(
+            model=get_model(),
+            messages=messages,
+            temperature=0.3,
+        )
+        raw = resp.choices[0].message.content.strip()
+        raw = raw.replace("```json", "").replace("```", "").strip()
+        # Find the first JSON object
+        start = raw.find('{')
+        if start == -1:
+            raise ValueError("No JSON found in response")
+        brace = 0
+        for i, ch in enumerate(raw[start:], start):
+            if ch == '{': brace += 1
+            elif ch == '}':
+                brace -= 1
+                if brace == 0:
+                    return json.loads(raw[start:i+1])
+        raise ValueError("Could not parse strategy JSON")
+
+
 def run_resource_decision(tasks: list[dict]) -> dict:
     """
     For each task, evaluate all resources and make final decision.
