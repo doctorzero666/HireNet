@@ -114,6 +114,41 @@ def get_me():
         return jsonify({"error": str(e)}), 500
 
 
+@app.route("/api/me/profile")
+def get_my_profile():
+    """Get current user's profile built from SecondMe data"""
+    token = session.get("access_token")
+    if not token:
+        return jsonify({"error": "Not logged in"}), 401
+
+    from secondme_client import SecondMeClient
+    client = SecondMeClient(token)
+    try:
+        info = client.get_user_info()
+        # Extract skills from soft memories
+        skills = []
+        bio = info.get("selfIntroduction") or info.get("bio") or ""
+        try:
+            memories = client.get_soft_memories(page_size=50)
+            # Pull short memory items as skill tags
+            for m in memories[:20]:
+                content = m.get("content", "").strip()
+                if content and len(content) <= 20:
+                    skills.append(content)
+        except Exception:
+            pass
+
+        return jsonify({
+            "name": info.get("name") or info.get("nickname") or "我的 Second Me",
+            "avatar": info.get("avatar") or info.get("avatarUrl") or "",
+            "bio": bio,
+            "skills": skills[:6],
+            "raw": info,
+        })
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
 # ─── Requirement Analysis API ─────────────────────────────────────────────────
 
 @app.route("/api/analyze/start", methods=["POST"])

@@ -760,9 +760,9 @@ nav{
           </div>
           <div class="sec-divider"></div>
           <div class="profile-card" style="border:none;padding:0;background:transparent;box-shadow:none;">
-            <div class="prof-avatar">🧑‍💻</div>
-            <div class="prof-name">我的 Second Me</div>
-            <div class="prof-role">AI 产品方向 · 2年经验</div>
+            <div class="prof-avatar" id="prof-avatar-el">🧑‍💻</div>
+            <div class="prof-name" id="prof-name-el">我的 Second Me</div>
+            <div class="prof-role" id="prof-role-el">加载中...</div>
             <div class="prof-skills" id="profile-skills-row">
               <span class="prof-skill">需求分析</span>
               <span class="prof-skill">PRD写作</span>
@@ -1057,13 +1057,36 @@ nav{
 <script>
 
 
-// Animate bars on load
+// Animate bars on load + load SecondMe profile
 window.addEventListener('load', () => {
   setTimeout(() => {
     document.getElementById('main-lvl-bar').style.width = '60%';
     document.querySelectorAll('.opp-bar').forEach(el => { el.style.width = el.dataset.w; });
     document.querySelectorAll('.prof-bar').forEach(el => { el.style.width = el.dataset.w; });
   }, 400);
+
+  // Load real SecondMe user profile
+  fetch('/api/me/profile').then(r => r.json()).then(data => {
+    if (data.error) return;
+    // Name
+    const nameEl = document.getElementById('prof-name-el');
+    if (nameEl && data.name) nameEl.textContent = data.name;
+    // Avatar: use img if URL, otherwise keep emoji
+    const avatarEl = document.getElementById('prof-avatar-el');
+    if (avatarEl && data.avatar) {
+      avatarEl.innerHTML = `<img src="${data.avatar}" style="width:60px;height:60px;border-radius:50%;object-fit:cover;" onerror="this.parentElement.textContent='🧑‍💻'">`;
+    }
+    // Bio as role line
+    const roleEl = document.getElementById('prof-role-el');
+    if (roleEl) roleEl.textContent = data.bio || 'Second Me 用户';
+    // Skills
+    if (data.skills && data.skills.length > 0) {
+      const skillsRow = document.getElementById('profile-skills-row');
+      if (skillsRow) {
+        skillsRow.innerHTML = data.skills.map(s => `<span class="prof-skill">${s}</span>`).join('');
+      }
+    }
+  }).catch(() => {});
 });
 
 // ── Career Strategy Agent Chat ──────────────────────────────────────────────
