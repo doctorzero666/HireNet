@@ -11,7 +11,7 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-from agents import RequirementAnalysisAgent, decompose_tasks, run_resource_decision
+from agents import RequirementAnalysisAgent, decompose_tasks, run_resource_decision, CareerStrategyAgent
 from job_design import generate_jd_report
 
 app = Flask(__name__)
@@ -25,6 +25,7 @@ AUTH_URL = os.getenv("SECONDME_AUTH_URL", "https://go.second.me/oauth/")
 
 # In-memory session store for demo (use Redis in production)
 analysis_sessions = {}
+career_sessions = {}
 
 
 # ─── OAuth2 Flow ──────────────────────────────────────────────────────────────
@@ -474,6 +475,73 @@ def get_tracker():
 
 
 # ─── Health check ─────────────────────────────────────────────────────────────
+
+# ─── Career Strategy Agent API ────────────────────────────────────────────────
+
+@app.route("/api/career/start", methods=["POST"])
+def career_start():
+    """开始一轮新的职业策略对话"""
+    data = request.get_json()
+    message = data.get("message", "").strip()
+    if not message:
+        return jsonify({"error": "message is required"}), 400
+
+    session_id = secrets.token_hex(8)
+    agent = CareerStrategyAgent()
+    response = agent.start(message)
+
+    is_complete = agent.is_complete(response)
+    strategy = None
+    display_response = response
+    if is_complete:
+        try:
+            strategy = agent.extract_strategy(response)
+            display_response = response.split("[STRATEGY_READY]")[0].strip()
+        except Exception:
+            is_complete = False
+
+    career_sessions[session_id] = {"agent": agent, "strategy": strategy}
+
+    return jsonify({
+        "session_id": session_id,
+        "response": display_response,
+        "is_complete": is_complete,
+        "strategy": strategy,
+    })
+
+
+@app.route("/api/career/reply", methods=["POST"])
+def career_reply():
+    """继续职业策略对话"""
+    data = request.get_json()
+    session_id = data.get("session_id")
+    message = data.get("message", "").strip()
+
+    if session_id not in career_sessions:
+        return jsonify({"error": "Session not found"}), 404
+
+    sess = career_sessions[session_id]
+    agent = sess["agent"]
+    response = agent.reply(message)
+
+    is_complete = agent.is_complete(response)
+    strategy = None
+    display_response = response
+    if is_complete:
+        try:
+            strategy = agent.extract_strategy(response)
+            sess["strategy"] = strategy
+            display_response = response.split("[STRATEGY_READY]")[0].strip()
+        except Exception:
+            is_complete = False
+
+    return jsonify({
+        "session_id": session_id,
+        "response": display_response,
+        "is_complete": is_complete,
+        "strategy": strategy,
+    })
+
 
 @app.route("/api/health")
 def health():
