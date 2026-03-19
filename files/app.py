@@ -48,8 +48,9 @@ def login():
     state = secrets.token_urlsafe(16)
     session["oauth_state"] = state
 
-    # Fall back to constructing redirect_uri from current request host
-    redirect_uri = REDIRECT_URI or (request.host_url.rstrip("/") + "/api/auth/callback")
+    # Fall back to constructing redirect_uri from current request host (force https)
+    fallback = (request.host_url.rstrip("/") + "/api/auth/callback").replace("http://", "https://")
+    redirect_uri = REDIRECT_URI or fallback
 
     from urllib.parse import urlencode
     params = {
