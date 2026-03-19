@@ -48,13 +48,17 @@ def login():
     state = secrets.token_urlsafe(16)
     session["oauth_state"] = state
 
+    # Fall back to constructing redirect_uri from current request host
+    redirect_uri = REDIRECT_URI or (request.host_url.rstrip("/") + "/api/auth/callback")
+
+    from urllib.parse import urlencode
     params = {
         "client_id": CLIENT_ID,
-        "redirect_uri": REDIRECT_URI,
+        "redirect_uri": redirect_uri,
         "response_type": "code",
         "state": state,
     }
-    from urllib.parse import urlencode
+    session["redirect_uri"] = redirect_uri  # store for token exchange
     return redirect(f"{AUTH_URL}?{urlencode(params)}")
 
 
@@ -74,7 +78,7 @@ def auth_callback():
         data={
             "grant_type": "authorization_code",
             "code": code,
-            "redirect_uri": REDIRECT_URI,
+            "redirect_uri": session.get("redirect_uri") or REDIRECT_URI,
             "client_id": CLIENT_ID,
             "client_secret": CLIENT_SECRET,
         },
