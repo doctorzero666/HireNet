@@ -1074,7 +1074,9 @@ window.addEventListener('load', () => {
     // Avatar: use img if URL, otherwise keep emoji
     const avatarEl = document.getElementById('prof-avatar-el');
     if (avatarEl && data.avatar) {
-      avatarEl.innerHTML = `<img src="${data.avatar}" style="width:60px;height:60px;border-radius:50%;object-fit:cover;" onerror="this.parentElement.textContent='🧑‍💻'">`;
+      avatarEl.innerHTML = `<img src="${data.avatar}" style="width:100%;height:100%;object-fit:cover;border-radius:3px;" onerror="this.parentElement.textContent='🧑‍💻'">`;
+      avatarEl.style.padding = '0';
+      avatarEl.style.fontSize = '0';
     }
     // Bio as role line
     const roleEl = document.getElementById('prof-role-el');
