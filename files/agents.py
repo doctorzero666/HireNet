@@ -383,6 +383,47 @@ class CareerStrategyAgent:
         json_str = json_str.replace("```json", "").replace("```", "").strip()
         return json.loads(json_str)
 
+    def force_generate_strategy(self) -> dict:
+        """
+        Force the LLM to output a structured strategy JSON based on the
+        conversation so far — bypassing the [STRATEGY_READY] detection.
+        """
+        force_prompt = """根据我们刚才的对话，现在请直接输出你对我的职业策略建议。
+只输出以下 JSON，不要有任何其他文字：
+{
+  "summary": "一句话总结这个人的核心优势和方向",
+  "directions": [
+    {
+      "title": "推荐方向名称",
+      "reason": "为什么适合你（结合对话中的具体情况）",
+      "next_action": "明天就能做的第一步行动"
+    }
+  ],
+  "focus_skills": ["最值得投入的技能1", "技能2"],
+  "avoid": "需要规避的陷阱或常见误区",
+  "encouragement": "个性化的鼓励语（不要套话）"
+}"""
+        messages = list(self.history) + [{"role": "user", "content": force_prompt}]
+        resp = self.client.chat.completions.create(
+            model=get_model(),
+            messages=messages,
+            temperature=0.3,
+        )
+        raw = resp.choices[0].message.content.strip()
+        raw = raw.replace("```json", "").replace("```", "").strip()
+        # Find the first JSON object
+        start = raw.find('{')
+        if start == -1:
+            raise ValueError("No JSON found in response")
+        brace = 0
+        for i, ch in enumerate(raw[start:], start):
+            if ch == '{': brace += 1
+            elif ch == '}':
+                brace -= 1
+                if brace == 0:
+                    return json.loads(raw[start:i+1])
+        raise ValueError("Could not parse strategy JSON")
+
 
 def run_resource_decision(tasks: list[dict]) -> dict:
     """

@@ -415,6 +415,33 @@ nav{
   line-height:1.55;max-width:210px;box-shadow:3px 3px 0 rgba(0,0,0,.14);
 }
 
+/* ── Task complete button on next-step items ── */
+.ns-complete-btn{
+  padding:4px 10px;border-radius:4px;cursor:pointer;flex-shrink:0;
+  background:linear-gradient(180deg,#5cd45c 0%,#3aba3a 100%);
+  border:2px solid #1e7a1e;border-bottom:3px solid #146414;
+  color:#fff;font-family:'Nunito',sans-serif;font-weight:800;font-size:10px;
+  text-shadow:1px 1px 0 #0e4a0e;white-space:nowrap;
+}
+.ns-complete-btn:hover{filter:brightness(1.07);}
+.ns-complete-btn:active{transform:translateY(1px);border-bottom-width:2px;}
+.ns-done{opacity:.5;pointer-events:none;}
+.ns-done .ns-title{text-decoration:line-through;}
+
+/* ── New timeline entry animation ── */
+@keyframes tl-slide-in{
+  from{opacity:0;transform:translateY(-10px);}
+  to{opacity:1;transform:translateY(0);}
+}
+.tl-item-new{animation:tl-slide-in .4s ease;}
+
+/* ── Level up flash ── */
+@keyframes levelup-flash{
+  0%,100%{box-shadow:none;}
+  40%{box-shadow:0 0 0 6px rgba(255,220,60,.6),0 0 16px rgba(255,200,0,.5);}
+}
+.levelup-flash{animation:levelup-flash 1.4s ease;}
+
 /* scrollbar */
 ::-webkit-scrollbar{width:5px;}
 ::-webkit-scrollbar-thumb{background:#9b7040;}
@@ -568,7 +595,7 @@ nav{
   <a href="/" class="nav-back">← 返回</a>
   <span class="nav-logo">🌱 HIRE NET</span>
   <span class="nav-sub">我的成长旅程</span>
-  <div class="nav-exp">⭐ Lv.2 &nbsp;|&nbsp; 300 / 500 EXP</div>
+  <div class="nav-exp" id="nav-exp">⭐ Lv.2 &nbsp;|&nbsp; 300 / 500 EXP</div>
   <div class="nav-badge">🧑‍🌾 JOB SEEKER</div>
 </nav>
 
@@ -588,10 +615,10 @@ nav{
           </div>
         </div>
         <div class="wb-right">
-          <div class="level-pill">⚔️ Level 2</div>
+          <div class="level-pill" id="level-pill">⚔️ Level 2</div>
           <div class="level-bar-wrap">
             <div class="level-bar-label">
-              <span>经验值</span><span>300/500</span>
+              <span>经验值</span><span id="exp-label">300/500</span>
             </div>
             <div class="level-bar-bg">
               <div class="level-bar-fill" id="main-lvl-bar" style="width:0%"></div>
@@ -736,7 +763,7 @@ nav{
             <div class="prof-avatar">🧑‍💻</div>
             <div class="prof-name">我的 Second Me</div>
             <div class="prof-role">AI 产品方向 · 2年经验</div>
-            <div class="prof-skills">
+            <div class="prof-skills" id="profile-skills-row">
               <span class="prof-skill">需求分析</span>
               <span class="prof-skill">PRD写作</span>
               <span class="prof-skill">AI产品</span>
@@ -756,7 +783,7 @@ nav{
               <div class="skill-bar-bg"><div class="skill-bar-fill prof-bar" data-w="70%" style="width:0%"></div></div>
             </div>
             <div class="completeness-row">
-              <div class="comp-num">78%</div>
+              <div class="comp-num" id="profile-completeness-num">78%</div>
               <div class="comp-text">画像完整度<br>补充 GitHub 可 +15%</div>
             </div>
           </div>
@@ -782,6 +809,7 @@ nav{
             </button>
           </div>
           <div class="sec-divider"></div>
+          <div id="next-steps-list">
           <div class="next-step-item">
             <span class="ns-icon">🔗</span>
             <div class="ns-text">
@@ -814,6 +842,7 @@ nav{
             </div>
             <span class="ns-arrow">→</span>
           </div>
+          </div><!-- end next-steps-list -->
         </div>
       </div>
 
@@ -834,7 +863,7 @@ nav{
           </div>
         </div>
         <div class="sec-divider"></div>
-        <div class="timeline">
+        <div class="timeline" id="journey-timeline">
 
           <div class="tl-item">
             <div class="tl-left">
@@ -1000,6 +1029,15 @@ nav{
     <div class="cs-chat-area" id="cs-chat-area"></div>
 
     <div class="cs-input-area">
+      <div id="cs-generate-row" style="display:none;margin-bottom:8px;">
+        <button onclick="generateStrategy()"
+          style="width:100%;padding:8px;border-radius:6px;cursor:pointer;
+            background:linear-gradient(180deg,#f0c840 0%,#d4a020 100%);
+            border:2px solid #9a7010;border-bottom:3px solid #6a5010;
+            color:#2a1800;font-family:'Nunito',sans-serif;font-weight:800;font-size:11px;">
+          ⭐ 信息够了，立即生成我的职业策略方案
+        </button>
+      </div>
       <div class="cs-input-row">
         <textarea class="cs-input" id="cs-input" rows="2"
           placeholder="聊聊你的职业困惑、目标或现状……"
@@ -1032,6 +1070,7 @@ window.addEventListener('load', () => {
 
 let csSessionId = null;
 let csWaiting = false;
+let csRounds = 0;  // number of completed exchanges
 
 function openCareerChat() {
   document.getElementById('cs-overlay').classList.add('open');
@@ -1133,6 +1172,169 @@ function showStrategyCard(strategy) {
 
   // Update mascot
   document.getElementById('mc-text').textContent = 'Career Strategy Agent 已为你生成职业策略方案！查看对话框了解详情 🧭';
+
+  // ── Linkage: push tasks to Next Steps panel ──
+  if (strategy.directions && strategy.directions.length > 0) {
+    updateNextSteps(strategy.directions, strategy.focus_skills || []);
+  }
+}
+
+async function generateStrategy() {
+  if (!csSessionId) return;
+  document.getElementById('cs-generate-row').style.display = 'none';
+  showTyping();
+  document.getElementById('cs-send').disabled = true;
+
+  try {
+    const res = await fetch('/api/career/generate', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ session_id: csSessionId }),
+    });
+    const data = await res.json();
+    removeTyping();
+
+    if (data.success && data.strategy) {
+      appendAgentMsg('好的，根据我们的对话，我为你整理了以下职业策略方案：');
+      showStrategyCard(data.strategy);
+    } else {
+      appendAgentMsg('生成策略时出了点问题，请再多聊几句后重试。');
+      document.getElementById('cs-generate-row').style.display = 'block';
+    }
+  } catch (e) {
+    removeTyping();
+    appendAgentMsg('网络错误，请稍后重试。');
+    document.getElementById('cs-generate-row').style.display = 'block';
+  } finally {
+    document.getElementById('cs-send').disabled = false;
+  }
+}
+
+// ── Tracker Agent + Candidate Profile Agent linkage ──────────────────────────
+
+let strategyTasks = [];   // store directions from Career Strategy Agent
+
+function updateNextSteps(directions, focusSkills) {
+  strategyTasks = directions.map(d => ({ ...d, focus_skills: focusSkills }));
+  const list = document.getElementById('next-steps-list');
+  list.innerHTML = '';
+
+  directions.forEach((dir, i) => {
+    const item = document.createElement('div');
+    item.className = 'next-step-item';
+    item.id = 'task-item-' + i;
+    item.innerHTML = `
+      <span class="ns-icon">🎯</span>
+      <div class="ns-text">
+        <div class="ns-title">${dir.next_action}</div>
+        <div class="ns-sub">${dir.title} · Career Strategy 已规划</div>
+      </div>
+      <button class="ns-complete-btn" onclick="completeTask(${i}, this)">✓ 完成</button>`;
+    list.appendChild(item);
+  });
+
+  document.getElementById('mc-text').textContent =
+    `Career Strategy Agent 已规划 ${directions.length} 个行动任务！完成后可获得 EXP 奖励 🎯`;
+}
+
+async function completeTask(taskIndex, btn) {
+  const task = strategyTasks[taskIndex];
+  if (!task) return;
+
+  btn.textContent = '完成中...';
+  btn.disabled = true;
+
+  try {
+    const res = await fetch('/api/tracker/task-complete', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        task_title:     task.next_action,
+        task_direction: task.title,
+        related_skills: task.focus_skills || [],
+        exp_reward:     50,
+      }),
+    });
+    const data = await res.json();
+
+    if (data.success) {
+      // Mark item done
+      const item = document.getElementById('task-item-' + taskIndex);
+      item.classList.add('ns-done');
+      btn.textContent = '✓ 已完成';
+
+      // Tracker Agent: add timeline entry
+      addTimelineEntry(data.timeline_entry, data.exp_gained);
+
+      // Candidate Profile Agent: update EXP + profile
+      updateExpDisplay(data.total_exp, data.exp_to_next, data.level, data.leveled_up);
+      updateProfileCompleteness(data.profile_completeness);
+      maybeAddSkillTag(task.focus_skills || []);
+    }
+  } catch (e) {
+    btn.textContent = '✓ 完成';
+    btn.disabled = false;
+  }
+}
+
+function addTimelineEntry(entry, expGained) {
+  const timeline = document.getElementById('journey-timeline');
+  const div = document.createElement('div');
+  div.className = 'tl-item tl-item-new';
+  div.innerHTML = `
+    <div class="tl-left">
+      <div class="tl-dot tl-dot-done">✓</div>
+      <div class="tl-line"></div>
+    </div>
+    <div class="tl-content">
+      <div class="tl-title">${entry.title} · 已完成</div>
+      <div class="tl-sub">Tracker Agent 已记录此项成长任务「${entry.direction}」</div>
+      <div class="tl-time">刚刚</div>
+      <span class="tl-badge tb-done">+${expGained} EXP ✓</span>
+    </div>`;
+  timeline.insertBefore(div, timeline.firstChild);
+}
+
+function updateExpDisplay(totalExp, expToNext, level, leveledUp) {
+  document.getElementById('nav-exp').textContent =
+    `⭐ Lv.${level}  |  ${totalExp} / ${expToNext} EXP`;
+  document.getElementById('level-pill').innerHTML = `⚔️ Level ${level}`;
+  document.getElementById('exp-label').textContent = `${totalExp}/${expToNext}`;
+
+  const pct = Math.round((totalExp / expToNext) * 100);
+  document.getElementById('main-lvl-bar').style.width = pct + '%';
+
+  if (leveledUp) {
+    const pill = document.getElementById('level-pill');
+    pill.classList.remove('levelup-flash');
+    void pill.offsetWidth; // reflow to restart animation
+    pill.classList.add('levelup-flash');
+    document.getElementById('mc-text').textContent =
+      `🎉 恭喜升级！你已达到 Level ${level}！Candidate Profile Agent 已更新你的画像`;
+  } else {
+    document.getElementById('mc-text').textContent =
+      `+50 EXP 已入账！Tracker Agent 已记录此次成长 📈`;
+  }
+}
+
+function updateProfileCompleteness(pct) {
+  const el = document.getElementById('profile-completeness-num');
+  if (el) el.textContent = pct + '%';
+}
+
+function maybeAddSkillTag(skills) {
+  const row = document.getElementById('profile-skills-row');
+  if (!row || !skills.length) return;
+  const existing = Array.from(row.querySelectorAll('.prof-skill')).map(el => el.textContent);
+  skills.forEach(skill => {
+    if (!existing.includes(skill)) {
+      const span = document.createElement('span');
+      span.className = 'prof-skill';
+      span.textContent = skill;
+      row.appendChild(span);
+      existing.push(skill);
+    }
+  });
 }
 
 async function sendCareerMsg() {
@@ -1173,6 +1375,12 @@ async function sendCareerMsg() {
       if (data.response) appendAgentMsg(data.response);
       if (data.is_complete && data.strategy) {
         showStrategyCard(data.strategy);
+      } else {
+        csRounds++;
+        // Show "generate now" button after 2 exchanges
+        if (csRounds >= 2) {
+          document.getElementById('cs-generate-row').style.display = 'block';
+        }
       }
     }
   } catch (e) {

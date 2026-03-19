@@ -6,6 +6,7 @@ import os
 import json
 import secrets
 import requests
+from datetime import datetime
 from flask import Flask, request, jsonify, session, redirect, render_template_string, render_template
 from dotenv import load_dotenv
 
@@ -26,6 +27,17 @@ AUTH_URL = os.getenv("SECONDME_AUTH_URL", "https://go.second.me/oauth/")
 # In-memory session store for demo (use Redis in production)
 analysis_sessions = {}
 career_sessions = {}
+
+# User profile state: EXP, level, completed tasks
+user_profile_state = {
+    "exp": 300,
+    "level": 2,
+    "exp_to_next": 500,
+    "completed_tasks": [],
+    "skill_boosts": {},
+    "profile_completeness": 78,
+}
+EXP_PER_LEVEL = 500
 
 
 # ─── OAuth2 Flow ──────────────────────────────────────────────────────────────
@@ -541,6 +553,77 @@ def career_reply():
         "is_complete": is_complete,
         "strategy": strategy,
     })
+
+
+# ─── Tracker Agent: task completion ──────────────────────────────────────────
+
+@app.route("/api/career/generate", methods=["POST"])
+def career_generate():
+    """Force-generate strategy from conversation history (user-triggered)."""
+    data = request.get_json()
+    session_id = data.get("session_id")
+    if session_id not in career_sessions:
+        return jsonify({"error": "Session not found"}), 404
+    agent = career_sessions[session_id]["agent"]
+    try:
+        strategy = agent.force_generate_strategy()
+        career_sessions[session_id]["strategy"] = strategy
+        return jsonify({"success": True, "strategy": strategy})
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+@app.route("/api/tracker/task-complete", methods=["POST"])
+def complete_task():
+    """Mark a career strategy task as complete; award EXP and update profile."""
+    data = request.get_json()
+    task_title    = data.get("task_title", "")
+    task_direction = data.get("task_direction", "")
+    related_skills = data.get("related_skills", [])
+    exp_reward    = int(data.get("exp_reward", 50))
+
+    state = user_profile_state
+    state["exp"] += exp_reward
+
+    leveled_up = False
+    while state["exp"] >= state["exp_to_next"]:
+        state["exp"] -= state["exp_to_next"]
+        state["level"] += 1
+        leveled_up = True
+
+    # Candidate Profile Agent: boost skills
+    for skill in related_skills:
+        state["skill_boosts"][skill] = state["skill_boosts"].get(skill, 0) + 3
+
+    # Increase completeness slightly per completed task
+    state["profile_completeness"] = min(100, state["profile_completeness"] + 3)
+
+    task_entry = {
+        "title": task_title,
+        "direction": task_direction,
+        "skills": related_skills,
+        "exp_gained": exp_reward,
+        "completed_at": datetime.now().strftime("%H:%M"),
+    }
+    state["completed_tasks"].append(task_entry)
+
+    return jsonify({
+        "success": True,
+        "exp_gained": exp_reward,
+        "total_exp": state["exp"],
+        "exp_to_next": state["exp_to_next"],
+        "level": state["level"],
+        "leveled_up": leveled_up,
+        "timeline_entry": task_entry,
+        "skill_boosts": state["skill_boosts"],
+        "profile_completeness": state["profile_completeness"],
+    })
+
+
+@app.route("/api/profile/state", methods=["GET"])
+def get_profile_state():
+    """Get current user profile state (EXP, level, skill boosts)."""
+    return jsonify(user_profile_state)
 
 
 @app.route("/api/health")
