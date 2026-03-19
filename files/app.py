@@ -631,6 +631,144 @@ def health():
     return jsonify({"status": "ok", "client_id": CLIENT_ID[:8] + "..."})
 
 
+# ─── MCP (Model Context Protocol) Endpoint ────────────────────────────────────
+
+MCP_TOOLS = [
+    {
+        "name": "hirenet_analyze_requirements",
+        "description": "帮助企业澄清项目需求，输出结构化任务分解",
+        "inputSchema": {
+            "type": "object",
+            "properties": {
+                "description": {"type": "string"}
+            },
+            "required": ["description"]
+        }
+    },
+    {
+        "name": "hirenet_match_candidates",
+        "description": "根据岗位需求，从 A2A 网络中匹配最合适的候选人或 Agent",
+        "inputSchema": {
+            "type": "object",
+            "properties": {
+                "job_title": {"type": "string"},
+                "requirements": {"type": "string"}
+            },
+            "required": ["job_title"]
+        }
+    },
+    {
+        "name": "hirenet_career_strategy",
+        "description": "职业策略顾问：分析求职者背景，给出个性化职业发展建议",
+        "inputSchema": {
+            "type": "object",
+            "properties": {
+                "background": {"type": "string"}
+            },
+            "required": ["background"]
+        }
+    },
+    {
+        "name": "hirenet_get_jobs",
+        "description": "获取当前 HireNet 平台上可用的岗位列表",
+        "inputSchema": {
+            "type": "object",
+            "properties": {}
+        }
+    },
+]
+
+
+@app.route("/api/mcp", methods=["POST"])
+def mcp_endpoint():
+    """JSON-RPC 2.0 MCP endpoint for SecondMe OpenClaw integration."""
+    body = request.get_json(silent=True) or {}
+    rpc_id = body.get("id", 1)
+    method = body.get("method", "")
+    params = body.get("params", {})
+
+    # Extract Bearer token forwarded by SecondMe
+    auth_header = request.headers.get("Authorization", "")
+    bearer_token = auth_header.removeprefix("Bearer ").strip() if auth_header.startswith("Bearer ") else None
+
+    def ok(result):
+        return jsonify({"jsonrpc": "2.0", "id": rpc_id, "result": result})
+
+    def err(code, message):
+        return jsonify({"jsonrpc": "2.0", "id": rpc_id, "error": {"code": code, "message": message}}), 400
+
+    if method == "tools/list":
+        return ok({"tools": MCP_TOOLS})
+
+    if method == "tools/call":
+        tool_name = params.get("name", "")
+        arguments = params.get("arguments", {})
+
+        try:
+            if tool_name == "hirenet_get_jobs":
+                from application_agent import get_demo_jobs
+                jobs = get_demo_jobs()
+                text = json.dumps(jobs, ensure_ascii=False, indent=2)
+
+            elif tool_name == "hirenet_analyze_requirements":
+                description = arguments.get("description", "")
+                if not description:
+                    return err(-32602, "description is required")
+                agent = RequirementAnalysisAgent()
+                response = agent.start(description)
+                text = response
+
+            elif tool_name == "hirenet_match_candidates":
+                from candidate_profile import get_all_resources
+                from agents import evaluate_resource_for_task
+                job_title = arguments.get("job_title", "")
+                requirements = arguments.get("requirements", "")
+                resources = get_all_resources()
+                human_resources = [r for r in resources if r["type"] == "human"]
+                task = {
+                    "id": "mcp_match",
+                    "name": job_title,
+                    "description": requirements,
+                    "type": "general",
+                    "requires_judgment": True,
+                    "is_recurring": True,
+                    "estimated_hours": 160,
+                }
+                matches = []
+                for resource in human_resources:
+                    try:
+                        eval_result = evaluate_resource_for_task(resource, task)
+                    except Exception:
+                        eval_result = {"confidence": 0.5, "reason": "评估超时", "strengths": []}
+                    matches.append({
+                        "candidate": resource,
+                        "match_score": round(eval_result.get("confidence", 0) * 100),
+                        "reason": eval_result.get("reason", ""),
+                    })
+                matches.sort(key=lambda x: x["match_score"], reverse=True)
+                text = json.dumps(matches, ensure_ascii=False, indent=2)
+
+            elif tool_name == "hirenet_career_strategy":
+                background = arguments.get("background", "")
+                if not background:
+                    return err(-32602, "background is required")
+                agent = CareerStrategyAgent()
+                agent.start(background)
+                strategy = agent.force_generate_strategy()
+                text = json.dumps(strategy, ensure_ascii=False, indent=2)
+
+            else:
+                return err(-32601, f"Unknown tool: {tool_name}")
+
+            return ok({"content": [{"type": "text", "text": text}]})
+
+        except Exception as e:
+            import traceback
+            return err(-32603, f"Tool execution error: {e}\n{traceback.format_exc()}")
+
+    return err(-32601, f"Method not found: {method}")
+
+
 # ─── Serve frontend ───────────────────────────────────────────────────────────
 
 @app.route("/")
