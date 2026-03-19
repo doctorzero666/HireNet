@@ -784,6 +784,20 @@ body {
 </div>
 
 <script>
+// Check login status on page load; redirect to OAuth if not logged in
+(async function checkAuth() {
+  // Skip if already redirected back from OAuth
+  if (window.location.search.includes('logged_in=true')) return;
+  try {
+    const resp = await fetch('/api/auth/me');
+    if (resp.status === 401) {
+      window.location.href = '/api/auth/login';
+    }
+  } catch (e) {
+    // network error, let user proceed
+  }
+})();
+
 let selectedRole = null;
 
 function selectRole(role) {
