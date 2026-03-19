@@ -28,6 +28,9 @@ AUTH_URL = os.getenv("SECONDME_AUTH_URL", "https://go.second.me/oauth/")
 analysis_sessions = {}
 career_sessions = {}
 
+# Global published jobs — company analysis pushes here; candidate side reads from here
+published_jobs = []
+
 # User profile state: EXP, level, completed tasks
 user_profile_state = {
     "exp": 300,
@@ -263,6 +266,9 @@ def run_decision():
         # Step 4: Build summary
         summary = _build_decision_summary(tasks, decisions, jd_report)
 
+        # Publish generated job designs to global pool for candidate matching
+        _publish_jobs(jd_report)
+
         return jsonify({
             "requirement": requirement,
             "tasks": tasks,
@@ -320,6 +326,16 @@ def _build_decision_summary(tasks, decisions, jd_report) -> dict:
     }
 
 
+def _publish_jobs(jd_report: dict):
+    """Push newly generated job designs into the global published_jobs pool."""
+    designs = jd_report.get("job_designs", [])
+    existing_ids = {j.get("job_id") for j in published_jobs}
+    for job in designs:
+        if job.get("job_id") and job["job_id"] not in existing_ids:
+            published_jobs.append(job)
+            existing_ids.add(job["job_id"])
+
+
 # ─── Candidate Side ───────────────────────────────────────────────────────────
 
 @app.route("/api/candidates", methods=["GET"])
@@ -353,6 +369,33 @@ def match_candidates():
 
     resources = get_all_resources()
     human_resources = [r for r in resources if r["type"] == "human"]
+
+    # Inject currently logged-in SecondMe user as a real candidate
+    logged_token = session.get("access_token")
+    if logged_token:
+        try:
+            from secondme_client import SecondMeClient
+            client = SecondMeClient(logged_token)
+            info = client.get_user_info()
+            skills = []
+            try:
+                memories = client.get_soft_memories(page_size=30)
+                skills = [m.get("content","").strip() for m in memories if m.get("content","").strip() and len(m.get("content","")) <= 30][:10]
+            except Exception:
+                pass
+            real_user = {
+                "id": "real_user",
+                "type": "human",
+                "name": info.get("name") or info.get("nickname") or "当前用户",
+                "capabilities": skills,
+                "capability_summary": info.get("selfIntroduction") or "、".join(skills[:5]),
+                "_token": logged_token,
+            }
+            # Only add if not already in list
+            if not any(r.get("id") == "real_user" for r in human_resources):
+                human_resources = [real_user] + human_resources
+        except Exception:
+            pass
 
     task = {
         "id": "match",
@@ -474,6 +517,84 @@ def candidate_match():
 
     results.sort(key=lambda x: x["match_score"], reverse=True)
     return jsonify({"candidate": profile, "matches": results})
+
+
+@app.route("/api/my-match", methods=["GET"])
+def my_match():
+    """
+    Match the currently logged-in SecondMe user against all published jobs.
+    Uses their real SecondMe profile (soft memories) as the candidate profile.
+    """
+    from application_agent import get_demo_jobs
+    from agents import evaluate_resource_for_task
+
+    token = session.get("access_token")
+
+    # Build profile from SecondMe if logged in, else use a generic profile
+    if token:
+        from secondme_client import SecondMeClient
+        client = SecondMeClient(token)
+        try:
+            info = client.get_user_info()
+            skills = []
+            bio = info.get("selfIntroduction") or info.get("bio") or ""
+            try:
+                memories = client.get_soft_memories(page_size=50)
+                for m in memories[:30]:
+                    content = m.get("content", "").strip()
+                    if content and len(content) <= 30:
+                        skills.append(content)
+            except Exception:
+                pass
+            profile = {
+                "id": "current_user",
+                "type": "human",
+                "name": info.get("name") or info.get("nickname") or "用户",
+                "capabilities": skills[:10],
+                "capability_summary": bio or "、".join(skills[:5]),
+                "skills": skills,
+                "bio": bio,
+                "_token": token,  # used by evaluate_resource_for_task via SecondMe /act
+            }
+        except Exception:
+            profile = {"id": "current_user", "type": "human", "name": "用户",
+                       "capabilities": [], "capability_summary": ""}
+    else:
+        profile = {"id": "current_user", "type": "human", "name": "用户",
+                   "capabilities": [], "capability_summary": ""}
+
+    # All available jobs: demo + published by company analysis
+    all_jobs = get_demo_jobs() + published_jobs
+    results = []
+    for job in all_jobs:
+        task = {
+            "id": job.get("job_id", ""),
+            "name": job.get("job_title", ""),
+            "description": "、".join(job.get("core_responsibilities", [])),
+            "type": "general",
+            "requires_judgment": True,
+            "is_recurring": True,
+            "estimated_hours": 160,
+        }
+        try:
+            eval_result = evaluate_resource_for_task(profile, task)
+        except Exception:
+            eval_result = {"confidence": 0.5, "reason": "评估超时，使用默认分数", "strengths": []}
+        results.append({
+            "job": job,
+            "match_score": round(eval_result.get("confidence", 0) * 100),
+            "reason": eval_result.get("reason", ""),
+            "strengths": eval_result.get("strengths", []),
+            "is_published": job in published_jobs,
+        })
+
+    results.sort(key=lambda x: x["match_score"], reverse=True)
+    return jsonify({
+        "profile": {k: v for k, v in profile.items() if k != "_token"},
+        "matches": results,
+        "total_jobs": len(all_jobs),
+        "published_jobs": len(published_jobs),
+    })
 
 
 @app.route("/api/apply", methods=["POST"])
@@ -861,6 +982,8 @@ def quick_analyze():
         # store jd_report in session for job listing
         analysis_sessions[session_id]["jd_report"] = jd_report
         summary = _build_decision_summary(tasks, decisions, jd_report)
+        # Publish generated job designs to global pool for candidate matching
+        _publish_jobs(jd_report)
 
         return jsonify({
             "session_id": session_id,

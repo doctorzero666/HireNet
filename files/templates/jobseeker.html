@@ -653,94 +653,12 @@ nav{
             <div style="font-weight:800;font-size:14px;color:#2a1000;">推荐机会</div>
             <div style="font-size:10px;color:#8a6030;font-weight:700;">Job Discovery · Matching Engine · Career Strategy</div>
           </div>
-          <div class="sec-head-agent" style="margin-left:auto;">3 个新机会</div>
+          <div class="sec-head-agent" style="margin-left:auto;" id="opp-count-label">加载中...</div>
         </div>
         <div class="sec-divider"></div>
 
-        <div class="opp-list">
-
-          <!-- Opp 1 -->
-          <div class="opp-card">
-            <div class="opp-top">
-              <div class="opp-emo">🤖</div>
-              <div class="opp-info">
-                <div class="opp-title">AI 产品经理</div>
-                <div class="opp-company">某 AI 创业公司 · 全职 · 远程</div>
-              </div>
-              <div class="opp-match-col">
-                <span class="opp-pct match-high">84%</span>
-                <span class="opp-pct-lbl">匹配度</span>
-              </div>
-            </div>
-            <div class="opp-tags">
-              <span class="opp-tag tag-new">New!</span>
-              <span class="opp-tag tag-type-hybrid">AI + Human</span>
-              <span class="opp-tag tag-skill">需求分析</span>
-              <span class="opp-tag tag-skill">AI产品</span>
-              <span class="opp-tag tag-skill">用户研究</span>
-            </div>
-            <div class="match-bar-bg"><div class="match-bar-fill mf-green opp-bar" data-w="84%"></div></div>
-            <div class="opp-reason">岗位经 HireNet 去水分析，已去除"5年经验"等夸大要求，实际与你的能力高度匹配。</div>
-            <div class="opp-btns">
-              <button class="opp-btn opp-btn-view">查看详情</button>
-              <button class="opp-btn opp-btn-join" onclick="applyJob(this,'Application Agent 正在生成定制化投递材料...')">✓ 一键参与</button>
-            </div>
-          </div>
-
-          <!-- Opp 2 -->
-          <div class="opp-card">
-            <div class="opp-top">
-              <div class="opp-emo">📊</div>
-              <div class="opp-info">
-                <div class="opp-title">数据分析项目</div>
-                <div class="opp-company">某电商公司 · 兼职 · 2周</div>
-              </div>
-              <div class="opp-match-col">
-                <span class="opp-pct match-high">78%</span>
-                <span class="opp-pct-lbl">匹配度</span>
-              </div>
-            </div>
-            <div class="opp-tags">
-              <span class="opp-tag tag-new">New!</span>
-              <span class="opp-tag tag-type-agent">Agent 协同</span>
-              <span class="opp-tag tag-skill">Python</span>
-              <span class="opp-tag tag-skill">数据可视化</span>
-              <span class="opp-tag tag-skill">SQL</span>
-            </div>
-            <div class="match-bar-bg"><div class="match-bar-fill mf-green opp-bar" data-w="78%"></div></div>
-            <div class="opp-reason">一次性项目，预计 2 周完成。数据分析 Agent 将协助你完成常规处理，你专注洞察输出。</div>
-            <div class="opp-btns">
-              <button class="opp-btn opp-btn-view">查看详情</button>
-              <button class="opp-btn opp-btn-join" onclick="applyJob(this,'Application Agent 正在匹配你的数据技能...')">✓ 一键参与</button>
-            </div>
-          </div>
-
-          <!-- Opp 3 -->
-          <div class="opp-card">
-            <div class="opp-top">
-              <div class="opp-emo">🌐</div>
-              <div class="opp-info">
-                <div class="opp-title">产品策略顾问</div>
-                <div class="opp-company">某 SaaS 公司 · 远程 · 兼职</div>
-              </div>
-              <div class="opp-match-col">
-                <span class="opp-pct match-mid">71%</span>
-                <span class="opp-pct-lbl">匹配度</span>
-              </div>
-            </div>
-            <div class="opp-tags">
-              <span class="opp-tag tag-type-human">Human Required</span>
-              <span class="opp-tag tag-skill">策略规划</span>
-              <span class="opp-tag tag-skill">竞品分析</span>
-            </div>
-            <div class="match-bar-bg"><div class="match-bar-fill mf-amber opp-bar" data-w="71%"></div></div>
-            <div class="opp-reason">需要有 AI 行业视角的顾问，每周 4–6 小时。Career Strategy Agent 认为这是你的成长方向。</div>
-            <div class="opp-btns">
-              <button class="opp-btn opp-btn-view">查看详情</button>
-              <button class="opp-btn opp-btn-join" onclick="applyJob(this,'Career Orchestrator 正在安排投递流程...')">✓ 一键参与</button>
-            </div>
-          </div>
-
+        <div class="opp-list" id="opp-list-container">
+          <div style="text-align:center;padding:20px;color:#9a7030;font-size:13px;">⚙️ Matching Engine 正在分析你的画像...</div>
         </div>
       </div>
     </div>
@@ -1064,6 +982,55 @@ window.addEventListener('load', () => {
     document.querySelectorAll('.opp-bar').forEach(el => { el.style.width = el.dataset.w; });
     document.querySelectorAll('.prof-bar').forEach(el => { el.style.width = el.dataset.w; });
   }, 400);
+
+  // Load real job matches from Matching Engine
+  fetch('/api/my-match').then(r => r.json()).then(data => {
+    const container = document.getElementById('opp-list-container');
+    const countLabel = document.getElementById('opp-count-label');
+    if (!data.matches || data.matches.length === 0) {
+      container.innerHTML = '<div style="text-align:center;padding:20px;color:#9a7030;font-size:13px;">暂无匹配岗位</div>';
+      if (countLabel) countLabel.textContent = '0 个机会';
+      return;
+    }
+    const emojis = ['🤖','📊','🌐','💡','⚙️','🎯','🏗️','📱'];
+    const top = data.matches.slice(0, 6);
+    if (countLabel) countLabel.textContent = `${top.length} 个新机会`;
+    container.innerHTML = top.map((m, i) => {
+      const job = m.job;
+      const pct = m.match_score;
+      const cls = pct >= 75 ? 'match-high' : pct >= 55 ? 'match-mid' : 'match-low';
+      const barCls = pct >= 75 ? 'mf-green' : 'mf-amber';
+      const skills = (job.required_skills || []).slice(0, 3).map(s => `<span class="opp-tag tag-skill">${s}</span>`).join('');
+      const isNew = m.is_published ? '<span class="opp-tag tag-new">企业发布</span>' : '<span class="opp-tag tag-new">New!</span>';
+      const salary = job.salary_range ? `${job.salary_range.min/1000}k-${job.salary_range.max/1000}k` : '';
+      const company = job.company || '企业方';
+      const type = job.work_type === 'full-time' ? '全职' : '兼职';
+      return `<div class="opp-card">
+        <div class="opp-top">
+          <div class="opp-emo">${emojis[i % emojis.length]}</div>
+          <div class="opp-info">
+            <div class="opp-title">${job.job_title || '职位'}</div>
+            <div class="opp-company">${company} · ${type}${salary ? ' · ' + salary : ''}</div>
+          </div>
+          <div class="opp-match-col">
+            <span class="opp-pct ${cls}">${pct}%</span>
+            <span class="opp-pct-lbl">匹配度</span>
+          </div>
+        </div>
+        <div class="opp-tags">${isNew}${skills}</div>
+        <div class="match-bar-bg"><div class="match-bar-fill ${barCls} opp-bar" data-w="${pct}%" style="width:0%"></div></div>
+        <div class="opp-reason">${m.reason || '基于你的 Second Me 画像匹配'}</div>
+        <div class="opp-btns">
+          <button class="opp-btn opp-btn-view">查看详情</button>
+          <button class="opp-btn opp-btn-join" onclick="applyJob(this,'Application Agent 正在生成定制化投递材料...')">✓ 一键参与</button>
+        </div>
+      </div>`;
+    }).join('');
+    // Animate bars
+    setTimeout(() => {
+      container.querySelectorAll('.opp-bar').forEach(el => { el.style.width = el.dataset.w; });
+    }, 200);
+  }).catch(() => {});
 
   // Load real SecondMe user profile
   fetch('/api/me/profile').then(r => r.json()).then(data => {
