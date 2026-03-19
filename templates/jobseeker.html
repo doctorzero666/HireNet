@@ -1,0 +1,892 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>HireNet — My Journey</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: 'Nunito', sans-serif; height: 100vh; overflow: hidden; }
+
+/* ── Scene ── */
+.scene-bg {
+  position: fixed; inset: 0; z-index: 0;
+  background: linear-gradient(180deg,
+    #4a98c8 0%, #68b4e0 22%, #90ccec 48%,
+    #b8e2f4 65%, #70be58 65%,
+    #54a63e 78%, #3e8028 100%);
+}
+/* Morning glow */
+.scene-bg::after {
+  content: '';
+  position: fixed; inset: 0;
+  background: radial-gradient(ellipse at 80% 8%,
+    rgba(255,240,160,.35) 0%, transparent 55%);
+  pointer-events: none;
+}
+
+/* Sun */
+.sun {
+  position: fixed; top: 40px; right: 100px;
+  width: 56px; height: 56px; z-index: 1;
+  background: radial-gradient(circle, #fff8c0 0%, #ffe840 45%, #f5c820 100%);
+  border-radius: 0;
+  animation: sun-pulse 5s ease-in-out infinite;
+}
+.sun::before {
+  content: ''; position: absolute; inset: -14px;
+  background: radial-gradient(circle, rgba(255,240,100,.28) 0%, transparent 70%);
+}
+@keyframes sun-pulse {
+  0%,100%{box-shadow:0 0 0 6px rgba(255,232,64,.18);}
+  50%{box-shadow:0 0 0 12px rgba(255,232,64,.22);}
+}
+
+/* Clouds */
+.cloud { position:fixed; background:#fff; border-radius:0;
+  box-shadow:2px 2px 0 #e0e0e0; animation:drift linear infinite; z-index:1; }
+.cloud::before,.cloud::after{content:'';position:absolute;background:#fff;}
+.cl1{width:88px;height:24px;top:6%;animation-duration:58s;left:-130px;}
+.cl1::before{width:50px;height:20px;top:-18px;left:12px;}
+.cl1::after{width:30px;height:14px;top:-12px;left:38px;}
+.cl2{width:120px;height:28px;top:16%;animation-duration:82s;animation-delay:-30s;left:-170px;}
+.cl2::before{width:68px;height:24px;top:-22px;left:18px;}
+.cl2::after{width:42px;height:16px;top:-14px;left:56px;}
+.cl3{width:66px;height:20px;top:4%;animation-duration:44s;animation-delay:-18s;left:-110px;}
+.cl3::before{width:38px;height:16px;top:-14px;left:10px;}
+.cl3::after{width:22px;height:12px;top:-10px;left:28px;}
+@keyframes drift{from{transform:translateX(0);}to{transform:translateX(calc(100vw + 240px));}}
+
+/* Birds */
+.bird{position:fixed;font-size:13px;animation:flyby linear infinite;z-index:2;pointer-events:none;}
+.b1{top:10%;animation-duration:24s;animation-delay:-7s;}
+.b2{top:20%;animation-duration:34s;animation-delay:-16s;font-size:10px;}
+@keyframes flyby{from{transform:translateX(-50px);}to{transform:translateX(calc(100vw + 50px));}}
+
+/* Trees */
+.tree{position:fixed;bottom:0;line-height:1;z-index:2;pointer-events:none;
+  filter:drop-shadow(2px 0 0 rgba(0,40,0,.18));}
+.tl1{left:-8px;font-size:108px;}
+.tl2{left:76px;font-size:70px;}
+.tr1{right:-8px;font-size:108px;}
+.tr2{right:76px;font-size:70px;}
+
+/* Butterflies */
+.butterfly{position:fixed;font-size:16px;animation:flutter linear infinite;z-index:3;pointer-events:none;}
+.bf1{bottom:32%;left:18%;animation-duration:18s;animation-delay:-4s;}
+.bf2{bottom:35%;right:22%;animation-duration:24s;animation-delay:-11s;font-size:13px;}
+@keyframes flutter{
+  0%{transform:translateX(0) translateY(0);}
+  25%{transform:translateX(30px) translateY(-20px);}
+  50%{transform:translateX(60px) translateY(0);}
+  75%{transform:translateX(30px) translateY(20px);}
+  100%{transform:translateX(0) translateY(0);}
+}
+
+/* Ground critters */
+.critter{position:fixed;z-index:4;pointer-events:none;font-size:26px;}
+.cr1{bottom:30%;left:175px;animation:hop 2.6s ease-in-out infinite;}
+.cr2{bottom:31%;right:178px;animation:hop 3.1s ease-in-out infinite;animation-delay:-.9s;}
+@keyframes hop{0%,100%{transform:translateY(0);}50%{transform:translateY(-7px);}}
+
+/* Flowers */
+.ground-flowers{position:fixed;bottom:29%;left:0;right:0;
+  display:flex;justify-content:center;gap:22px;padding:0 210px;
+  z-index:3;pointer-events:none;}
+.gf{font-size:20px;animation:sway 3.4s ease-in-out infinite;}
+.gf:nth-child(2n){animation-delay:-.9s;}
+.gf:nth-child(3n){animation-delay:-1.8s;}
+.gf:nth-child(4n){animation-delay:-2.5s;}
+@keyframes sway{0%,100%{transform:rotate(-5deg);}50%{transform:rotate(5deg);}}
+
+/* ── Nav ── */
+nav{
+  position:relative;z-index:20;height:46px;
+  background:linear-gradient(180deg,#9b6c36 0%,#7a4e20 100%);
+  border-bottom:4px solid #5a3010;
+  display:flex;align-items:center;gap:14px;padding:0 18px;
+  box-shadow:0 4px 0 #3a1a00;
+}
+.nav-back{
+  background:linear-gradient(180deg,#c8903c 0%,#a87028 100%);
+  border:2px solid #7a4a18;border-bottom:3px solid #4a2a08;border-radius:5px;
+  padding:5px 12px;font-family:'Nunito',sans-serif;font-weight:800;font-size:11px;
+  color:#fff8e8;text-shadow:1px 1px 0 #5a2800;cursor:pointer;text-decoration:none;
+}
+.nav-logo{font-family:'Press Start 2P',monospace;font-size:11px;color:#f5c842;text-shadow:2px 2px 0 #8b5000;}
+.nav-sub{font-size:11px;color:#e8c87a;font-weight:700;border-left:2px solid #a07040;padding-left:12px;}
+.nav-badge{
+  margin-left:auto;
+  background:linear-gradient(180deg,#3aba3a 0%,#28a028 100%);
+  border:2px solid #1a7a1a;border-bottom:3px solid #106010;border-radius:5px;
+  padding:4px 12px;font-family:'Nunito',sans-serif;font-weight:800;font-size:11px;
+  color:#fff;text-shadow:1px 1px 0 #0a400a;
+}
+.nav-exp{
+  display:flex;align-items:center;gap:6px;
+  background:linear-gradient(180deg,#f0c840 0%,#d4a020 100%);
+  border:2px solid #9a7010;border-bottom:3px solid #6a5010;border-radius:5px;
+  padding:4px 10px;font-weight:800;font-size:11px;color:#3a1800;
+}
+
+/* ── Page scroll wrapper ── */
+.page-scroll{
+  position:relative;z-index:10;
+  height:calc(100vh - 46px);
+  overflow-y:auto;overflow-x:hidden;
+  padding:14px 14px 80px;
+  display:flex;flex-direction:column;gap:14px;
+}
+.page-scroll::-webkit-scrollbar{width:5px;}
+.page-scroll::-webkit-scrollbar-thumb{background:#9b7040;}
+
+/* ── Board ── */
+.board{
+  background:linear-gradient(135deg,#9b6c36 0%,#7a4e20 45%,#9b6c36 100%);
+  border:4px solid #5a3010;border-radius:12px;padding:12px;
+  box-shadow:6px 6px 0 #3a1a00,inset 0 3px 0 rgba(255,220,140,.3),inset 0 -3px 0 rgba(0,0,0,.25);
+  position:relative;
+}
+.board::before{
+  content:'';position:absolute;inset:7px;pointer-events:none;border-radius:8px;
+  background:repeating-linear-gradient(90deg,transparent 0px,transparent 42px,rgba(0,0,0,.03) 42px,rgba(0,0,0,.03) 43px);
+}
+
+/* ── Parchment ── */
+.parch{
+  background:linear-gradient(150deg,#f8ecd0 0%,#f0e0b4 55%,#f5e8c4 100%);
+  border:3px solid #9b7040;border-radius:8px;padding:14px;
+  position:relative;overflow:hidden;
+  box-shadow:inset 0 3px 6px rgba(255,255,255,.4),inset 0 -3px 6px rgba(100,60,0,.16);
+}
+.parch::before{
+  content:'';position:absolute;inset:0;pointer-events:none;
+  background:radial-gradient(ellipse at 15% 15%,rgba(255,248,210,.5) 0%,transparent 55%),
+             radial-gradient(ellipse at 85% 85%,rgba(190,140,60,.1) 0%,transparent 55%);
+}
+.parch > * { position: relative; z-index: 1; }
+
+/* Section head */
+.sec-head{
+  display:flex;align-items:center;gap:10px;margin-bottom:12px;
+}
+.sec-head-icon{font-size:20px;}
+.sec-head-title{font-weight:800;font-size:14px;color:#2a1000;}
+.sec-head-agent{
+  font-size:9px;font-weight:700;color:#7a5020;
+  background:rgba(200,160,80,.3);border:1px solid rgba(160,120,40,.4);
+  padding:2px 8px;border-radius:3px;margin-left:auto;
+}
+.sec-divider{height:2px;background:linear-gradient(90deg,transparent,#c8a060 20%,#c8a060 80%,transparent);margin-bottom:12px;}
+
+/* ── Module A: Welcome Banner ── */
+.welcome-banner{
+  background:linear-gradient(135deg,rgba(255,255,255,.65) 0%,rgba(255,245,215,.5) 100%);
+  border:2px solid #c8a060;border-radius:8px;padding:14px 18px;
+  display:flex;align-items:center;gap:16px;
+  box-shadow:3px 3px 0 rgba(80,40,0,.12);
+}
+.wb-avatar{
+  width:58px;height:58px;
+  background:linear-gradient(135deg,#f0e8c0,#d8c890);
+  border:3px solid #9a8030;border-radius:6px;
+  display:flex;align-items:center;justify-content:center;
+  font-size:30px;flex-shrink:0;
+  box-shadow:2px 2px 0 rgba(0,0,0,.15);
+  animation:float 3s ease-in-out infinite;
+}
+@keyframes float{0%,100%{transform:translateY(0);}50%{transform:translateY(-4px);}}
+.wb-content{flex:1;}
+.wb-greeting{font-size:13px;font-weight:700;color:#5a3810;margin-bottom:3px;}
+.wb-name{font-weight:800;font-size:16px;color:#2a1000;margin-bottom:5px;}
+.wb-direction{
+  display:inline-flex;align-items:center;gap:6px;
+  background:rgba(90,170,60,.15);border:1px solid rgba(70,140,40,.4);
+  border-radius:4px;padding:3px 10px;font-size:11px;font-weight:700;color:#2a6010;
+}
+.wb-right{display:flex;flex-direction:column;align-items:flex-end;gap:8px;flex-shrink:0;}
+.level-pill{
+  background:linear-gradient(135deg,#f0c840 0%,#d4a020 100%);
+  border:2px solid #9a7010;border-radius:4px;padding:5px 12px;
+  font-family:'Press Start 2P',monospace;font-size:10px;color:#3a1800;
+  box-shadow:2px 2px 0 #6a5000;display:flex;align-items:center;gap:6px;
+}
+.level-bar-wrap{width:120px;}
+.level-bar-label{display:flex;justify-content:space-between;font-size:10px;font-weight:700;color:#6a4020;margin-bottom:4px;}
+.level-bar-bg{height:10px;background:#8b6030;border:2px solid #5a3010;overflow:hidden;}
+.level-bar-fill{
+  height:100%;width:60%;
+  background:linear-gradient(180deg,#60e060 0%,#30b030 60%,#20a020 100%);
+  box-shadow:inset 0 2px 0 rgba(255,255,255,.3);
+  transition:width 1.2s ease;
+}
+
+/* ── Top section: two columns ── */
+.top-section{display:grid;grid-template-columns:1fr 300px;gap:14px;}
+
+/* ── Module B: Opportunity cards ── */
+.opp-list{display:flex;flex-direction:column;gap:10px;}
+.opp-card{
+  background:rgba(255,255,255,.5);border:2px solid #c8a060;border-radius:8px;
+  padding:12px;cursor:pointer;
+  transition:background .15s,transform .12s,box-shadow .12s;
+  box-shadow:2px 2px 0 rgba(80,40,0,.1);
+}
+.opp-card:hover{background:rgba(255,255,255,.72);transform:translateY(-2px);box-shadow:4px 4px 0 rgba(80,40,0,.18);}
+.opp-top{display:flex;align-items:flex-start;gap:10px;margin-bottom:9px;}
+.opp-emo{
+  width:48px;height:48px;background:linear-gradient(135deg,#f0e8c0,#d8c890);
+  border:2px solid #9a8030;border-radius:6px;display:flex;align-items:center;
+  justify-content:center;font-size:26px;flex-shrink:0;
+}
+.opp-info{flex:1;}
+.opp-title{font-weight:800;font-size:14px;color:#2a1000;margin-bottom:3px;}
+.opp-company{font-size:11px;color:#7a5030;font-weight:700;}
+.opp-match-col{text-align:right;flex-shrink:0;}
+.opp-pct{font-family:'Press Start 2P',monospace;font-size:14px;display:block;}
+.opp-pct-lbl{font-size:9px;color:#8a6030;}
+.match-high{color:#2a8a10;}
+.match-mid {color:#9a6010;}
+
+.opp-tags{display:flex;flex-wrap:wrap;gap:5px;margin-bottom:8px;}
+.opp-tag{
+  font-size:10px;font-weight:700;padding:2px 8px;border-radius:3px;border:1px solid;
+}
+.tag-skill{color:#1a5a30;background:rgba(60,160,80,.14);border-color:rgba(40,130,60,.4);}
+.tag-type-hybrid{color:#5a1a90;background:rgba(140,80,200,.14);border-color:rgba(120,60,180,.4);}
+.tag-type-agent{color:#1a3a7a;background:rgba(60,100,200,.12);border-color:rgba(50,90,180,.4);}
+.tag-type-human{color:#7a2a10;background:rgba(200,80,50,.12);border-color:rgba(180,70,40,.4);}
+.tag-new{
+  color:#fff;background:#d84040;border-color:#a02020;
+  font-size:9px;padding:2px 6px;
+  animation:pop .3s ease;
+}
+@keyframes pop{0%{transform:scale(.8);}100%{transform:scale(1);}}
+
+.opp-reason{font-size:11px;color:#5a3810;line-height:1.55;font-weight:600;margin-bottom:9px;}
+
+.match-bar-bg{height:7px;background:#c8a060;border:1px solid #9a7030;overflow:hidden;margin-bottom:9px;}
+.match-bar-fill{height:100%;transition:width 1s ease;}
+.mf-green{background:linear-gradient(90deg,#3ab030,#60d050);}
+.mf-amber{background:linear-gradient(90deg,#c09020,#e8b840);}
+
+.opp-btns{display:flex;gap:7px;}
+.opp-btn{
+  flex:1;padding:8px 4px;font-family:'Nunito',sans-serif;font-weight:800;font-size:11px;
+  border-radius:5px;cursor:pointer;border:2px solid;text-align:center;
+  transition:all .1s;box-shadow:2px 2px 0 rgba(0,0,0,.1);
+}
+.opp-btn:active{transform:translate(1px,1px);box-shadow:none;}
+.opp-btn-join{
+  background:linear-gradient(180deg,#5cd45c 0%,#3aba3a 100%);
+  border-color:#1e7a1e;border-bottom:4px solid #146414;
+  color:#fff;text-shadow:1px 1px 0 #0e4a0e;
+}
+.opp-btn-join:hover{filter:brightness(1.07);transform:translateY(-1px);}
+.opp-btn-join:active{transform:translateY(2px);border-bottom-width:2px;}
+.opp-btn-view{
+  background:linear-gradient(180deg,#f0e890 0%,#d8d060 100%);
+  border-color:#9a8820;border-bottom:4px solid #6a6010;
+  color:#2a2000;
+}
+.opp-btn-view:hover{filter:brightness(1.05);}
+
+/* Apply animation */
+.applying{
+  background:linear-gradient(180deg,#b0d8f0 0%,#80b8e0 100%)!important;
+  border-color:#4080b0!important;color:#fff!important;
+  animation:applying-spin 1s linear infinite;
+}
+@keyframes applying-spin{0%{letter-spacing:.3px;}50%{letter-spacing:1.5px;}100%{letter-spacing:.3px;}}
+
+/* ── Module D: Profile panel ── */
+.profile-panel{display:flex;flex-direction:column;gap:10px;}
+.profile-card{
+  background:rgba(255,255,255,.5);border:2px solid #c8a060;border-radius:8px;
+  padding:14px;box-shadow:2px 2px 0 rgba(80,40,0,.1);
+}
+.prof-avatar{
+  width:52px;height:52px;background:linear-gradient(135deg,#f0e8c0,#d8c890);
+  border:3px solid #9a8030;border-radius:6px;display:flex;align-items:center;
+  justify-content:center;font-size:28px;margin-bottom:12px;
+  box-shadow:2px 2px 0 rgba(0,0,0,.12);
+}
+.prof-name{font-weight:800;font-size:15px;color:#2a1000;margin-bottom:2px;}
+.prof-role{font-size:11px;color:#7a5030;font-weight:700;margin-bottom:12px;}
+.prof-skills{display:flex;flex-wrap:wrap;gap:5px;margin-bottom:12px;}
+.prof-skill{
+  font-size:10px;font-weight:700;color:#1a4a8a;
+  background:rgba(40,100,200,.12);border:1px solid rgba(40,100,200,.3);padding:3px 9px;border-radius:3px;
+}
+.skill-bar-section{margin-bottom:9px;}
+.skill-bar-label{display:flex;justify-content:space-between;font-size:11px;font-weight:700;color:#5a3810;margin-bottom:4px;}
+.skill-bar-label span{color:#2a1000;}
+.skill-bar-bg{height:8px;background:#c8a060;border:1px solid #9a7030;overflow:hidden;}
+.skill-bar-fill{height:100%;background:linear-gradient(90deg,#3ab030,#60d050);transition:width 1.3s ease;}
+
+.completeness-row{
+  display:flex;align-items:center;gap:10px;
+  padding:8px 10px;background:rgba(60,180,60,.1);
+  border:1px solid rgba(40,150,40,.35);border-radius:5px;margin-top:4px;
+}
+.comp-num{font-family:'Press Start 2P',monospace;font-size:14px;color:#2a8010;}
+.comp-text{font-size:11px;color:#3a5a20;font-weight:700;line-height:1.4;}
+
+/* Next steps */
+.next-step-item{
+  display:flex;align-items:center;gap:10px;padding:9px 0;
+  border-bottom:1px dashed #c8a060;cursor:pointer;
+  transition:background .1s;border-radius:4px;padding-left:4px;
+}
+.next-step-item:last-child{border-bottom:none;}
+.next-step-item:hover{background:rgba(255,255,255,.4);}
+.ns-icon{font-size:20px;flex-shrink:0;}
+.ns-text{flex:1;}
+.ns-title{font-weight:800;font-size:12px;color:#2a1000;margin-bottom:2px;}
+.ns-sub{font-size:10px;color:#7a5030;font-weight:600;}
+.ns-arrow{font-family:'Press Start 2P',monospace;font-size:10px;color:#c8a040;
+  animation:arrow-nudge 2s ease-in-out infinite;}
+@keyframes arrow-nudge{0%,100%{transform:translateX(0);}50%{transform:translateX(3px);}}
+
+/* ── Module C: Journey timeline ── */
+.bottom-section{display:grid;grid-template-columns:1fr 1fr;gap:14px;}
+
+.timeline{display:flex;flex-direction:column;}
+.tl-item{display:flex;gap:12px;padding:11px 0;border-bottom:1px dashed #c8a060;}
+.tl-item:last-child{border-bottom:none;}
+.tl-left{display:flex;flex-direction:column;align-items:center;width:22px;flex-shrink:0;}
+.tl-dot{
+  width:14px;height:14px;border-radius:0;border:2px solid;flex-shrink:0;
+  display:flex;align-items:center;justify-content:center;font-size:8px;
+}
+.tl-dot-done {background:rgba(60,180,60,.2);border-color:#3aba3a;color:#1a6a10;}
+.tl-dot-prog {background:rgba(200,140,20,.18);border-color:#c89020;color:#7a4a00;}
+.tl-dot-new  {background:rgba(60,100,200,.18);border-color:#4070c0;color:#1a3a80;}
+.tl-line{flex:1;width:2px;background:#c8a060;margin-top:4px;}
+.tl-content{flex:1;}
+.tl-title{font-weight:800;font-size:13px;color:#2a1000;margin-bottom:2px;}
+.tl-sub{font-size:11px;color:#6a4020;font-weight:600;margin-bottom:4px;}
+.tl-time{font-size:10px;color:#9a7040;}
+.tl-badge{
+  display:inline-block;font-size:9px;font-weight:800;
+  padding:2px 9px;border:2px solid;border-radius:3px;margin-top:4px;
+}
+.tb-done   {color:#1a6a10;background:#c8f0c8;border-color:#3aba3a;}
+.tb-prog   {color:#7a4a00;background:#ffe8a0;border-color:#c08820;}
+.tb-new    {color:#1a3a80;background:#c0d0f8;border-color:#4070c0;}
+
+/* ── Achievement cards ── */
+.ach-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
+.ach-card{
+  background:rgba(255,255,255,.45);border:2px solid #c8a060;border-radius:7px;
+  padding:10px;display:flex;align-items:flex-start;gap:8px;
+  box-shadow:2px 2px 0 rgba(80,40,0,.1);
+  transition:background .15s,transform .1s;cursor:default;
+}
+.ach-card:hover{background:rgba(255,255,255,.65);transform:translateY(-1px);}
+.ach-icon{
+  width:38px;height:38px;border-radius:5px;
+  display:flex;align-items:center;justify-content:center;font-size:20px;
+  flex-shrink:0;border:2px solid;
+}
+.ach-icon-gold{background:linear-gradient(135deg,#f8e060,#e0c030);border-color:#b09020;}
+.ach-icon-green{background:linear-gradient(135deg,#c0f0c0,#80d080);border-color:#3a9030;}
+.ach-icon-blue{background:linear-gradient(135deg,#c0d8f8,#80a8e0);border-color:#3060a0;}
+.ach-icon-purple{background:linear-gradient(135deg,#e0c0f8,#b880e0);border-color:#7040a0;}
+.ach-info{flex:1;}
+.ach-title{font-weight:800;font-size:12px;color:#2a1000;margin-bottom:2px;}
+.ach-sub{font-size:10px;color:#7a5030;font-weight:600;line-height:1.4;}
+.ach-locked{opacity:.45;filter:grayscale(.6);}
+.ach-locked .ach-title::after{content:' 🔒';font-size:10px;}
+
+/* ── Bottom mascot chat ── */
+.mascot-chat{
+  position:fixed;bottom:14px;right:20px;z-index:50;
+  display:flex;align-items:flex-end;gap:10px;
+}
+.mc-av{font-size:40px;animation:bounce 2.2s ease-in-out infinite;}
+@keyframes bounce{0%,100%{transform:translateY(0);}50%{transform:translateY(-5px);}}
+.mc-bubble{
+  background:linear-gradient(145deg,#fffbf0 0%,#f5e8c0 100%);
+  border:3px solid #8b6030;border-radius:12px 12px 0 12px;
+  padding:10px 14px;font-size:12px;font-weight:700;color:#3a1800;
+  line-height:1.55;max-width:210px;box-shadow:3px 3px 0 rgba(0,0,0,.14);
+}
+
+/* scrollbar */
+::-webkit-scrollbar{width:5px;}
+::-webkit-scrollbar-thumb{background:#9b7040;}
+</style>
+</head>
+<body>
+
+<!-- Scene -->
+<div class="scene-bg"></div>
+<div class="sun"></div>
+<div class="cloud cl1"></div><div class="cloud cl2"></div><div class="cloud cl3"></div>
+<div class="bird b1">🐦</div><div class="bird b2">🐦</div>
+<div class="tree tl1">🌳</div><div class="tree tl2">🌲</div>
+<div class="tree tr1">🌳</div><div class="tree tr2">🌲</div>
+<div class="butterfly bf1">🦋</div><div class="butterfly bf2">🦋</div>
+<div class="critter cr1">🐇</div><div class="critter cr2">🐿️</div>
+<div class="ground-flowers">
+  <span class="gf">🌻</span><span class="gf">🌸</span><span class="gf">🌼</span>
+  <span class="gf">🌷</span><span class="gf">🌺</span><span class="gf">🌻</span>
+  <span class="gf">🌸</span><span class="gf">🌼</span>
+</div>
+
+<!-- Nav -->
+<nav>
+  <a href="/" class="nav-back">← 返回</a>
+  <span class="nav-logo">🌱 HIRE NET</span>
+  <span class="nav-sub">我的成长旅程</span>
+  <div class="nav-exp">⭐ Lv.2 &nbsp;|&nbsp; 300 / 500 EXP</div>
+  <div class="nav-badge">🧑‍🌾 JOB SEEKER</div>
+</nav>
+
+<!-- Page -->
+<div class="page-scroll">
+
+  <!-- ── Module A: Welcome Banner ── -->
+  <div class="board">
+    <div class="parch">
+      <div class="welcome-banner">
+        <div class="wb-avatar">🧑‍🌾</div>
+        <div class="wb-content">
+          <div class="wb-greeting">欢迎回来，今天想参与什么？</div>
+          <div class="wb-name">旅行者 · 冒险者</div>
+          <div class="wb-direction">
+            🌱 正在成长为：<strong>AI 产品协作者</strong>
+          </div>
+        </div>
+        <div class="wb-right">
+          <div class="level-pill">⚔️ Level 2</div>
+          <div class="level-bar-wrap">
+            <div class="level-bar-label">
+              <span>经验值</span><span>300/500</span>
+            </div>
+            <div class="level-bar-bg">
+              <div class="level-bar-fill" id="main-lvl-bar" style="width:0%"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Career Strategy & Tracker agents hint -->
+      <div style="display:flex;gap:8px;margin-top:10px;">
+        <div style="flex:1;background:rgba(200,160,80,.15);border:1px dashed #b08040;border-radius:5px;padding:7px 12px;font-size:11px;font-weight:700;color:#6a4020;display:flex;align-items:center;gap:7px;">
+          <span style="width:7px;height:7px;background:#3aba3a;border-radius:0;display:inline-block;animation:blink 2s infinite;"></span>
+          Career Strategy Agent：已推荐 3 个适合你的方向
+        </div>
+        <div style="flex:1;background:rgba(200,160,80,.15);border:1px dashed #b08040;border-radius:5px;padding:7px 12px;font-size:11px;font-weight:700;color:#6a4020;display:flex;align-items:center;gap:7px;">
+          <span style="width:7px;height:7px;background:#4070c0;border-radius:0;display:inline-block;animation:blink 2.5s infinite .3s;"></span>
+          Tracker Agent：已记录 2 条新进展
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── TOP SECTION: Module B (opps) + Module D (profile) ── -->
+  <div class="top-section">
+
+    <!-- Module B: Opportunity cards -->
+    <div class="board">
+      <div class="parch">
+        <div class="sec-head">
+          <span class="sec-head-icon">🗺️</span>
+          <div>
+            <div style="font-weight:800;font-size:14px;color:#2a1000;">推荐机会</div>
+            <div style="font-size:10px;color:#8a6030;font-weight:700;">Job Discovery · Matching Engine · Career Strategy</div>
+          </div>
+          <div class="sec-head-agent" style="margin-left:auto;">3 个新机会</div>
+        </div>
+        <div class="sec-divider"></div>
+
+        <div class="opp-list">
+
+          <!-- Opp 1 -->
+          <div class="opp-card">
+            <div class="opp-top">
+              <div class="opp-emo">🤖</div>
+              <div class="opp-info">
+                <div class="opp-title">AI 产品经理</div>
+                <div class="opp-company">某 AI 创业公司 · 全职 · 远程</div>
+              </div>
+              <div class="opp-match-col">
+                <span class="opp-pct match-high">84%</span>
+                <span class="opp-pct-lbl">匹配度</span>
+              </div>
+            </div>
+            <div class="opp-tags">
+              <span class="opp-tag tag-new">New!</span>
+              <span class="opp-tag tag-type-hybrid">AI + Human</span>
+              <span class="opp-tag tag-skill">需求分析</span>
+              <span class="opp-tag tag-skill">AI产品</span>
+              <span class="opp-tag tag-skill">用户研究</span>
+            </div>
+            <div class="match-bar-bg"><div class="match-bar-fill mf-green opp-bar" data-w="84%"></div></div>
+            <div class="opp-reason">岗位经 HireNet 去水分析，已去除"5年经验"等夸大要求，实际与你的能力高度匹配。</div>
+            <div class="opp-btns">
+              <button class="opp-btn opp-btn-view">查看详情</button>
+              <button class="opp-btn opp-btn-join" onclick="applyJob(this,'Application Agent 正在生成定制化投递材料...')">✓ 一键参与</button>
+            </div>
+          </div>
+
+          <!-- Opp 2 -->
+          <div class="opp-card">
+            <div class="opp-top">
+              <div class="opp-emo">📊</div>
+              <div class="opp-info">
+                <div class="opp-title">数据分析项目</div>
+                <div class="opp-company">某电商公司 · 兼职 · 2周</div>
+              </div>
+              <div class="opp-match-col">
+                <span class="opp-pct match-high">78%</span>
+                <span class="opp-pct-lbl">匹配度</span>
+              </div>
+            </div>
+            <div class="opp-tags">
+              <span class="opp-tag tag-new">New!</span>
+              <span class="opp-tag tag-type-agent">Agent 协同</span>
+              <span class="opp-tag tag-skill">Python</span>
+              <span class="opp-tag tag-skill">数据可视化</span>
+              <span class="opp-tag tag-skill">SQL</span>
+            </div>
+            <div class="match-bar-bg"><div class="match-bar-fill mf-green opp-bar" data-w="78%"></div></div>
+            <div class="opp-reason">一次性项目，预计 2 周完成。数据分析 Agent 将协助你完成常规处理，你专注洞察输出。</div>
+            <div class="opp-btns">
+              <button class="opp-btn opp-btn-view">查看详情</button>
+              <button class="opp-btn opp-btn-join" onclick="applyJob(this,'Application Agent 正在匹配你的数据技能...')">✓ 一键参与</button>
+            </div>
+          </div>
+
+          <!-- Opp 3 -->
+          <div class="opp-card">
+            <div class="opp-top">
+              <div class="opp-emo">🌐</div>
+              <div class="opp-info">
+                <div class="opp-title">产品策略顾问</div>
+                <div class="opp-company">某 SaaS 公司 · 远程 · 兼职</div>
+              </div>
+              <div class="opp-match-col">
+                <span class="opp-pct match-mid">71%</span>
+                <span class="opp-pct-lbl">匹配度</span>
+              </div>
+            </div>
+            <div class="opp-tags">
+              <span class="opp-tag tag-type-human">Human Required</span>
+              <span class="opp-tag tag-skill">策略规划</span>
+              <span class="opp-tag tag-skill">竞品分析</span>
+            </div>
+            <div class="match-bar-bg"><div class="match-bar-fill mf-amber opp-bar" data-w="71%"></div></div>
+            <div class="opp-reason">需要有 AI 行业视角的顾问，每周 4–6 小时。Career Strategy Agent 认为这是你的成长方向。</div>
+            <div class="opp-btns">
+              <button class="opp-btn opp-btn-view">查看详情</button>
+              <button class="opp-btn opp-btn-join" onclick="applyJob(this,'Career Orchestrator 正在安排投递流程...')">✓ 一键参与</button>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </div>
+
+    <!-- Module D: Profile + next steps -->
+    <div style="display:flex;flex-direction:column;gap:14px;">
+
+      <!-- Profile card -->
+      <div class="board">
+        <div class="parch">
+          <div class="sec-head">
+            <span class="sec-head-icon">🪪</span>
+            <div>
+              <div style="font-weight:800;font-size:14px;color:#2a1000;">我的画像</div>
+              <div style="font-size:10px;color:#8a6030;font-weight:700;">Candidate Profile Agent</div>
+            </div>
+          </div>
+          <div class="sec-divider"></div>
+          <div class="profile-card" style="border:none;padding:0;background:transparent;box-shadow:none;">
+            <div class="prof-avatar">🧑‍💻</div>
+            <div class="prof-name">我的 Second Me</div>
+            <div class="prof-role">AI 产品方向 · 2年经验</div>
+            <div class="prof-skills">
+              <span class="prof-skill">需求分析</span>
+              <span class="prof-skill">PRD写作</span>
+              <span class="prof-skill">AI产品</span>
+              <span class="prof-skill">用户研究</span>
+              <span class="prof-skill">数据分析</span>
+            </div>
+            <div class="skill-bar-section">
+              <div class="skill-bar-label">产品能力<span>82%</span></div>
+              <div class="skill-bar-bg"><div class="skill-bar-fill prof-bar" data-w="82%" style="width:0%"></div></div>
+            </div>
+            <div class="skill-bar-section">
+              <div class="skill-bar-label">技术理解<span>65%</span></div>
+              <div class="skill-bar-bg"><div class="skill-bar-fill prof-bar" data-w="65%" style="width:0%"></div></div>
+            </div>
+            <div class="skill-bar-section">
+              <div class="skill-bar-label">数据能力<span>70%</span></div>
+              <div class="skill-bar-bg"><div class="skill-bar-fill prof-bar" data-w="70%" style="width:0%"></div></div>
+            </div>
+            <div class="completeness-row">
+              <div class="comp-num">78%</div>
+              <div class="comp-text">画像完整度<br>补充 GitHub 可 +15%</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Next steps (Career Strategy Agent) -->
+      <div class="board">
+        <div class="parch">
+          <div class="sec-head">
+            <span class="sec-head-icon">🧭</span>
+            <div>
+              <div style="font-weight:800;font-size:14px;color:#2a1000;">下一步建议</div>
+              <div style="font-size:10px;color:#8a6030;font-weight:700;">Career Strategy Agent</div>
+            </div>
+          </div>
+          <div class="sec-divider"></div>
+          <div class="next-step-item">
+            <span class="ns-icon">🔗</span>
+            <div class="ns-text">
+              <div class="ns-title">连接 GitHub 账号</div>
+              <div class="ns-sub">提升画像精度 +15%，解锁更多匹配</div>
+            </div>
+            <span class="ns-arrow">→</span>
+          </div>
+          <div class="next-step-item">
+            <span class="ns-icon">📝</span>
+            <div class="ns-text">
+              <div class="ns-title">补充项目经历描述</div>
+              <div class="ns-sub">帮助 Second Me 更准确代表你</div>
+            </div>
+            <span class="ns-arrow">→</span>
+          </div>
+          <div class="next-step-item">
+            <span class="ns-icon">🤝</span>
+            <div class="ns-text">
+              <div class="ns-title">回复面试邀请</div>
+              <div class="ns-sub" style="color:#c84040;">AI 产品经理职位等待回应</div>
+            </div>
+            <span class="ns-arrow" style="color:#c84040;">→</span>
+          </div>
+          <div class="next-step-item">
+            <span class="ns-icon">🎯</span>
+            <div class="ns-text">
+              <div class="ns-title">设定目标薪资范围</div>
+              <div class="ns-sub">优化匹配推荐优先级</div>
+            </div>
+            <span class="ns-arrow">→</span>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ── BOTTOM SECTION: Module C (Journey) + Achievements ── -->
+  <div class="bottom-section">
+
+    <!-- Module C: Journey Timeline -->
+    <div class="board">
+      <div class="parch">
+        <div class="sec-head">
+          <span class="sec-head-icon">📖</span>
+          <div>
+            <div style="font-weight:800;font-size:14px;color:#2a1000;">成长轨迹</div>
+            <div style="font-size:10px;color:#8a6030;font-weight:700;">Tracker Agent · Candidate Profile Agent</div>
+          </div>
+        </div>
+        <div class="sec-divider"></div>
+        <div class="timeline">
+
+          <div class="tl-item">
+            <div class="tl-left">
+              <div class="tl-dot tl-dot-new">★</div>
+              <div class="tl-line"></div>
+            </div>
+            <div class="tl-content">
+              <div class="tl-title">AI 产品经理 · 面试邀请</div>
+              <div class="tl-sub">某 AI 创业公司发来面试邀请，等待你确认</div>
+              <div class="tl-time">刚刚</div>
+              <span class="tl-badge tb-new">新消息</span>
+            </div>
+          </div>
+
+          <div class="tl-item">
+            <div class="tl-left">
+              <div class="tl-dot tl-dot-prog">↻</div>
+              <div class="tl-line"></div>
+            </div>
+            <div class="tl-content">
+              <div class="tl-title">数据分析项目 · 已投递</div>
+              <div class="tl-sub">Application Agent 已自动生成定制化投递材料</div>
+              <div class="tl-time">2小时前</div>
+              <span class="tl-badge tb-prog">等待回复</span>
+            </div>
+          </div>
+
+          <div class="tl-item">
+            <div class="tl-left">
+              <div class="tl-dot tl-dot-done">✓</div>
+              <div class="tl-line"></div>
+            </div>
+            <div class="tl-content">
+              <div class="tl-title">AI Landing Page 项目 · 完成</div>
+              <div class="tl-sub">协助某创业公司搭建了 AI 官网，获得好评</div>
+              <div class="tl-time">3天前</div>
+              <span class="tl-badge tb-done">+80 EXP ✓</span>
+            </div>
+          </div>
+
+          <div class="tl-item">
+            <div class="tl-left">
+              <div class="tl-dot tl-dot-done">✓</div>
+              <div class="tl-line"></div>
+            </div>
+            <div class="tl-content">
+              <div class="tl-title">Second Me 训练完成</div>
+              <div class="tl-sub">个人画像已注册至 A2A 网络，可被企业主动发现</div>
+              <div class="tl-time">昨天</div>
+              <span class="tl-badge tb-done">已完成</span>
+            </div>
+          </div>
+
+          <div class="tl-item">
+            <div class="tl-left">
+              <div class="tl-dot tl-dot-done">✓</div>
+            </div>
+            <div class="tl-content">
+              <div class="tl-title">加入 HireNet</div>
+              <div class="tl-sub">上传简历，生成技能图谱，开始冒险</div>
+              <div class="tl-time">3天前</div>
+              <span class="tl-badge tb-done">+20 EXP ✓</span>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </div>
+
+    <!-- Achievements -->
+    <div class="board">
+      <div class="parch">
+        <div class="sec-head">
+          <span class="sec-head-icon">🏆</span>
+          <div>
+            <div style="font-weight:800;font-size:14px;color:#2a1000;">成就解锁</div>
+            <div style="font-size:10px;color:#8a6030;font-weight:700;">Career Strategy Agent · Tracker Agent</div>
+          </div>
+        </div>
+        <div class="sec-divider"></div>
+        <div class="ach-grid">
+
+          <div class="ach-card">
+            <div class="ach-icon ach-icon-gold">🌱</div>
+            <div class="ach-info">
+              <div class="ach-title">初次冒险</div>
+              <div class="ach-sub">完成第一次任务参与</div>
+            </div>
+          </div>
+
+          <div class="ach-card">
+            <div class="ach-icon ach-icon-green">🤝</div>
+            <div class="ach-info">
+              <div class="ach-title">AI 协作者</div>
+              <div class="ach-sub">与 Agent 协同完成项目</div>
+            </div>
+          </div>
+
+          <div class="ach-card">
+            <div class="ach-icon ach-icon-blue">🪪</div>
+            <div class="ach-info">
+              <div class="ach-title">数字分身</div>
+              <div class="ach-sub">Second Me 成功注册</div>
+            </div>
+          </div>
+
+          <div class="ach-card ach-locked">
+            <div class="ach-icon ach-icon-purple">⭐</div>
+            <div class="ach-info">
+              <div class="ach-title">首次面试</div>
+              <div class="ach-sub">完成第一次面试对话</div>
+            </div>
+          </div>
+
+          <div class="ach-card ach-locked">
+            <div class="ach-icon ach-icon-gold">💼</div>
+            <div class="ach-info">
+              <div class="ach-title">任务大师</div>
+              <div class="ach-sub">完成 5 个独立任务</div>
+            </div>
+          </div>
+
+          <div class="ach-card ach-locked">
+            <div class="ach-icon ach-icon-green">🏅</div>
+            <div class="ach-info">
+              <div class="ach-title">受雇英雄</div>
+              <div class="ach-sub">成功获得全职 offer</div>
+            </div>
+          </div>
+
+        </div>
+
+        <!-- Career Strategy suggestion box -->
+        <div style="margin-top:12px;background:linear-gradient(135deg,rgba(80,40,160,.1) 0%,rgba(120,60,200,.07) 100%);border:2px dashed #9060c0;border-radius:7px;padding:10px 12px;">
+          <div style="font-size:10px;font-weight:800;color:#6030a0;margin-bottom:5px;display:flex;align-items:center;gap:5px;">
+            <span style="width:6px;height:6px;background:#9060c0;border-radius:0;display:inline-block;animation:blink 2s infinite;"></span>
+            Career Strategy Agent 建议
+          </div>
+          <div style="font-size:12px;font-weight:700;color:#3a1860;line-height:1.55;">
+            回复面试邀请后，你将解锁"首次面试"成就，并获得 <strong>+50 EXP</strong>！继续加油 🎉
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+  </div>
+
+</div><!-- end page-scroll -->
+
+<!-- Mascot -->
+<div class="mascot-chat">
+  <div class="mc-av">🤖</div>
+  <div class="mc-bubble" id="mc-text">欢迎回来！你有一条面试邀请等待回复，要我帮你准备吗？✨</div>
+</div>
+
+<script>
+
+
+// Animate bars on load
+window.addEventListener('load', () => {
+  setTimeout(() => {
+    document.getElementById('main-lvl-bar').style.width = '60%';
+    document.querySelectorAll('.opp-bar').forEach(el => { el.style.width = el.dataset.w; });
+    document.querySelectorAll('.prof-bar').forEach(el => { el.style.width = el.dataset.w; });
+  }, 400);
+});
+
+// Module E: Apply button
+async function applyJob(btn, agentMsg) {
+  const orig = btn.textContent;
+  btn.textContent = '投递中...';
+  btn.disabled = true;
+  btn.classList.add('applying');
+  document.getElementById('mc-text').textContent = agentMsg;
+
+  await new Promise(r => setTimeout(r, 1800));
+
+  btn.textContent = '✓ 已投递';
+  btn.classList.remove('applying');
+  btn.style.background = 'linear-gradient(180deg,#90c890 0%,#68a868 100%)';
+  btn.style.borderColor = '#3a6a3a';
+  btn.style.opacity = '.75';
+
+  document.getElementById('mc-text').textContent = '投递成功！Tracker Agent 已记录此条进展，我会帮你跟踪回复状态 📮';
+}
+</script>
+</body>
+</html>
