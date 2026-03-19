@@ -54,8 +54,8 @@ def login():
         "response_type": "code",
         "state": state,
     }
-    query = "&".join(f"{k}={v}" for k, v in params.items())
-    return redirect(f"{AUTH_URL}?{query}")
+    from urllib.parse import urlencode
+    return redirect(f"{AUTH_URL}?{urlencode(params)}")
 
 
 @app.route("/api/auth/callback")
