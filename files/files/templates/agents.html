@@ -1,0 +1,1091 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>HireNet — Agent 世界</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: 'Nunito', sans-serif; height: 100vh; overflow: hidden; }
+
+/* ── Night-to-dawn sky: magical feel ── */
+.scene-bg {
+  position: fixed; inset: 0; z-index: 0;
+  background: linear-gradient(180deg,
+    #0a0a2e 0%, #1a1050 18%, #2a1a6e 35%,
+    #3a2888 48%, #6040a0 60%,
+    #4a7a3a 68%, #3a6028 80%, #2a4a1a 100%);
+}
+
+/* Stars */
+.stars {
+  position: fixed; inset: 0; z-index: 1; pointer-events: none;
+  overflow: hidden;
+}
+.star {
+  position: absolute;
+  background: #fff;
+  border-radius: 0;
+  animation: twinkle linear infinite;
+}
+@keyframes twinkle {
+  0%,100%{opacity:1;} 50%{opacity:.2;}
+}
+
+/* Magic moon */
+.moon {
+  position: fixed; top: 50px; right: 140px; z-index: 2;
+  width: 56px; height: 56px;
+  background: radial-gradient(circle at 35% 35%, #fff8e0 0%, #f0e060 50%, #d4c030 100%);
+  border-radius: 0;
+  box-shadow: 0 0 0 6px rgba(240,220,80,.2), 0 0 0 14px rgba(240,220,80,.08);
+  animation: moon-glow 5s ease-in-out infinite;
+}
+.moon::after {
+  content: '';
+  position: absolute; top: 8px; left: 10px;
+  width: 14px; height: 14px;
+  background: rgba(200,180,20,.2);
+  border-radius: 0;
+}
+@keyframes moon-glow {
+  0%,100%{box-shadow:0 0 0 6px rgba(240,220,80,.2),0 0 0 14px rgba(240,220,80,.08);}
+  50%{box-shadow:0 0 0 10px rgba(240,220,80,.25),0 0 0 20px rgba(240,220,80,.1);}
+}
+
+/* Magic sparkles floating */
+.sparkle {
+  position: fixed; z-index: 3; pointer-events: none;
+  font-size: 14px;
+  animation: sparkle-float linear infinite;
+}
+@keyframes sparkle-float {
+  0%  { transform: translateY(0) translateX(0) rotate(0deg); opacity: 0; }
+  10% { opacity: 1; }
+  90% { opacity: 1; }
+  100%{ transform: translateY(-120px) translateX(30px) rotate(360deg); opacity: 0; }
+}
+
+/* Trees (dark silhouette) */
+.tree {
+  position: fixed; bottom: 0; z-index: 2; pointer-events: none;
+  line-height: 1;
+  filter: drop-shadow(0 0 8px rgba(100,60,200,.4));
+}
+.tl1{left:-10px;font-size:110px;}
+.tl2{left:76px;font-size:74px;}
+.tr1{right:-10px;font-size:110px;}
+.tr2{right:76px;font-size:74px;}
+
+/* Fireflies */
+.firefly {
+  position: fixed; z-index: 3; pointer-events: none;
+  width: 5px; height: 5px; background: #c8ff60;
+  border-radius: 0;
+  animation: firefly-move ease-in-out infinite;
+  box-shadow: 0 0 6px #a0ff40, 0 0 12px rgba(160,255,64,.5);
+}
+@keyframes firefly-move {
+  0%  { transform: translate(0,0); opacity:0; }
+  20% { opacity:1; }
+  50% { transform: translate(40px,-30px); }
+  80% { opacity:1; }
+  100%{ transform: translate(-20px, 20px); opacity:0; }
+}
+
+/* Clouds (dim, night version) */
+.cloud {
+  position: fixed; background: rgba(80,60,120,.4); border-radius: 0;
+  animation: drift linear infinite; z-index: 2;
+}
+.cloud::before,.cloud::after{content:'';position:absolute;background:rgba(80,60,120,.4);}
+.cl1{width:90px;height:22px;top:8%;animation-duration:65s;left:-130px;}
+.cl1::before{width:50px;height:18px;top:-16px;left:12px;}
+.cl1::after{width:30px;height:12px;top:-10px;left:36px;}
+.cl2{width:120px;height:26px;top:18%;animation-duration:90s;animation-delay:-35s;left:-170px;}
+.cl2::before{width:66px;height:22px;top:-20px;left:18px;}
+.cl2::after{width:40px;height:16px;top:-14px;left:54px;}
+@keyframes drift{from{transform:translateX(0);}to{transform:translateX(calc(100vw + 240px));}}
+
+/* ── Nav ── */
+nav {
+  position: relative; z-index: 20; height: 46px;
+  background: linear-gradient(180deg, #2a1a6e 0%, #1a0e50 100%);
+  border-bottom: 4px solid #6040c0;
+  display: flex; align-items: center; gap: 14px; padding: 0 18px;
+  box-shadow: 0 4px 0 #0a0828, 0 0 20px rgba(100,60,200,.4);
+}
+.nav-back {
+  background: linear-gradient(180deg,#6040c0 0%,#4020a0 100%);
+  border:2px solid #8060e0;border-bottom:3px solid #2010a0;border-radius:5px;
+  padding:5px 12px;font-family:'Nunito',sans-serif;font-weight:800;font-size:11px;
+  color:#e8d8ff;text-shadow:1px 1px 0 #200080;cursor:pointer;text-decoration:none;
+  transition:filter .15s;
+}
+.nav-back:hover{filter:brightness(1.2);}
+.nav-logo {
+  font-family:'Press Start 2P',monospace;font-size:11px;color:#c0a0ff;
+  text-shadow:0 0 10px rgba(180,140,255,.6),2px 2px 0 #200080;
+}
+.nav-sub{font-size:11px;color:#a080e0;font-weight:700;border-left:2px solid #4030a0;padding-left:12px;}
+.nav-live {
+  margin-left:auto;
+  display:flex;align-items:center;gap:7px;font-size:11px;font-weight:800;color:#c8ff80;
+}
+.live-dot {
+  width:8px;height:8px;background:#60ff40;border-radius:0;
+  animation:livepulse 1.2s ease-in-out infinite;
+  box-shadow:0 0 6px #40ff20;
+}
+@keyframes livepulse{0%,100%{opacity:1;box-shadow:0 0 6px #40ff20;}50%{opacity:.4;box-shadow:0 0 2px #40ff20;}}
+.nav-badge {
+  background:linear-gradient(180deg,#8060e0 0%,#5030c0 100%);
+  border:2px solid #a080ff;border-bottom:3px solid #3010c0;border-radius:5px;
+  padding:4px 12px;font-weight:800;font-size:11px;color:#f0e8ff;
+  text-shadow:1px 1px 0 #200080;
+}
+
+/* ── Page scroll ── */
+.page-scroll {
+  position:relative;z-index:10;
+  height:calc(100vh - 46px);
+  overflow-y:auto;overflow-x:hidden;
+  padding:14px 14px 80px;
+  display:flex;flex-direction:column;gap:14px;
+}
+.page-scroll::-webkit-scrollbar{width:5px;}
+.page-scroll::-webkit-scrollbar-thumb{background:#6040c0;}
+
+/* ── Board (purple/dark wood) ── */
+.board {
+  background:linear-gradient(135deg,#2a1a6e 0%,#1e1254 45%,#2a1a6e 100%);
+  border:4px solid #6040c0;border-radius:12px;padding:12px;
+  box-shadow:7px 7px 0 #0a0828,0 0 20px rgba(100,60,200,.35),
+    inset 0 3px 0 rgba(180,140,255,.2),inset 0 -3px 0 rgba(0,0,0,.4);
+  position:relative;
+}
+.board::before {
+  content:'';position:absolute;inset:7px;pointer-events:none;border-radius:8px;
+  background:repeating-linear-gradient(90deg,
+    transparent 0px,transparent 40px,
+    rgba(150,100,255,.04) 40px,rgba(150,100,255,.04) 41px);
+}
+
+/* ── Parchment (dark version) ── */
+.parch {
+  background:linear-gradient(150deg,#1e1448 0%,#160e3a 55%,#1a1244 100%);
+  border:2px solid #5040a0;border-radius:8px;padding:14px;
+  position:relative;overflow:hidden;
+  box-shadow:inset 0 3px 6px rgba(150,100,255,.15),inset 0 -3px 6px rgba(0,0,0,.4);
+}
+.parch::before {
+  content:'';position:absolute;inset:0;pointer-events:none;
+  background:
+    radial-gradient(ellipse at 15% 15%,rgba(120,80,200,.2) 0%,transparent 55%),
+    radial-gradient(ellipse at 85% 85%,rgba(80,40,160,.1) 0%,transparent 55%);
+}
+.parch > * { position:relative;z-index:1; }
+
+/* Section header */
+.sec-head{display:flex;align-items:center;gap:10px;margin-bottom:12px;}
+.sec-head-icon{font-size:20px;}
+.sec-head-title{font-weight:800;font-size:14px;color:#e0d0ff;}
+.sec-head-sub{font-size:10px;color:#9070c0;font-weight:700;}
+.sec-head-badge {
+  margin-left:auto;font-size:9px;font-weight:800;
+  padding:3px 10px;border-radius:3px;border:1px solid;
+}
+.badge-live{color:#80ff60;background:rgba(80,255,60,.12);border-color:rgba(80,255,60,.35);}
+.badge-future{color:#c0a0ff;background:rgba(150,100,255,.12);border-color:rgba(150,100,255,.35);}
+.sec-divider{height:2px;background:linear-gradient(90deg,transparent,#5040a0 20%,#5040a0 80%,transparent);margin-bottom:12px;}
+
+/* ── Module C: Live Status Bar ── */
+.live-bar {
+  display:flex;gap:10px;flex-wrap:wrap;margin-bottom:0;
+}
+.live-agent {
+  display:flex;align-items:center;gap:7px;
+  background:rgba(255,255,255,.06);border:1px solid rgba(150,100,255,.3);
+  border-radius:5px;padding:6px 12px;font-size:11px;font-weight:800;color:#d0c0ff;
+  flex:1;min-width:180px;
+}
+.la-dot{width:7px;height:7px;border-radius:0;flex-shrink:0;}
+.la-active{background:#60ff40;animation:livepulse 1.2s infinite;box-shadow:0 0 5px #40ff20;}
+.la-idle  {background:#a080c0;animation:livepulse 3s infinite;}
+.la-busy  {background:#ffc040;animation:livepulse 0.8s infinite;box-shadow:0 0 5px #ffaa20;}
+.la-task  {font-size:9px;color:#9070b0;font-weight:600;margin-left:auto;}
+
+/* ── Module B: Collaboration Flow ── */
+.flow-wrap {
+  overflow-x:auto;padding:8px 0 12px;
+}
+.flow-wrap::-webkit-scrollbar{height:4px;}
+.flow-wrap::-webkit-scrollbar-thumb{background:#6040c0;}
+.flow-row {
+  display:flex;align-items:center;gap:0;
+  min-width:max-content;
+  padding:0 4px;
+}
+.flow-node {
+  background:linear-gradient(135deg,rgba(100,70,200,.45) 0%,rgba(70,40,160,.5) 100%);
+  border:2px solid #7050d0;border-radius:6px;
+  padding:10px 14px;text-align:center;
+  min-width:120px;cursor:pointer;
+  transition:all .2s;
+  box-shadow:3px 3px 0 rgba(0,0,0,.4),0 0 10px rgba(100,70,200,.2);
+  position:relative;
+}
+.flow-node:hover{
+  border-color:#c0a0ff;
+  box-shadow:4px 4px 0 rgba(0,0,0,.4),0 0 16px rgba(150,100,255,.4);
+  transform:translateY(-2px);
+}
+.flow-node.highlight{
+  border-color:#80ff60;
+  box-shadow:4px 4px 0 rgba(0,0,0,.4),0 0 16px rgba(80,255,60,.4);
+  animation:node-pulse 2s ease-in-out infinite;
+}
+@keyframes node-pulse{
+  0%,100%{box-shadow:4px 4px 0 rgba(0,0,0,.4),0 0 16px rgba(80,255,60,.4);}
+  50%{box-shadow:4px 4px 0 rgba(0,0,0,.4),0 0 24px rgba(80,255,60,.6);}
+}
+.fn-icon{font-size:20px;margin-bottom:5px;display:block;}
+.fn-name{font-size:10px;font-weight:800;color:#e0d0ff;line-height:1.3;}
+.fn-role{font-size:9px;color:#9070c0;margin-top:3px;}
+
+/* Arrow between nodes */
+.flow-arrow {
+  display:flex;flex-direction:column;align-items:center;
+  padding:0 4px;flex-shrink:0;
+}
+.fa-line {
+  width:32px;height:3px;
+  background:linear-gradient(90deg,#5040a0,#8060d0);
+  position:relative;overflow:hidden;
+}
+.fa-line::after {
+  content:'';position:absolute;top:0;left:-100%;
+  width:100%;height:100%;
+  background:linear-gradient(90deg,transparent,rgba(200,160,255,.8),transparent);
+  animation:data-flow 1.6s linear infinite;
+}
+@keyframes data-flow{0%{left:-100%;}100%{left:100%;}}
+.fa-head {
+  width:0;height:0;
+  border-top:5px solid transparent;
+  border-bottom:5px solid transparent;
+  border-left:8px solid #8060d0;
+  margin-left:-1px;
+}
+.fa-label{font-size:8px;color:#7060a0;font-weight:700;margin-bottom:3px;white-space:nowrap;}
+
+/* Branch arrow */
+.flow-branch {
+  display:flex;flex-direction:column;gap:8px;justify-content:center;
+  padding-left:8px;
+}
+.branch-item {
+  display:flex;align-items:center;gap:4px;
+}
+.branch-line {
+  width:24px;height:3px;
+  background:linear-gradient(90deg,#5040a0,#8060d0);
+  position:relative;overflow:hidden;
+}
+.branch-line::after {
+  content:'';position:absolute;top:0;left:-100%;
+  width:100%;height:100%;
+  background:linear-gradient(90deg,transparent,rgba(200,160,255,.8),transparent);
+  animation:data-flow 1.6s linear infinite;
+  animation-delay:var(--d,0s);
+}
+
+/* ── Module A: Agent Card Wall ── */
+.agent-grid {
+  display:grid;
+  grid-template-columns:repeat(auto-fill,minmax(200px,1fr));
+  gap:10px;
+}
+.agent-card {
+  background:linear-gradient(135deg,rgba(100,70,200,.3) 0%,rgba(70,40,160,.35) 100%);
+  border:2px solid #5040a0;border-radius:8px;
+  padding:14px 12px;cursor:pointer;
+  transition:all .2s;
+  box-shadow:3px 3px 0 rgba(0,0,0,.4);
+  position:relative;overflow:hidden;
+}
+.agent-card::before {
+  content:'';position:absolute;inset:0;
+  background:radial-gradient(ellipse at 50% 0%,rgba(200,160,255,.1) 0%,transparent 60%);
+  pointer-events:none;
+}
+.agent-card:hover {
+  border-color:#c0a0ff;transform:translateY(-3px);
+  box-shadow:5px 5px 0 rgba(0,0,0,.4),0 0 14px rgba(150,100,255,.3);
+}
+.ac-head{display:flex;align-items:flex-start;gap:10px;margin-bottom:10px;}
+.ac-icon{
+  width:44px;height:44px;border-radius:6px;border:2px solid;
+  display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0;
+  box-shadow:2px 2px 0 rgba(0,0,0,.3);
+}
+.ac-info{flex:1;}
+.ac-name{font-weight:800;font-size:12px;color:#e0d0ff;line-height:1.3;margin-bottom:3px;}
+.ac-type{font-size:9px;font-weight:700;padding:2px 7px;border-radius:3px;border:1px solid;display:inline-block;}
+
+/* Card accent colors */
+.a-purple .ac-icon{background:linear-gradient(135deg,#8050d0,#6030b0);border-color:#c090ff;}
+.a-purple .ac-type{color:#d0a0ff;background:rgba(160,100,255,.15);border-color:rgba(160,100,255,.4);}
+.a-teal   .ac-icon{background:linear-gradient(135deg,#208080,#106060);border-color:#40d0d0;}
+.a-teal   .ac-type{color:#80e0e0;background:rgba(60,180,180,.15);border-color:rgba(60,180,180,.4);}
+.a-green  .ac-icon{background:linear-gradient(135deg,#306030,#204020);border-color:#60c060;}
+.a-green  .ac-type{color:#90e090;background:rgba(60,180,60,.15);border-color:rgba(60,180,60,.4);}
+.a-amber  .ac-icon{background:linear-gradient(135deg,#806020,#604010);border-color:#d0a040;}
+.a-amber  .ac-type{color:#f0c060;background:rgba(200,160,60,.15);border-color:rgba(200,160,60,.4);}
+.a-blue   .ac-icon{background:linear-gradient(135deg,#204080,#102860);border-color:#4080c0;}
+.a-blue   .ac-type{color:#80b0f0;background:rgba(60,120,200,.15);border-color:rgba(60,120,200,.4);}
+.a-coral  .ac-icon{background:linear-gradient(135deg,#802030,#601020);border-color:#d05060;}
+.a-coral  .ac-type{color:#f09090;background:rgba(200,70,80,.15);border-color:rgba(200,70,80,.4);}
+
+.ac-desc{font-size:11px;color:#a090c0;line-height:1.5;font-weight:600;margin-bottom:10px;}
+.ac-tasks{display:flex;flex-wrap:wrap;gap:4px;margin-bottom:10px;}
+.ac-task{
+  font-size:9px;font-weight:700;color:#c0b0e0;
+  background:rgba(150,100,255,.12);border:1px solid rgba(150,100,255,.25);
+  padding:2px 7px;border-radius:3px;
+}
+.ac-foot{display:flex;align-items:center;justify-content:space-between;}
+.ac-status{display:flex;align-items:center;gap:5px;font-size:10px;font-weight:700;}
+.ac-calls{font-size:9px;color:#7060a0;font-weight:600;}
+
+/* ── Module D: Third-party upload (Future) ── */
+.future-section {
+  display:grid;grid-template-columns:1fr 1fr;gap:12px;
+}
+.future-upload {
+  background:linear-gradient(135deg,rgba(80,50,150,.25) 0%,rgba(60,30,120,.3) 100%);
+  border:3px dashed #7060b0;border-radius:10px;
+  padding:20px;text-align:center;cursor:pointer;
+  transition:all .2s;
+  position:relative;overflow:hidden;
+}
+.future-upload::before{
+  content:'';position:absolute;inset:0;
+  background:linear-gradient(135deg,rgba(150,100,255,.06) 0%,transparent 60%);
+  pointer-events:none;
+}
+.future-upload:hover{
+  border-color:#c0a0ff;background:linear-gradient(135deg,rgba(100,70,200,.3) 0%,rgba(70,40,160,.35) 100%);
+  transform:translateY(-2px);
+  box-shadow:0 0 20px rgba(150,100,255,.2);
+}
+.fu-icon{font-size:42px;margin-bottom:10px;display:block;
+  animation:float-icon 3s ease-in-out infinite;}
+@keyframes float-icon{0%,100%{transform:translateY(0);}50%{transform:translateY(-6px);}}
+.fu-title{font-weight:800;font-size:14px;color:#c0a8ff;margin-bottom:6px;}
+.fu-sub{font-size:11px;color:#8070b0;line-height:1.55;font-weight:600;margin-bottom:12px;}
+.fu-badge{
+  display:inline-block;font-size:9px;font-weight:800;
+  padding:3px 12px;border:2px dashed #8060c0;border-radius:4px;
+  color:#a080e0;letter-spacing:.5px;margin-bottom:12px;
+}
+.fu-btn {
+  display:block;width:100%;
+  background:rgba(150,100,255,.15);
+  border:2px solid #7050c0;border-bottom:4px solid #4030a0;
+  border-radius:6px;padding:9px;
+  font-family:'Nunito',sans-serif;font-weight:800;font-size:12px;
+  color:#c0a0ff;cursor:pointer;
+  transition:all .15s;
+  position:relative;z-index:1;
+}
+.fu-btn:hover{background:rgba(150,100,255,.28);border-color:#c0a0ff;color:#e8d8ff;}
+.fu-btn:active{transform:translateY(2px);border-bottom-width:2px;}
+.fu-btn.disabled{opacity:.45;cursor:not-allowed;filter:grayscale(.4);}
+.fu-btn.disabled:hover{background:rgba(150,100,255,.15);border-color:#7050c0;color:#c0a0ff;transform:none;}
+
+.registered-agents{display:flex;flex-direction:column;gap:8px;}
+.ra-item{
+  display:flex;align-items:center;gap:10px;
+  background:rgba(255,255,255,.05);border:1px solid rgba(150,100,255,.25);
+  border-radius:6px;padding:9px 12px;
+  transition:background .15s;cursor:pointer;
+}
+.ra-item:hover{background:rgba(255,255,255,.1);}
+.ra-icon{font-size:22px;flex-shrink:0;}
+.ra-info{flex:1;}
+.ra-name{font-weight:800;font-size:12px;color:#e0d0ff;margin-bottom:2px;}
+.ra-type{font-size:10px;color:#9070b0;font-weight:600;}
+.ra-status{font-size:9px;font-weight:800;padding:2px 9px;border-radius:3px;border:1px solid;}
+.ra-ok    {color:#80ff60;background:rgba(80,255,60,.12);border-color:rgba(80,255,60,.35);}
+.ra-review{color:#ffc040;background:rgba(255,180,40,.12);border-color:rgba(255,180,40,.35);}
+
+/* ── Bottom mascot ── */
+.mascot-chat{
+  position:fixed;bottom:14px;right:20px;z-index:50;
+  display:flex;align-items:flex-end;gap:10px;
+}
+.mc-av{font-size:40px;animation:bounce 2.2s ease-in-out infinite;}
+@keyframes bounce{0%,100%{transform:translateY(0);}50%{transform:translateY(-5px);}}
+.mc-bubble{
+  background:linear-gradient(145deg,#1e1448 0%,#160e3a 100%);
+  border:3px solid #7050c0;border-radius:12px 12px 0 12px;
+  padding:10px 14px;font-size:12px;font-weight:700;color:#d0c0ff;
+  line-height:1.55;max-width:220px;
+  box-shadow:3px 3px 0 rgba(0,0,0,.4),0 0 12px rgba(100,60,200,.3);
+}
+
+::-webkit-scrollbar{width:5px;}
+::-webkit-scrollbar-thumb{background:#6040c0;}
+</style>
+</head>
+<body>
+
+<!-- Scene -->
+<div class="scene-bg"></div>
+<div class="moon"></div>
+<div class="stars" id="stars"></div>
+<div class="cloud cl1"></div>
+<div class="cloud cl2"></div>
+<div class="tree tl1">🌲</div>
+<div class="tree tl2">🌳</div>
+<div class="tree tr1">🌲</div>
+<div class="tree tr2">🌳</div>
+
+<!-- Nav -->
+<nav>
+  <a href="/" class="nav-back">← 返回</a>
+  <span class="nav-logo">🔮 HIRE NET</span>
+  <span class="nav-sub">Agent 世界</span>
+  <div class="nav-live"><div class="live-dot"></div>9 Agents 运行中</div>
+  <div class="nav-badge">✨ AGENT WORLD</div>
+</nav>
+
+<div class="page-scroll">
+
+  <!-- ── Module C: Live Status ── -->
+  <div class="board">
+    <div class="parch">
+      <div class="sec-head">
+        <span class="sec-head-icon">📡</span>
+        <div>
+          <div class="sec-head-title">实时 Agent 状态</div>
+          <div class="sec-head-sub">Career Orchestrator · Task Runner · 所有功能型 Agent</div>
+        </div>
+        <div class="sec-head-badge badge-live">● LIVE</div>
+      </div>
+      <div class="sec-divider"></div>
+      <div class="live-bar">
+        <div class="live-agent">
+          <div class="la-dot la-busy"></div>
+          Career Orchestrator
+          <span class="la-task">调度 3 个任务中</span>
+        </div>
+        <div class="live-agent">
+          <div class="la-dot la-active"></div>
+          Requirement Analysis Agent
+          <span class="la-task">处理 1 个请求</span>
+        </div>
+        <div class="live-agent">
+          <div class="la-dot la-active"></div>
+          Task Decomposition Agent
+          <span class="la-task">拆解中</span>
+        </div>
+        <div class="live-agent">
+          <div class="la-dot la-busy"></div>
+          Resource Decision Engine
+          <span class="la-task">评估 4 个任务</span>
+        </div>
+        <div class="live-agent">
+          <div class="la-dot la-active"></div>
+          Matching Engine
+          <span class="la-task">匹配候选人</span>
+        </div>
+        <div class="live-agent">
+          <div class="la-dot la-idle"></div>
+          Application Agent
+          <span class="la-task">待命</span>
+        </div>
+        <div class="live-agent">
+          <div class="la-dot la-idle"></div>
+          Tracker Agent
+          <span class="la-task">待命</span>
+        </div>
+        <div class="live-agent">
+          <div class="la-dot la-active"></div>
+          文案撰写 Agent
+          <span class="la-task">生成内容中</span>
+        </div>
+        <div class="live-agent">
+          <div class="la-dot la-idle"></div>
+          代码生成 Agent
+          <span class="la-task">待命</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Module B: Collaboration Flow ── -->
+  <div class="board">
+    <div class="parch">
+      <div class="sec-head">
+        <span class="sec-head-icon">🔗</span>
+        <div>
+          <div class="sec-head-title">Agent 协作链路</div>
+          <div class="sec-head-sub">数据在 Agent 之间实时流动</div>
+        </div>
+      </div>
+      <div class="sec-divider"></div>
+
+      <!-- Employer flow -->
+      <div style="font-size:10px;font-weight:800;color:#9070c0;margin-bottom:8px;letter-spacing:.5px;">
+        🏰 雇主路径
+      </div>
+      <div class="flow-wrap">
+        <div class="flow-row">
+          <div class="flow-node highlight" onclick="highlightFlow(this)">
+            <span class="fn-icon">🏰</span>
+            <div class="fn-name">雇主输入</div>
+            <div class="fn-role">用户层</div>
+          </div>
+          <div class="flow-arrow">
+            <div class="fa-label">任务描述</div>
+            <div style="display:flex;align-items:center;">
+              <div class="fa-line"></div><div class="fa-head"></div>
+            </div>
+          </div>
+          <div class="flow-node" onclick="highlightFlow(this)">
+            <span class="fn-icon">🔍</span>
+            <div class="fn-name">Requirement Analysis</div>
+            <div class="fn-role">需求理解</div>
+          </div>
+          <div class="flow-arrow">
+            <div class="fa-label">结构化需求</div>
+            <div style="display:flex;align-items:center;">
+              <div class="fa-line"></div><div class="fa-head"></div>
+            </div>
+          </div>
+          <div class="flow-node" onclick="highlightFlow(this)">
+            <span class="fn-icon">⚙️</span>
+            <div class="fn-name">Task Decomposition</div>
+            <div class="fn-role">任务拆解</div>
+          </div>
+          <div class="flow-arrow">
+            <div class="fa-label">任务单元</div>
+            <div style="display:flex;align-items:center;">
+              <div class="fa-line"></div><div class="fa-head"></div>
+            </div>
+          </div>
+          <div class="flow-node" onclick="highlightFlow(this)">
+            <span class="fn-icon">⚖️</span>
+            <div class="fn-name">Resource Decision</div>
+            <div class="fn-role">人机决策</div>
+          </div>
+          <div class="flow-arrow" style="align-items:flex-start;padding-top:14px;">
+            <div style="display:flex;flex-direction:column;gap:14px;">
+              <div class="branch-item">
+                <div class="branch-line" style="--d:0s"></div>
+                <div class="fa-head"></div>
+                <div style="margin-left:6px;">
+                  <div class="flow-node" style="min-width:100px;padding:8px 10px;">
+                    <span class="fn-icon">⚡</span>
+                    <div class="fn-name" style="font-size:9px;">Agent 执行</div>
+                  </div>
+                </div>
+              </div>
+              <div class="branch-item">
+                <div class="branch-line" style="--d:.4s"></div>
+                <div class="fa-head"></div>
+                <div style="margin-left:6px;">
+                  <div class="flow-node" style="min-width:100px;padding:8px 10px;">
+                    <span class="fn-icon">👥</span>
+                    <div class="fn-name" style="font-size:9px;">候选人匹配</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Seeker flow -->
+      <div style="font-size:10px;font-weight:800;color:#9070c0;margin:14px 0 8px;letter-spacing:.5px;">
+        🌱 求职者路径
+      </div>
+      <div class="flow-wrap">
+        <div class="flow-row">
+          <div class="flow-node" onclick="highlightFlow(this)">
+            <span class="fn-icon">🧑‍🌾</span>
+            <div class="fn-name">求职者上传</div>
+            <div class="fn-role">用户层</div>
+          </div>
+          <div class="flow-arrow">
+            <div class="fa-label">简历/经历</div>
+            <div style="display:flex;align-items:center;">
+              <div class="fa-line"></div><div class="fa-head"></div>
+            </div>
+          </div>
+          <div class="flow-node" onclick="highlightFlow(this)">
+            <span class="fn-icon">🪪</span>
+            <div class="fn-name">Candidate Profile</div>
+            <div class="fn-role">画像生成</div>
+          </div>
+          <div class="flow-arrow">
+            <div class="fa-label">能力卡片</div>
+            <div style="display:flex;align-items:center;">
+              <div class="fa-line"></div><div class="fa-head"></div>
+            </div>
+          </div>
+          <div class="flow-node" onclick="highlightFlow(this)">
+            <span class="fn-icon">🔭</span>
+            <div class="fn-name">Job Discovery</div>
+            <div class="fn-role">机会发现</div>
+          </div>
+          <div class="flow-arrow">
+            <div class="fa-label">岗位池</div>
+            <div style="display:flex;align-items:center;">
+              <div class="fa-line"></div><div class="fa-head"></div>
+            </div>
+          </div>
+          <div class="flow-node" onclick="highlightFlow(this)">
+            <span class="fn-icon">🎯</span>
+            <div class="fn-name">Matching Engine</div>
+            <div class="fn-role">精准匹配</div>
+          </div>
+          <div class="flow-arrow">
+            <div class="fa-label">匹配结果</div>
+            <div style="display:flex;align-items:center;">
+              <div class="fa-line"></div><div class="fa-head"></div>
+            </div>
+          </div>
+          <div class="flow-node" onclick="highlightFlow(this)">
+            <span class="fn-icon">📮</span>
+            <div class="fn-name">Application Agent</div>
+            <div class="fn-role">自动投递</div>
+          </div>
+          <div class="flow-arrow">
+            <div class="fa-label">进度追踪</div>
+            <div style="display:flex;align-items:center;">
+              <div class="fa-line"></div><div class="fa-head"></div>
+            </div>
+          </div>
+          <div class="flow-node" onclick="highlightFlow(this)">
+            <span class="fn-icon">📊</span>
+            <div class="fn-name">Tracker Agent</div>
+            <div class="fn-role">状态记录</div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ── Module A: Agent Card Wall ── -->
+  <div class="board">
+    <div class="parch">
+      <div class="sec-head">
+        <span class="sec-head-icon">🏘️</span>
+        <div>
+          <div class="sec-head-title">Agent 村 · 全员档案</div>
+          <div class="sec-head-sub">9 个专属 Agent，各司其职，协同运作</div>
+        </div>
+      </div>
+      <div class="sec-divider"></div>
+      <div class="agent-grid">
+
+        <div class="agent-card a-purple">
+          <div class="ac-head">
+            <div class="ac-icon">⚡</div>
+            <div class="ac-info">
+              <div class="ac-name">Career Orchestrator</div>
+              <div class="ac-type">总指挥</div>
+            </div>
+          </div>
+          <div class="ac-desc">接收所有请求，分配任务给各专属 Agent，管理完整工作流。</div>
+          <div class="ac-tasks">
+            <span class="ac-task">任务路由</span>
+            <span class="ac-task">流程编排</span>
+            <span class="ac-task">结果聚合</span>
+          </div>
+          <div class="ac-foot">
+            <div class="ac-status">
+              <div class="la-dot la-busy"></div>
+              <span style="font-size:10px;color:#c8ff80;font-weight:800;">调度中</span>
+            </div>
+            <span class="ac-calls">今日调用 · 142次</span>
+          </div>
+        </div>
+
+        <div class="agent-card a-teal">
+          <div class="ac-head">
+            <div class="ac-icon">🔍</div>
+            <div class="ac-info">
+              <div class="ac-name">Requirement Analysis Agent</div>
+              <div class="ac-type">需求理解</div>
+            </div>
+          </div>
+          <div class="ac-desc">将模糊的自然语言需求转化为结构化任务描述，消除信息失真。</div>
+          <div class="ac-tasks">
+            <span class="ac-task">语义理解</span>
+            <span class="ac-task">需求澄清</span>
+            <span class="ac-task">结构化输出</span>
+          </div>
+          <div class="ac-foot">
+            <div class="ac-status">
+              <div class="la-dot la-active"></div>
+              <span style="font-size:10px;color:#c8ff80;font-weight:800;">工作中</span>
+            </div>
+            <span class="ac-calls">今日调用 · 38次</span>
+          </div>
+        </div>
+
+        <div class="agent-card a-amber">
+          <div class="ac-head">
+            <div class="ac-icon">⚙️</div>
+            <div class="ac-info">
+              <div class="ac-name">Task Decomposition Agent</div>
+              <div class="ac-type">任务拆解</div>
+            </div>
+          </div>
+          <div class="ac-desc">将大型需求拆解为可独立判断执行方式的最小任务单元。</div>
+          <div class="ac-tasks">
+            <span class="ac-task">任务切分</span>
+            <span class="ac-task">依赖分析</span>
+            <span class="ac-task">工时估算</span>
+          </div>
+          <div class="ac-foot">
+            <div class="ac-status">
+              <div class="la-dot la-active"></div>
+              <span style="font-size:10px;color:#c8ff80;font-weight:800;">工作中</span>
+            </div>
+            <span class="ac-calls">今日调用 · 31次</span>
+          </div>
+        </div>
+
+        <div class="agent-card a-coral">
+          <div class="ac-head">
+            <div class="ac-icon">⚖️</div>
+            <div class="ac-info">
+              <div class="ac-name">Resource Decision Engine</div>
+              <div class="ac-type">人机决策</div>
+            </div>
+          </div>
+          <div class="ac-desc">判断每个任务最适合由 Agent、Human 还是协同完成，输出置信度。</div>
+          <div class="ac-tasks">
+            <span class="ac-task">能力评估</span>
+            <span class="ac-task">成本对比</span>
+            <span class="ac-task">决策输出</span>
+          </div>
+          <div class="ac-foot">
+            <div class="ac-status">
+              <div class="la-dot la-busy"></div>
+              <span style="font-size:10px;color:#ffc040;font-weight:800;">繁忙</span>
+            </div>
+            <span class="ac-calls">今日调用 · 55次</span>
+          </div>
+        </div>
+
+        <div class="agent-card a-blue">
+          <div class="ac-head">
+            <div class="ac-icon">🎯</div>
+            <div class="ac-info">
+              <div class="ac-name">Matching Engine</div>
+              <div class="ac-type">精准匹配</div>
+            </div>
+          </div>
+          <div class="ac-desc">计算任务需求与候选人/Agent 能力之间的语义匹配度。</div>
+          <div class="ac-tasks">
+            <span class="ac-task">向量匹配</span>
+            <span class="ac-task">评分排序</span>
+            <span class="ac-task">推荐生成</span>
+          </div>
+          <div class="ac-foot">
+            <div class="ac-status">
+              <div class="la-dot la-active"></div>
+              <span style="font-size:10px;color:#c8ff80;font-weight:800;">工作中</span>
+            </div>
+            <span class="ac-calls">今日调用 · 67次</span>
+          </div>
+        </div>
+
+        <div class="agent-card a-green">
+          <div class="ac-head">
+            <div class="ac-icon">🪪</div>
+            <div class="ac-info">
+              <div class="ac-name">Candidate Profile Agent</div>
+              <div class="ac-type">画像构建</div>
+            </div>
+          </div>
+          <div class="ac-desc">解析求职者的简历与经历，生成结构化能力卡片并注册进 A2A 网络。</div>
+          <div class="ac-tasks">
+            <span class="ac-task">简历解析</span>
+            <span class="ac-task">技能图谱</span>
+            <span class="ac-task">A2A注册</span>
+          </div>
+          <div class="ac-foot">
+            <div class="ac-status">
+              <div class="la-dot la-idle"></div>
+              <span style="font-size:10px;color:#a080c0;font-weight:800;">待命</span>
+            </div>
+            <span class="ac-calls">今日调用 · 24次</span>
+          </div>
+        </div>
+
+        <div class="agent-card a-blue">
+          <div class="ac-head">
+            <div class="ac-icon">🔭</div>
+            <div class="ac-info">
+              <div class="ac-name">Job Discovery Agent</div>
+              <div class="ac-type">机会发现</div>
+            </div>
+          </div>
+          <div class="ac-desc">根据候选人画像主动搜索和聚合适合的任务机会与岗位。</div>
+          <div class="ac-tasks">
+            <span class="ac-task">岗位搜索</span>
+            <span class="ac-task">信息聚合</span>
+            <span class="ac-task">相关性过滤</span>
+          </div>
+          <div class="ac-foot">
+            <div class="ac-status">
+              <div class="la-dot la-idle"></div>
+              <span style="font-size:10px;color:#a080c0;font-weight:800;">待命</span>
+            </div>
+            <span class="ac-calls">今日调用 · 18次</span>
+          </div>
+        </div>
+
+        <div class="agent-card a-green">
+          <div class="ac-head">
+            <div class="ac-icon">📮</div>
+            <div class="ac-info">
+              <div class="ac-name">Application Agent</div>
+              <div class="ac-type">自动投递</div>
+            </div>
+          </div>
+          <div class="ac-desc">生成定制化投递材料，代表求职者完成投递流程，汇报结果。</div>
+          <div class="ac-tasks">
+            <span class="ac-task">材料生成</span>
+            <span class="ac-task">模拟投递</span>
+            <span class="ac-task">结果上报</span>
+          </div>
+          <div class="ac-foot">
+            <div class="ac-status">
+              <div class="la-dot la-idle"></div>
+              <span style="font-size:10px;color:#a080c0;font-weight:800;">待命</span>
+            </div>
+            <span class="ac-calls">今日调用 · 29次</span>
+          </div>
+        </div>
+
+        <div class="agent-card a-amber">
+          <div class="ac-head">
+            <div class="ac-icon">📊</div>
+            <div class="ac-info">
+              <div class="ac-name">Tracker Agent</div>
+              <div class="ac-type">状态追踪</div>
+            </div>
+          </div>
+          <div class="ac-desc">记录所有投递状态与任务进展，提供后续跟进建议和提醒。</div>
+          <div class="ac-tasks">
+            <span class="ac-task">状态记录</span>
+            <span class="ac-task">进度追踪</span>
+            <span class="ac-task">提醒触发</span>
+          </div>
+          <div class="ac-foot">
+            <div class="ac-status">
+              <div class="la-dot la-idle"></div>
+              <span style="font-size:10px;color:#a080c0;font-weight:800;">待命</span>
+            </div>
+            <span class="ac-calls">今日调用 · 43次</span>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Module D: Third-party Agent Upload (Future) ── -->
+  <div class="board">
+    <div class="parch">
+      <div class="sec-head">
+        <span class="sec-head-icon">🚀</span>
+        <div>
+          <div class="sec-head-title">开放 Agent 网络 · 未来扩展</div>
+          <div class="sec-head-sub">Agent Marketplace · A2A Agent Invocation · Agent Resource Hub</div>
+        </div>
+        <div class="sec-head-badge badge-future">COMING SOON</div>
+      </div>
+      <div class="sec-divider"></div>
+
+      <div class="future-section">
+
+        <!-- Upload portal -->
+        <div class="future-upload" onclick="showComingSoon()">
+          <span class="fu-icon">📦</span>
+          <div class="fu-title">上传你的 Agent</div>
+          <div class="fu-sub">
+            将你开发的专业 Agent 接入 HireNet 网络，让企业直接发现并调用你的 Agent 能力。
+          </div>
+          <div class="fu-badge">🔒 即将开放</div>
+          <button class="fu-btn disabled">注册 Agent → Agent Registry</button>
+        </div>
+
+        <!-- Registered agents preview -->
+        <div>
+          <div style="font-size:10px;font-weight:800;color:#9070c0;margin-bottom:10px;letter-spacing:.5px;">
+            已接入的第三方 Agent（示例预览）
+          </div>
+          <div class="registered-agents">
+            <div class="ra-item">
+              <span class="ra-icon">🎨</span>
+              <div class="ra-info">
+                <div class="ra-name">UI 设计 Agent</div>
+                <div class="ra-type">设计 · 由 @studio_pixel 开发</div>
+              </div>
+              <span class="ra-status ra-ok">可用</span>
+            </div>
+            <div class="ra-item">
+              <span class="ra-icon">📣</span>
+              <div class="ra-info">
+                <div class="ra-name">社媒运营 Agent</div>
+                <div class="ra-type">运营 · 由 @market_ai 开发</div>
+              </div>
+              <span class="ra-status ra-ok">可用</span>
+            </div>
+            <div class="ra-item">
+              <span class="ra-icon">🔒</span>
+              <div class="ra-info">
+                <div class="ra-name">安全审计 Agent</div>
+                <div class="ra-type">安全 · 由 @secbot 开发</div>
+              </div>
+              <span class="ra-status ra-review">审核中</span>
+            </div>
+            <div class="ra-item" style="opacity:.45;filter:grayscale(.5);">
+              <span class="ra-icon">➕</span>
+              <div class="ra-info">
+                <div class="ra-name">你的 Agent</div>
+                <div class="ra-type">开放注册中 · 等待接入</div>
+              </div>
+              <span class="ra-status" style="color:#7060a0;background:rgba(120,90,200,.12);border:1px solid rgba(120,90,200,.3);">待开放</span>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Vision statement -->
+      <div style="margin-top:14px;padding:12px 16px;background:rgba(100,60,200,.12);border:2px dashed #7050c0;border-radius:8px;text-align:center;">
+        <div style="font-family:'Press Start 2P',monospace;font-size:8px;color:#c0a0ff;letter-spacing:.5px;margin-bottom:6px;">
+          长期愿景
+        </div>
+        <div style="font-size:12px;font-weight:700;color:#a090d0;line-height:1.6;">
+          HireNet 不只是招聘工具，而是一个决定"工作如何被完成"的系统。<br>
+          <span style="color:#c0a0ff;">Agent 承担标准化工作 · Human 专注复杂创造 · HireNet 负责调度与匹配</span>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+</div><!-- end page-scroll -->
+
+<!-- Mascot -->
+<div class="mascot-chat">
+  <div class="mc-av">🔮</div>
+  <div class="mc-bubble">欢迎来到 Agent 世界！这里有 9 个 Agent 正在让劳动力市场变得更公平 ✨</div>
+</div>
+
+<script>
+// Generate stars
+(function(){
+  const container = document.getElementById('stars');
+  for(let i=0;i<120;i++){
+    const s=document.createElement('div');
+    s.className='star';
+    const size=Math.random()<.7?2:Math.random()<.8?3:4;
+    s.style.cssText=`
+      width:${size}px;height:${size}px;
+      left:${Math.random()*100}%;
+      top:${Math.random()*65}%;
+      animation-duration:${1.5+Math.random()*3.5}s;
+      animation-delay:${-Math.random()*4}s;
+    `;
+    container.appendChild(s);
+  }
+})();
+
+// Generate sparkles
+(function(){
+  const emojis=['✨','⭐','💫','🌟','✦'];
+  for(let i=0;i<12;i++){
+    const sp=document.createElement('div');
+    sp.className='sparkle';
+    sp.textContent=emojis[Math.floor(Math.random()*emojis.length)];
+    sp.style.cssText=`
+      left:${5+Math.random()*90}%;
+      bottom:${28+Math.random()*30}%;
+      animation-duration:${4+Math.random()*5}s;
+      animation-delay:${-Math.random()*8}s;
+      font-size:${10+Math.random()*8}px;
+    `;
+    document.body.appendChild(sp);
+  }
+})();
+
+// Generate fireflies
+(function(){
+  for(let i=0;i<8;i++){
+    const ff=document.createElement('div');
+    ff.className='firefly';
+    ff.style.cssText=`
+      left:${10+Math.random()*80}%;
+      bottom:${28+Math.random()*20}%;
+      animation-duration:${3+Math.random()*4}s;
+      animation-delay:${-Math.random()*6}s;
+    `;
+    document.body.appendChild(ff);
+  }
+})();
+
+// Highlight flow node on click
+function highlightFlow(node){
+  document.querySelectorAll('.flow-node').forEach(n=>n.classList.remove('highlight'));
+  node.classList.add('highlight');
+  setTimeout(()=>node.classList.remove('highlight'),2500);
+}
+
+// Coming soon toast
+function showComingSoon(){
+  const toast=document.createElement('div');
+  toast.textContent='🔮 Agent 注册功能即将开放，敬请期待！';
+  toast.style.cssText=`
+    position:fixed;bottom:80px;left:50%;transform:translateX(-50%);
+    background:linear-gradient(135deg,#2a1a6e,#3a2888);
+    border:2px solid #8060e0;border-radius:8px;
+    padding:12px 24px;font-size:13px;font-weight:800;color:#e0d0ff;
+    box-shadow:4px 4px 0 #0a0828,0 0 20px rgba(120,80,220,.4);
+    z-index:200;transition:opacity .4s;
+  `;
+  document.body.appendChild(toast);
+  setTimeout(()=>{toast.style.opacity='0';setTimeout(()=>toast.remove(),400);},2500);
+}
+
+// Randomize live agent task texts periodically
+const tasks=[
+  '处理 1 个请求','处理 2 个请求','调度 3 个任务中','评估 4 个任务',
+  '匹配候选人','生成内容中','分析需求中','拆解中','待命','空闲'
+];
+setInterval(()=>{
+  const dots=document.querySelectorAll('.la-busy,.la-active');
+  dots.forEach(d=>{
+    const taskEl=d.parentElement.querySelector('.la-task');
+    if(taskEl&&Math.random()>.7){
+      taskEl.textContent=tasks[Math.floor(Math.random()*tasks.length)];
+    }
+  });
+},3000);
+</script>
+</body>
+</html>
