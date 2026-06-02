@@ -30,3 +30,9 @@ env/
 # IDE
 .vscode/
 .idea/
+
+# Media / app assets (不进版本控制，用外部存储或 LFS)
+*.mp4
+*.png
+*.jpg
+*.jpeg
