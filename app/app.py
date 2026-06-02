@@ -5,16 +5,13 @@ import os
 import json
 import secrets
 from datetime import datetime
-from flask import Flask, request, jsonify, session, render_template
+from flask import Flask, Blueprint, request, jsonify, session, render_template
 from dotenv import load_dotenv
-
-load_dotenv()
 
 from app.agents.agents import RequirementAnalysisAgent, decompose_tasks, run_resource_decision, CareerStrategyAgent
 from app.agents.job_design import generate_jd_report
 
-app = Flask(__name__)
-app.secret_key = os.getenv("APP_SECRET_KEY", secrets.token_hex(32))
+main = Blueprint('main', __name__)
 
 # In-memory session store for demo (use Redis in production)
 analysis_sessions = {}
@@ -37,7 +34,7 @@ EXP_PER_LEVEL = 500
 
 # ─── Requirement Analysis API ─────────────────────────────────────────────────
 
-@app.route("/api/analyze/start", methods=["POST"])
+@main.route("/api/analyze/start", methods=["POST"])
 def start_analysis():
     """Start a new requirement analysis session"""
     data = request.get_json()
@@ -76,7 +73,7 @@ def start_analysis():
     })
 
 
-@app.route("/api/analyze/reply", methods=["POST"])
+@main.route("/api/analyze/reply", methods=["POST"])
 def reply_analysis():
     """Continue requirement analysis conversation"""
     data = request.get_json()
@@ -110,7 +107,7 @@ def reply_analysis():
 
 # ─── Task Decomposition + Resource Decision ───────────────────────────────────
 
-@app.route("/api/analyze/decide", methods=["POST"])
+@main.route("/api/analyze/decide", methods=["POST"])
 def run_decision():
     """
     Run full pipeline:
@@ -221,7 +218,7 @@ def _publish_jobs(jd_report: dict):
 
 # ─── Candidate Side ───────────────────────────────────────────────────────────
 
-@app.route("/api/candidates", methods=["GET"])
+@main.route("/api/candidates", methods=["GET"])
 def list_candidates():
     """List demo candidates with their profiles"""
     from app.agents.candidate_profile import DEMO_CANDIDATES, build_candidate_profile
@@ -237,7 +234,7 @@ def list_candidates():
     return jsonify({"candidates": candidates})
 
 
-@app.route("/api/match", methods=["POST"])
+@main.route("/api/match", methods=["POST"])
 def match_candidates():
     """Match candidates against a job design"""
     data = request.get_json()
@@ -283,7 +280,7 @@ def match_candidates():
 
 # ─── Candidate Side (extended) ────────────────────────────────────────────────
 
-@app.route("/api/candidates/<candidate_id>/profile", methods=["GET"])
+@main.route("/api/candidates/<candidate_id>/profile", methods=["GET"])
 def get_candidate_profile(candidate_id):
     """Get full profile for a single candidate"""
     from app.agents.candidate_profile import build_candidate_profile, DEMO_CANDIDATES
@@ -309,7 +306,7 @@ def get_candidate_profile(candidate_id):
         }})
 
 
-@app.route("/api/jobs", methods=["GET"])
+@main.route("/api/jobs", methods=["GET"])
 def list_jobs():
     """List available jobs for candidate-side matching"""
     from app.agents.application_agent import get_demo_jobs
@@ -326,7 +323,7 @@ def list_jobs():
     return jsonify({"jobs": jobs})
 
 
-@app.route("/api/candidate-match", methods=["POST"])
+@main.route("/api/candidate-match", methods=["POST"])
 def candidate_match():
     """Match a candidate against all available jobs"""
     from app.agents.application_agent import get_demo_jobs
@@ -375,7 +372,7 @@ def candidate_match():
     return jsonify({"candidate": profile, "matches": results})
 
 
-@app.route("/api/my-match", methods=["GET"])
+@main.route("/api/my-match", methods=["GET"])
 def my_match():
     """Match a generic user profile against all published jobs."""
     from app.agents.application_agent import get_demo_jobs
@@ -417,7 +414,7 @@ def my_match():
     })
 
 
-@app.route("/api/apply", methods=["POST"])
+@main.route("/api/apply", methods=["POST"])
 def apply_to_job():
     """Generate cover letter and record application"""
     from app.agents.application_agent import generate_cover_letter, apply_to_job as _apply
@@ -458,7 +455,7 @@ def apply_to_job():
     return jsonify({"application": application, "cover_letter": cover_letter_result})
 
 
-@app.route("/api/tracker", methods=["GET"])
+@main.route("/api/tracker", methods=["GET"])
 def get_tracker():
     """Get all application records (Tracker Agent)"""
     from app.agents.application_agent import get_applications
@@ -471,7 +468,7 @@ def get_tracker():
 
 # ─── Career Strategy Agent API ────────────────────────────────────────────────
 
-@app.route("/api/career/start", methods=["POST"])
+@main.route("/api/career/start", methods=["POST"])
 def career_start():
     """开始一轮新的职业策略对话"""
     data = request.get_json()
@@ -503,7 +500,7 @@ def career_start():
     })
 
 
-@app.route("/api/career/reply", methods=["POST"])
+@main.route("/api/career/reply", methods=["POST"])
 def career_reply():
     """继续职业策略对话"""
     data = request.get_json()
@@ -538,7 +535,7 @@ def career_reply():
 
 # ─── Tracker Agent: task completion ──────────────────────────────────────────
 
-@app.route("/api/career/generate", methods=["POST"])
+@main.route("/api/career/generate", methods=["POST"])
 def career_generate():
     """Force-generate strategy from conversation history (user-triggered)."""
     data = request.get_json()
@@ -554,7 +551,7 @@ def career_generate():
         return jsonify({"error": str(e)}), 500
 
 
-@app.route("/api/tracker/task-complete", methods=["POST"])
+@main.route("/api/tracker/task-complete", methods=["POST"])
 def complete_task():
     """Mark a career strategy task as complete; award EXP and update profile."""
     data = request.get_json()
@@ -601,13 +598,13 @@ def complete_task():
     })
 
 
-@app.route("/api/profile/state", methods=["GET"])
+@main.route("/api/profile/state", methods=["GET"])
 def get_profile_state():
     """Get current user profile state (EXP, level, skill boosts)."""
     return jsonify(user_profile_state)
 
 
-@app.route("/api/health")
+@main.route("/api/health")
 def health():
     return jsonify({"status": "ok"})
 
@@ -660,7 +657,7 @@ MCP_TOOLS = [
 ]
 
 
-@app.route("/api/mcp", methods=["POST"])
+@main.route("/api/mcp", methods=["POST"])
 def mcp_endpoint():
     """JSON-RPC 2.0 MCP endpoint."""
     body = request.get_json(silent=True) or {}
@@ -752,26 +749,26 @@ def mcp_endpoint():
 
 # ─── Serve frontend ───────────────────────────────────────────────────────────
 
-@app.route("/")
+@main.route("/")
 def index():
     """Serve the main page"""
     return render_template('index.html')
 
 
-@app.route('/employer')
+@main.route('/employer')
 def employer():
     return render_template('employer.html')
 
-@app.route('/jobseeker')
+@main.route('/jobseeker')
 def jobseeker():
     return render_template('jobseeker.html')
 
-@app.route('/agents')
+@main.route('/agents')
 def agents():
     return render_template('agents.html')
 
 
-@app.route("/api/analyze/quick", methods=["POST"])
+@main.route("/api/analyze/quick", methods=["POST"])
 def quick_analyze():
     """
     Quick demo mode: takes a pre-built requirement dict directly,
@@ -818,7 +815,15 @@ def quick_analyze():
         return jsonify({"error": str(e), "traceback": traceback.format_exc()}), 500
 
 
+def create_app():
+    load_dotenv()
+    app = Flask(__name__)
+    app.secret_key = os.getenv("APP_SECRET_KEY", secrets.token_hex(32))
+    app.register_blueprint(main)
+    return app
+
+
 if __name__ == "__main__":
     port = int(os.getenv("PORT", os.getenv("APP_PORT", 3000)))
     print(f"HireNet running on http://localhost:{port}")
-    app.run(debug=False, host="0.0.0.0", port=port, threaded=True)
+    create_app().run(debug=False, host="0.0.0.0", port=port, threaded=True)

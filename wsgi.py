@@ -1,5 +1,7 @@
 import os
-from app.app import app
+from app.app import create_app
+
+app = create_app()
 
 if __name__ == "__main__":
     port = int(os.getenv("PORT", os.getenv("APP_PORT", 3000)))
