@@ -1,0 +1,20 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "ResourceDecision",
+  "description": "四维资源决策：执行方 × 支付方式 × 用哪些资产 × 结算时机",
+  "type": "object",
+  "required": ["executor_type", "payment_method", "asset_ids", "settlement_timing"],
+  "properties": {
+    "executor_type": { "type": "string", "enum": ["Agent", "Human", "Hybrid"] },
+    "payment_method": { "type": "string", "enum": ["ledger_only", "on_chain", "fiat"] },
+    "asset_ids": { "type": "array", "items": { "type": "string" } },
+    "settlement_timing": { "type": "string", "enum": ["immediate", "on_completion", "batch"] }
+  },
+  "if": {
+    "properties": { "executor_type": { "enum": ["Agent", "Hybrid"] } },
+    "required": ["executor_type"]
+  },
+  "then": {
+    "properties": { "asset_ids": { "minItems": 1 } }
+  }
+}

@@ -1,0 +1,44 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "JobDesign",
+  "type": "object",
+  "required": [
+    "job_title", "core_responsibilities", "required_skills",
+    "experience_range", "salary_range", "work_type", "water_score"
+  ],
+  "properties": {
+    "job_title": { "type": "string", "minLength": 1 },
+    "core_responsibilities": {
+      "type": "array", "items": { "type": "string" }, "minItems": 1
+    },
+    "required_skills": {
+      "type": "array", "items": { "type": "string" }, "minItems": 1
+    },
+    "nice_to_have_skills": { "type": "array", "items": { "type": "string" } },
+    "experience_range": {
+      "type": "object",
+      "required": ["min", "max", "unit"],
+      "properties": {
+        "min": { "type": "number", "minimum": 0 },
+        "max": { "type": "number", "minimum": 0 },
+        "unit": { "type": "string" }
+      }
+    },
+    "salary_range": {
+      "type": "object",
+      "required": ["min", "max", "unit"],
+      "properties": {
+        "min": { "type": "number", "minimum": 0 },
+        "max": { "type": "number", "minimum": 0 },
+        "unit": { "type": "string" }
+      }
+    },
+    "work_type": {
+      "type": "string",
+      "enum": ["full-time", "part-time", "contract", "freelance"]
+    },
+    "water_score": { "type": "integer", "minimum": 0, "maximum": 100 },
+    "water_analysis": { "type": "string" },
+    "red_flags_removed": { "type": "array", "items": { "type": "string" } }
+  }
+}

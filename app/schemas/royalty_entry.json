@@ -1,0 +1,17 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "RoyaltyEntry",
+  "description": "RoyaltyLedger 中的单条分成记录",
+  "type": "object",
+  "required": ["entry_id", "run_id", "creator_id", "amount", "currency", "chain", "settlement_status"],
+  "properties": {
+    "entry_id":          { "type": "string", "minLength": 1 },
+    "run_id":            { "type": "string", "minLength": 1 },
+    "creator_id":        { "type": "string", "minLength": 1 },
+    "amount":            { "type": "number", "minimum": 0 },
+    "currency":          { "type": "string", "minLength": 1 },
+    "chain":             { "type": ["string", "null"] },
+    "settlement_status": { "type": "string", "enum": ["accrued", "settled"] }
+  },
+  "additionalProperties": false
+}

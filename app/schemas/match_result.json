@@ -1,0 +1,14 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "MatchResult",
+  "type": "object",
+  "required": ["candidate_id", "job_id", "match_score", "match_reasons"],
+  "properties": {
+    "candidate_id": { "type": "string", "minLength": 1 },
+    "job_id": { "type": "string", "minLength": 1 },
+    "match_score": { "type": "integer", "minimum": 0, "maximum": 100 },
+    "match_reasons": { "type": "array", "items": { "type": "string" }, "minItems": 1 },
+    "skill_gaps": { "type": "array", "items": { "type": "string" } },
+    "recommendation": { "type": "string" }
+  }
+}

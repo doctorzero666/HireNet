@@ -1,0 +1,18 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Task",
+  "type": "object",
+  "required": ["id", "name", "description", "type", "estimated_hours", "requires_judgment", "is_recurring"],
+  "properties": {
+    "id": { "type": "string", "minLength": 1 },
+    "name": { "type": "string", "minLength": 1 },
+    "description": { "type": "string", "minLength": 1 },
+    "type": {
+      "type": "string",
+      "enum": ["technical", "creative", "analytical", "strategic", "operational"]
+    },
+    "estimated_hours": { "type": "number", "minimum": 0 },
+    "requires_judgment": { "type": "boolean" },
+    "is_recurring": { "type": "boolean" }
+  }
+}

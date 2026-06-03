@@ -1,0 +1,15 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Requirement",
+  "type": "object",
+  "required": ["project_name", "core_description", "tasks_hint", "duration", "urgency", "budget_hint"],
+  "properties": {
+    "project_name": { "type": "string", "minLength": 1 },
+    "core_description": { "type": "string", "minLength": 1 },
+    "tasks_hint": { "type": "array", "items": { "type": "string" } },
+    "duration": { "type": "string", "enum": ["one-time", "ongoing", "unknown"] },
+    "team_context": { "type": "string" },
+    "urgency": { "type": "string", "enum": ["high", "medium", "low"] },
+    "budget_hint": { "type": "string", "enum": ["low", "medium", "high", "unknown"] }
+  }
+}

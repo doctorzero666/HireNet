@@ -1,0 +1,19 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "AgentRun",
+  "description": "每次 SkillAsset 调用的计费 + 审计记录",
+  "type": "object",
+  "required": ["run_id", "skill_asset_id", "creator_id", "amount", "currency", "chain", "status", "invoked_at"],
+  "properties": {
+    "run_id":          { "type": "string", "minLength": 1 },
+    "skill_asset_id":  { "type": "string", "minLength": 1 },
+    "creator_id":      { "type": "string", "minLength": 1 },
+    "amount":          { "type": "number", "minimum": 0 },
+    "currency":        { "type": "string", "minLength": 1 },
+    "chain":           { "type": ["string", "null"] },
+    "status":          { "type": "string", "enum": ["pending", "completed", "failed"] },
+    "invoked_at":      { "type": "string", "minLength": 1 },
+    "invoker_id":      { "type": "string" }
+  },
+  "additionalProperties": false
+}
