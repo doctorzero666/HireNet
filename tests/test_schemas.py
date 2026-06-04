@@ -77,7 +77,7 @@ VALID_SKILL_ASSET = {
     "name": "Job Design Agent",
     "description": "Generates de-watered job descriptions",
     "io_schema": {"input": {"requirement": "object"}, "output": {"job_design": "object"}},
-    "price_amount": 0.5,
+    "price_amount": 50,          # integer basis points (= 0.50 USD at 1/100 cent)
     "price_currency": "USD",
     "split_rule": {"creator": 7000, "platform": 3000},  # basis points: 70% / 30%
     # sha256 of empty string — valid 64-char lowercase hex provenance hash
@@ -235,7 +235,7 @@ class TestSkillAssetSchema:
         validate(VALID_SKILL_ASSET, "skill_asset")
 
     def test_negative_price_blocked(self):
-        bad = {**VALID_SKILL_ASSET, "price_amount": -0.01}
+        bad = {**VALID_SKILL_ASSET, "price_amount": -1}
         with pytest.raises(jsonschema.ValidationError):
             validate(bad, "skill_asset")
 
@@ -430,13 +430,22 @@ class TestValidateSplitRule:
 
 VALID_AGENT_RUN = {
     "run_id": "run_001",
-    "skill_asset_id": "skill_001",
-    "creator_id": "user_001",
-    "amount": 0.5,
-    "currency": "USD",
-    "chain": None,
-    "status": "completed",
-    "invoked_at": "2026-06-03T10:00:00Z",
+    "agent_name": "TestAgent",
+    "caller_id": "caller_001",
+    "task_id": "task_001",
+    "input_tokens": 100,
+    "output_tokens": 50,
+    "llm_cost_usd": "0.002",
+    "time_ms": 1200,
+    "success": True,
+    "asset_ids": ["skill_001"],
+    "royalty_splits": {"user_001": {"amount": 35, "currency": "USD"}},
+    "charge_amount": 50,
+    "charge_currency": "USD",
+    "charge_chain": None,
+    "payment_method": "ledger_only",
+    "settlement_status": "accrued",
+    "created_at": "2026-06-04T00:00:00+00:00",
 }
 
 
@@ -444,29 +453,34 @@ class TestAgentRunSchema:
     def test_valid_passes(self):
         validate(VALID_AGENT_RUN, "agent_run")
 
-    def test_chain_null_allowed(self):
-        validate({**VALID_AGENT_RUN, "chain": None}, "agent_run")
+    def test_charge_chain_null_allowed(self):
+        validate({**VALID_AGENT_RUN, "charge_chain": None}, "agent_run")
 
-    def test_chain_string_allowed(self):
-        validate({**VALID_AGENT_RUN, "chain": "ethereum"}, "agent_run")
+    def test_charge_chain_string_allowed(self):
+        validate({**VALID_AGENT_RUN, "charge_chain": "ethereum"}, "agent_run")
 
-    def test_invalid_status_blocked(self):
-        bad = {**VALID_AGENT_RUN, "status": "cancelled"}
+    def test_invalid_settlement_status_blocked(self):
+        bad = {**VALID_AGENT_RUN, "settlement_status": "cancelled"}
         with pytest.raises(jsonschema.ValidationError):
             validate(bad, "agent_run")
 
-    def test_negative_amount_blocked(self):
-        bad = {**VALID_AGENT_RUN, "amount": -0.01}
+    def test_negative_charge_amount_blocked(self):
+        bad = {**VALID_AGENT_RUN, "charge_amount": -1}
         with pytest.raises(jsonschema.ValidationError):
             validate(bad, "agent_run")
 
-    def test_missing_creator_id_blocked(self):
-        bad = {k: v for k, v in VALID_AGENT_RUN.items() if k != "creator_id"}
+    def test_missing_agent_name_blocked(self):
+        bad = {k: v for k, v in VALID_AGENT_RUN.items() if k != "agent_name"}
         with pytest.raises(jsonschema.ValidationError):
             validate(bad, "agent_run")
 
-    def test_missing_currency_blocked(self):
-        bad = {k: v for k, v in VALID_AGENT_RUN.items() if k != "currency"}
+    def test_missing_charge_currency_blocked(self):
+        bad = {k: v for k, v in VALID_AGENT_RUN.items() if k != "charge_currency"}
+        with pytest.raises(jsonschema.ValidationError):
+            validate(bad, "agent_run")
+
+    def test_invalid_payment_method_blocked(self):
+        bad = {**VALID_AGENT_RUN, "payment_method": "cash"}
         with pytest.raises(jsonschema.ValidationError):
             validate(bad, "agent_run")
 
@@ -479,13 +493,15 @@ class TestAgentRunSchema:
 # ─── RoyaltyEntry schema ──────────────────────────────────────────────────────
 
 VALID_ROYALTY_ENTRY = {
-    "entry_id": "entry_001",
+    "id": "entry_001",
     "run_id": "run_001",
     "creator_id": "user_001",
-    "amount": 0.35,
+    "asset_id": "skill_001",
+    "amount": 35,
     "currency": "USD",
     "chain": None,
-    "settlement_status": "accrued",
+    "status": "accrued",
+    "created_at": "2026-06-04T00:00:00+00:00",
 }
 
 
@@ -494,7 +510,7 @@ class TestRoyaltyEntrySchema:
         validate(VALID_ROYALTY_ENTRY, "royalty_entry")
 
     def test_valid_settled_passes(self):
-        validate({**VALID_ROYALTY_ENTRY, "settlement_status": "settled"}, "royalty_entry")
+        validate({**VALID_ROYALTY_ENTRY, "status": "settled"}, "royalty_entry")
 
     def test_chain_null_allowed(self):
         validate({**VALID_ROYALTY_ENTRY, "chain": None}, "royalty_entry")
@@ -502,13 +518,13 @@ class TestRoyaltyEntrySchema:
     def test_chain_string_allowed(self):
         validate({**VALID_ROYALTY_ENTRY, "chain": "ethereum"}, "royalty_entry")
 
-    def test_invalid_settlement_status_blocked(self):
-        bad = {**VALID_ROYALTY_ENTRY, "settlement_status": "pending"}
+    def test_invalid_status_blocked(self):
+        bad = {**VALID_ROYALTY_ENTRY, "status": "pending"}
         with pytest.raises(jsonschema.ValidationError):
             validate(bad, "royalty_entry")
 
-    def test_missing_settlement_status_blocked(self):
-        bad = {k: v for k, v in VALID_ROYALTY_ENTRY.items() if k != "settlement_status"}
+    def test_missing_status_blocked(self):
+        bad = {k: v for k, v in VALID_ROYALTY_ENTRY.items() if k != "status"}
         with pytest.raises(jsonschema.ValidationError):
             validate(bad, "royalty_entry")
 
@@ -518,7 +534,7 @@ class TestRoyaltyEntrySchema:
             validate(bad, "royalty_entry")
 
     def test_negative_amount_blocked(self):
-        bad = {**VALID_ROYALTY_ENTRY, "amount": -0.01}
+        bad = {**VALID_ROYALTY_ENTRY, "amount": -1}
         with pytest.raises(jsonschema.ValidationError):
             validate(bad, "royalty_entry")
 

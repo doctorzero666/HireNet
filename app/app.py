@@ -10,6 +10,7 @@ from dotenv import load_dotenv
 
 from app.agents.agents import RequirementAnalysisAgent, decompose_tasks, run_resource_decision, CareerStrategyAgent
 from app.agents.job_design import generate_jd_report
+from app.storage.db import init_db
 
 main = Blueprint('main', __name__)
 
@@ -815,10 +816,17 @@ def quick_analyze():
         return jsonify({"error": str(e), "traceback": traceback.format_exc()}), 500
 
 
-def create_app():
+def create_app(config: dict | None = None):
     load_dotenv()
     app = Flask(__name__)
     app.secret_key = os.getenv("APP_SECRET_KEY", secrets.token_hex(32))
+
+    default_db = os.path.join(os.path.expanduser("~"), ".hirenet", "hirenet.db")
+    app.config["DATABASE_PATH"] = os.getenv("HIRENET_DB_PATH", default_db)
+    if config:
+        app.config.update(config)
+
+    init_db(app)
     app.register_blueprint(main)
     return app
 

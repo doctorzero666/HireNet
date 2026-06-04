@@ -1,17 +1,19 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
   "title": "RoyaltyEntry",
-  "description": "RoyaltyLedger 中的单条分成记录",
+  "description": "RoyaltyLedger 中的单条分成记录，字段集与 royalty_ledger 表一一对应",
   "type": "object",
-  "required": ["entry_id", "run_id", "creator_id", "amount", "currency", "chain", "settlement_status"],
+  "required": ["id", "run_id", "creator_id", "asset_id", "amount", "currency", "status", "created_at"],
+  "additionalProperties": false,
   "properties": {
-    "entry_id":          { "type": "string", "minLength": 1 },
-    "run_id":            { "type": "string", "minLength": 1 },
-    "creator_id":        { "type": "string", "minLength": 1 },
-    "amount":            { "type": "number", "minimum": 0 },
-    "currency":          { "type": "string", "minLength": 1 },
-    "chain":             { "type": ["string", "null"] },
-    "settlement_status": { "type": "string", "enum": ["accrued", "settled"] }
-  },
-  "additionalProperties": false
+    "id":         { "type": "string",  "minLength": 1 },
+    "run_id":     { "type": "string",  "minLength": 1 },
+    "creator_id": { "type": "string",  "minLength": 1 },
+    "asset_id":   { "type": "string",  "minLength": 1 },
+    "amount":     { "type": "integer", "minimum": 0 },
+    "currency":   { "type": "string",  "minLength": 1 },
+    "chain":      { "type": ["string", "null"] },
+    "status":     { "type": "string",  "enum": ["accrued", "settled"] },
+    "created_at": { "type": "string",  "minLength": 1 }
+  }
 }

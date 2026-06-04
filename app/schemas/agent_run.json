@@ -1,19 +1,32 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
   "title": "AgentRun",
-  "description": "每次 SkillAsset 调用的计费 + 审计记录",
+  "description": "每次 SkillAsset 调用的计费 + 审计记录，字段集与 agent_runs 表一一对应",
   "type": "object",
-  "required": ["run_id", "skill_asset_id", "creator_id", "amount", "currency", "chain", "status", "invoked_at"],
+  "required": [
+    "run_id", "agent_name", "caller_id", "task_id",
+    "success", "asset_ids", "royalty_splits",
+    "charge_amount", "charge_currency",
+    "payment_method", "settlement_status", "created_at"
+  ],
+  "additionalProperties": false,
   "properties": {
-    "run_id":          { "type": "string", "minLength": 1 },
-    "skill_asset_id":  { "type": "string", "minLength": 1 },
-    "creator_id":      { "type": "string", "minLength": 1 },
-    "amount":          { "type": "number", "minimum": 0 },
-    "currency":        { "type": "string", "minLength": 1 },
-    "chain":           { "type": ["string", "null"] },
-    "status":          { "type": "string", "enum": ["pending", "completed", "failed"] },
-    "invoked_at":      { "type": "string", "minLength": 1 },
-    "invoker_id":      { "type": "string" }
-  },
-  "additionalProperties": false
+    "run_id":            { "type": "string",  "minLength": 1 },
+    "agent_name":        { "type": "string",  "minLength": 1 },
+    "caller_id":         { "type": "string",  "minLength": 1 },
+    "task_id":           { "type": "string",  "minLength": 1 },
+    "input_tokens":      { "type": ["integer", "null"] },
+    "output_tokens":     { "type": ["integer", "null"] },
+    "llm_cost_usd":      { "type": ["string",  "null"] },
+    "time_ms":           { "type": ["integer", "null"] },
+    "success":           { "type": "boolean" },
+    "asset_ids":         { "type": "array",   "items": { "type": "string" } },
+    "royalty_splits":    { "type": "object" },
+    "charge_amount":     { "type": "integer", "minimum": 0 },
+    "charge_currency":   { "type": "string",  "minLength": 1 },
+    "charge_chain":      { "type": ["string", "null"] },
+    "payment_method":    { "type": "string",  "enum": ["ledger_only", "on_chain", "fiat"] },
+    "settlement_status": { "type": "string",  "enum": ["accrued", "settled"] },
+    "created_at":        { "type": "string",  "minLength": 1 }
+  }
 }
