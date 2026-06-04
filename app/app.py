@@ -823,11 +823,18 @@ def create_app(config: dict | None = None):
 
     default_db = os.path.join(os.path.expanduser("~"), ".hirenet", "hirenet.db")
     app.config["DATABASE_PATH"] = os.getenv("HIRENET_DB_PATH", default_db)
+    # Phase 1 stub: single hard-coded creator identity used for all registrations.
+    # Real per-user authentication is deferred to Phase 2.
+    app.config["PHASE1_CREATOR_ID"] = os.getenv("HIRENET_PHASE1_CREATOR_ID", "phase1_stub_creator")
     if config:
         app.config.update(config)
 
     init_db(app)
     app.register_blueprint(main)
+
+    from app.routes.skills import skills_bp
+    app.register_blueprint(skills_bp)
+
     return app
 
 

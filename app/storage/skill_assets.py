@@ -15,15 +15,18 @@ def insert_skill_asset(db_path: str, asset: dict) -> str:
             conn.execute(
                 """
                 INSERT INTO skill_assets
-                    (id, creator_id, name, description, io_schema, price_amount,
-                     price_currency, price_chain, split_rule, content_hash, created_at)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                    (id, creator_id, name, description, type, endpoint_url,
+                     io_schema, price_amount, price_currency, price_chain,
+                     split_rule, content_hash, created_at)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 """,
                 (
                     skill_id,
                     asset["creator_id"],
                     asset["name"],
                     asset["description"],
+                    asset["type"],
+                    asset.get("endpoint_url"),
                     json.dumps(asset["io_schema"]),
                     price_amount,
                     asset["price_currency"],

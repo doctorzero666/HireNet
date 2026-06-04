@@ -48,6 +48,8 @@ def _skill_asset(**overrides) -> dict:
         "creator_id": "user_001",
         "name": "Test Skill",
         "description": "A test skill",
+        "type": "skill",
+        "endpoint_url": None,
         "io_schema": {"input": {"text": "string"}, "output": {"result": "string"}},
         "price_amount": 50,          # 50 basis points
         "price_currency": "USD",
@@ -105,6 +107,8 @@ def _raw_skill_asset_row(**overrides) -> dict:
         "creator_id": "user_001",
         "name": "Raw Test",
         "description": "raw",
+        "type": "skill",
+        "endpoint_url": None,
         "io_schema": "{}",
         "price_amount": 50,
         "price_currency": "USD",

@@ -31,6 +31,8 @@ def _create_tables(conn: sqlite3.Connection) -> None:
             creator_id     TEXT    NOT NULL,
             name           TEXT    NOT NULL,
             description    TEXT    NOT NULL,
+            type           TEXT    NOT NULL,
+            endpoint_url   TEXT,
             io_schema      TEXT    NOT NULL,
             price_amount   INTEGER NOT NULL CHECK (price_amount >= 0),
             price_currency TEXT    NOT NULL,
@@ -74,9 +76,36 @@ def _create_tables(conn: sqlite3.Connection) -> None:
     """)
 
 
+def _migrate(conn: sqlite3.Connection) -> None:
+    """Add columns that were introduced after U2, if they are missing from an existing table.
+
+    SQLite does not support ADD COLUMN with NOT NULL unless a DEFAULT is provided, so
+    the new columns are added as nullable TEXT here. The service layer guarantees that
+    every new write supplies a valid value, preserving the effective constraint.
+    Pre-existing rows (U2 data) have their type backfilled to 'skill'.
+    """
+    rows = conn.execute("PRAGMA table_info(skill_assets)").fetchall()
+    existing = {row[1] for row in rows}
+
+    needs_commit = False
+
+    if "type" not in existing:
+        conn.execute("ALTER TABLE skill_assets ADD COLUMN type TEXT")
+        conn.execute("UPDATE skill_assets SET type = 'skill' WHERE type IS NULL")
+        needs_commit = True
+
+    if "endpoint_url" not in existing:
+        conn.execute("ALTER TABLE skill_assets ADD COLUMN endpoint_url TEXT")
+        needs_commit = True
+
+    if needs_commit:
+        conn.commit()
+
+
 def init_db(app: Flask) -> None:
     db_path = app.config["DATABASE_PATH"]
     parent = os.path.dirname(os.path.abspath(db_path))
     os.makedirs(parent, exist_ok=True)
     with closing(_open(db_path)) as conn:
         _create_tables(conn)
+        _migrate(conn)

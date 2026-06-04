@@ -76,6 +76,7 @@ VALID_SKILL_ASSET = {
     "creator_id": "user_001",
     "name": "Job Design Agent",
     "description": "Generates de-watered job descriptions",
+    "type": "skill",
     "io_schema": {"input": {"requirement": "object"}, "output": {"job_design": "object"}},
     "price_amount": 50,          # integer basis points (= 0.50 USD at 1/100 cent)
     "price_currency": "USD",
