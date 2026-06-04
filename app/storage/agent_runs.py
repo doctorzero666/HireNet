@@ -5,42 +5,52 @@ from datetime import datetime, timezone
 
 from app.storage.db import _open, _require_nonneg_int
 
+_INSERT_AGENT_RUN_SQL = """
+    INSERT INTO agent_runs
+        (run_id, agent_name, caller_id, task_id, input_tokens, output_tokens,
+         llm_cost_usd, time_ms, success, asset_ids, royalty_splits,
+         charge_amount, charge_currency, charge_chain, payment_method,
+         settlement_status, created_at)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+"""
 
-def insert_agent_run(db_path: str, run: dict) -> str:
+
+def _build_agent_run_row(run: dict) -> tuple[str, tuple]:
+    """Validate + assemble the SQL parameter tuple for an agent_runs INSERT.
+
+    Returns (run_id, params). Pure: opens no connection, performs no I/O — so a
+    batch caller can reuse it inside its own transaction (see record_agent_run).
+    """
     run_id = str(uuid.uuid4())
     created_at = datetime.now(timezone.utc).isoformat()
     charge_amount = _require_nonneg_int(run["charge_amount"], "charge_amount")
+    params = (
+        run_id,
+        run["agent_name"],
+        run["caller_id"],
+        run["task_id"],
+        run.get("input_tokens"),
+        run.get("output_tokens"),
+        run.get("llm_cost_usd"),
+        run.get("time_ms"),
+        int(run["success"]),
+        json.dumps(run["asset_ids"]),
+        json.dumps(run["royalty_splits"]),
+        charge_amount,
+        run["charge_currency"],
+        run.get("charge_chain"),
+        run["payment_method"],
+        run["settlement_status"],
+        created_at,
+    )
+    return run_id, params
+
+
+def insert_agent_run(db_path: str, run: dict) -> str:
+    run_id, params = _build_agent_run_row(run)
     with closing(_open(db_path)) as conn:
         with conn:
-            conn.execute(
-                """
-                INSERT INTO agent_runs
-                    (run_id, agent_name, caller_id, task_id, input_tokens, output_tokens,
-                     llm_cost_usd, time_ms, success, asset_ids, royalty_splits,
-                     charge_amount, charge_currency, charge_chain, payment_method,
-                     settlement_status, created_at)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-                """,
-                (
-                    run_id,
-                    run["agent_name"],
-                    run["caller_id"],
-                    run["task_id"],
-                    run.get("input_tokens"),
-                    run.get("output_tokens"),
-                    run.get("llm_cost_usd"),
-                    run.get("time_ms"),
-                    int(run["success"]),
-                    json.dumps(run["asset_ids"]),
-                    json.dumps(run["royalty_splits"]),
-                    charge_amount,
-                    run["charge_currency"],
-                    run.get("charge_chain"),
-                    run["payment_method"],
-                    run["settlement_status"],
-                    created_at,
-                ),
-            )
+            conn.execute(_INSERT_AGENT_RUN_SQL, params)
     return run_id
 
 
