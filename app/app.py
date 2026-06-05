@@ -835,6 +835,9 @@ def create_app(config: dict | None = None):
     from app.routes.skills import skills_bp
     app.register_blueprint(skills_bp)
 
+    from app.routes.earnings import earnings_bp
+    app.register_blueprint(earnings_bp)
+
     return app
 
 

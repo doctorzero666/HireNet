@@ -57,3 +57,61 @@ def list_all_royalties(db_path: str) -> list[dict]:
             "SELECT * FROM royalty_ledger ORDER BY created_at DESC"
         ).fetchall()
     return [dict(row) for row in rows]
+
+
+_SUMMARIZE_CREATOR_EARNINGS_SQL = """
+    SELECT currency,
+           chain,
+           SUM(amount) AS total_amount,
+           COUNT(*)    AS call_count
+      FROM royalty_ledger
+     WHERE creator_id = ?
+       AND status = 'accrued'
+  GROUP BY currency, chain
+  ORDER BY currency,
+           CASE WHEN chain IS NULL THEN 0 ELSE 1 END,
+           chain
+"""
+
+
+def summarize_creator_earnings(db_path: str, creator_id: str) -> dict:
+    """Aggregate accrued royalty totals for a single creator.
+
+    Returns:
+        {
+          "creator_id": str,
+          "call_count": int,                # total accrued ledger rows for this creator
+          "totals_by_currency": [           # one row per (currency, chain)
+              {"currency": "USD", "chain": None, "amount": 350},
+              ...
+          ],
+        }
+
+    Notes:
+        - Filters status='accrued' explicitly so Phase 2 'settled' rows do not
+          silently leak into the "accrued earnings" total.
+        - Groups by (currency, chain) because the schema treats them as a
+          triple — (USDC, ethereum) and (USDC, base) are distinct ledgers.
+        - call_count is the sum of per-group COUNT(*), which equals the number
+          of ledger rows for this creator (U4 guarantees one ledger row per run).
+    """
+    with closing(_open(db_path)) as conn:
+        rows = conn.execute(
+            _SUMMARIZE_CREATOR_EARNINGS_SQL, (creator_id,)
+        ).fetchall()
+
+    totals_by_currency: list[dict] = []
+    call_count = 0
+    for row in rows:
+        totals_by_currency.append({
+            "currency": row["currency"],
+            "chain": row["chain"],
+            "amount": int(row["total_amount"]),
+        })
+        call_count += int(row["call_count"])
+
+    return {
+        "creator_id": creator_id,
+        "call_count": call_count,
+        "totals_by_currency": totals_by_currency,
+    }
