@@ -92,10 +92,17 @@ def design_job(requirement: dict, task: dict, original_description: str = "") ->
     return job_design
 
 
-def generate_jd_report(decisions: dict, requirement: dict, original_description: str) -> dict:
+def generate_jd_report(decisions: dict, requirement: dict, original_description: str, on_design=None) -> dict:
     """
     For all tasks that need human hiring, generate job designs.
     Returns a full hiring report.
+
+    on_design: optional callback `(task: dict, job_design: dict) -> None` invoked
+    once per SUCCESSFULLY generated job design. U6 uses it to bill one SkillAsset
+    invocation (writes agent_runs + royalty_ledger via the U4 path). Default None
+    keeps existing behaviour unchanged. The callback runs OUTSIDE the design_job
+    try block on purpose: a design failure must not trigger billing, and a billing
+    failure must propagate (not be swallowed) so no royalty is silently lost.
     """
     human_tasks = [
         d for d in decisions.get("decisions", [])
@@ -124,9 +131,13 @@ def generate_jd_report(decisions: dict, requirement: dict, original_description:
 
         try:
             jd = design_job(requirement, task, original_description)
-            job_designs.append(jd)
         except Exception as e:
             print(f"Job design failed for task {task['id']}: {e}")
+            continue
+
+        job_designs.append(jd)
+        if on_design is not None:
+            on_design(task, jd)  # bill one invocation; billing errors propagate
 
     # Calculate overall water score
     if job_designs:

@@ -5,7 +5,7 @@ import os
 import json
 import secrets
 from datetime import datetime
-from flask import Flask, Blueprint, request, jsonify, session, render_template
+from flask import Flask, Blueprint, request, jsonify, session, render_template, current_app
 from dotenv import load_dotenv
 
 from app.agents.agents import RequirementAnalysisAgent, decompose_tasks, run_resource_decision, CareerStrategyAgent
@@ -31,6 +31,20 @@ user_profile_state = {
     "profile_completeness": 78,
 }
 EXP_PER_LEVEL = 500
+
+
+def _job_design_recorder():
+    """Build the on_design billing callback for the current app/request.
+
+    Thin wrapper over the service-layer recorder so the routes stay thin: reads
+    the bootstrapped asset id + Phase 1 stub identities from app config.
+    """
+    from app.services.asset_bootstrap import build_job_design_recorder
+    return build_job_design_recorder(
+        current_app.config["DATABASE_PATH"],
+        current_app.config["JOB_DESIGN_ASSET_ID"],
+        current_app.config["PHASE1_CALLER_ID"],
+    )
 
 
 # ─── Requirement Analysis API ─────────────────────────────────────────────────
@@ -137,11 +151,13 @@ def run_decision():
         # Step 2: Resource decision for each task
         decisions = run_resource_decision(tasks)
 
-        # Step 3: Generate job designs if needed
+        # Step 3: Generate job designs if needed. Each successful design bills one
+        # Job Design SkillAsset invocation to its creator via the U4 path.
         jd_report = generate_jd_report(
             decisions,
             requirement,
             original_description=sess.get("initial_input", ""),
+            on_design=_job_design_recorder(),
         )
 
         # Step 4: Build summary
@@ -795,7 +811,8 @@ def quick_analyze():
         tasks = task_data.get("tasks", [])
         decisions = run_resource_decision(tasks)
         jd_report = generate_jd_report(
-            decisions, requirement, original_description=original_description
+            decisions, requirement, original_description=original_description,
+            on_design=_job_design_recorder(),
         )
         # store jd_report in session for job listing
         analysis_sessions[session_id]["jd_report"] = jd_report
@@ -826,6 +843,9 @@ def create_app(config: dict | None = None):
     # Phase 1 stub: single hard-coded creator identity used for all registrations.
     # Real per-user authentication is deferred to Phase 2.
     app.config["PHASE1_CREATOR_ID"] = os.getenv("HIRENET_PHASE1_CREATOR_ID", "phase1_stub_creator")
+    # Phase 1 stub: caller (employer) identity comes from server config, not the request.
+    # Symmetric with PHASE1_CREATOR_ID; real per-user auth is deferred to Phase 2.
+    app.config["PHASE1_CALLER_ID"] = os.getenv("HIRENET_PHASE1_CALLER_ID", "phase1_stub_employer")
     if config:
         app.config.update(config)
 
@@ -837,6 +857,13 @@ def create_app(config: dict | None = None):
 
     from app.routes.earnings import earnings_bp
     app.register_blueprint(earnings_bp)
+
+    # U6: register the Job Design Agent as the first SkillAsset (idempotent across
+    # restarts), so a real employer task that uses it can be billed to its creator.
+    from app.services.asset_bootstrap import bootstrap_job_design_asset
+    app.config["JOB_DESIGN_ASSET_ID"] = bootstrap_job_design_asset(
+        app.config["DATABASE_PATH"], app.config["PHASE1_CREATOR_ID"]
+    )
 
     return app
 
