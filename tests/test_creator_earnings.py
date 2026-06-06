@@ -2,7 +2,7 @@
 U5 验收测试：creator earnings 汇总查询 + 收益页路由
 
 - summarize_creator_earnings：按 (currency, chain) 分组，只统计 status='accrued'
-- /creator/earnings：?creator_id= 优先，缺省落 PHASE1_CREATOR_ID 配置
+- /creator/earnings：creator_id 来自 PHASE1_CREATOR_ID 配置；query param 被忽略（防 IDOR）
 """
 import os
 import sqlite3
@@ -218,25 +218,6 @@ class TestSummarize:
 # ---------------------------------------------------------------------------
 
 class TestEarningsRoute:
-    def test_with_explicit_creator_id_query_param(self, client):
-        # client 夹具的 DATABASE_PATH 由 conftest 临时创建，需要先注册 + 调用，
-        # 但 client 只暴露 HTTP 接口。这里直接用 /api/skills/register + 内部
-        # service 调用过于绕，简化办法：拿 client.application 对应的 db_path
-        # 反向找到 service 层，构造数据。
-        db_path = client.application.config["DATABASE_PATH"]
-        asset_id = _register_asset(db_path, creator_id="alice",
-                                   split=(7000, 3000))
-        _call(db_path, asset_id, charge_amount=100)
-
-        resp = client.get("/creator/earnings?creator_id=alice")
-        assert resp.status_code == 200
-        body = resp.get_data(as_text=True)
-        assert "alice" in body
-        assert "70" in body                     # accrued amount
-        assert "USD" in body
-        assert "Call count" in body or "CALL COUNT" in body
-        assert "No earnings yet" not in body
-
     def test_default_creator_falls_back_to_phase1_stub(self, client):
         # 不带 creator_id —— 路由应使用 PHASE1_CREATOR_ID 配置值
         stub_id = client.application.config["PHASE1_CREATOR_ID"]
@@ -247,13 +228,49 @@ class TestEarningsRoute:
         body = resp.get_data(as_text=True)
         assert stub_id in body
 
-    def test_unknown_creator_returns_200_with_empty_state(self, client):
-        # 不存在的 creator_id 是合法查询 —— 返回空状态，不是 404
+    def test_query_param_creator_id_is_ignored(self, client):
+        # 防 IDOR 回归（强守卫）：不只检查 creator_id 字符串，更要检查"展示的收益
+        # 数据是 stub 的、不是 ghost 的"。给两个 creator 灌入 currency / chain /
+        # 金额都不同的可区分数据，请求时挂上 ?creator_id=ghost_user_xyz，断言：
+        #   - stub 的金额 / 货币 / call_count 出现在页面上；
+        #   - ghost 的金额 / 货币 / chain 完全不出现。
+        # 若某天 handler 又读 request.args 并悄悄渲染 ghost 的金额（但仍保留 stub
+        # 的 header），仅靠 "stub_id in body" 守不住——这里靠独特数值守。
+        db_path = client.application.config["DATABASE_PATH"]
+        stub_id = client.application.config["PHASE1_CREATOR_ID"]
+
+        # Stub: USD, 无 chain, 70/30 split, 3 calls × 100 → 3 × 70 = 210 USD accrued
+        stub_asset = _register_asset(db_path, creator_id=stub_id,
+                                     split=(7000, 3000), currency="USD",
+                                     name="Stub Skill")
+        for _ in range(3):
+            _call(db_path, stub_asset, charge_amount=100, currency="USD")
+
+        # Ghost: EUR + ethereum, 50/50 split, 1 call × 1234 → 617 EUR @ ethereum
+        # 选与 stub 完全不同的 currency / chain / 金额位数，泄漏会非常显眼。
+        ghost_asset = _register_asset(db_path, creator_id="ghost_user_xyz",
+                                      split=(5000, 5000), currency="EUR",
+                                      chain="ethereum", name="Ghost Skill")
+        _call(db_path, ghost_asset, charge_amount=1234,
+              currency="EUR", chain="ethereum")
+
         resp = client.get("/creator/earnings?creator_id=ghost_user_xyz")
         assert resp.status_code == 200
         body = resp.get_data(as_text=True)
-        assert "ghost_user_xyz" in body
-        assert "No earnings yet" in body
+
+        # Positive：页面必须渲染 STUB 的数据
+        assert stub_id in body, "stub creator_id missing from page header"
+        assert "210" in body, "stub's accrued USD total (210) not rendered"
+        assert "ACCRUED USD" in body, "stub's USD label missing"
+        # call_count=3 单独 assert "3" 太弱，结合下面 ghost 的全部否定即可：
+        # 只要 stub 数据出现 + ghost 数据全不出现，就证明渲染的是 stub。
+
+        # Negative：ghost 的任何可识别 token 都不能泄漏
+        assert "ghost_user_xyz" not in body, "ghost creator_id leaked"
+        assert "617" not in body, "GHOST'S ACCRUED AMOUNT LEAKED — IDOR regression"
+        assert "EUR" not in body, "ghost's currency leaked"
+        assert "ethereum" not in body, "ghost's chain leaked"
+        assert "ACCRUED EUR" not in body, "ghost's accrued-row label leaked"
 
     def test_shared_pixel_css_is_served(self, client):
         # 页面通过 url_for('static', filename='css/pixel.css') 引用共享样式 ——
