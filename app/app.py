@@ -7,6 +7,7 @@ import math
 import secrets
 import decimal
 import threading
+import time
 from datetime import datetime, timezone
 from flask import Flask, Blueprint, request, jsonify, session, render_template, current_app, make_response
 from dotenv import load_dotenv
@@ -1443,6 +1444,46 @@ def royalty_settle():
         record_settlement_submission(
             db_path, run_id, tx_hash=result.tx_hash or "", method=provider_name,
         )
+
+        # Anvil instant-mines on every tx, so the receipt is essentially
+        # available the moment send_raw_transaction returns. Block briefly
+        # here so the demo flow returns 'settled' rather than parking the
+        # run in 'settling' and forcing the UI to poll /royalty/status.
+        # Cobo (genuinely async — chain confirmation in minutes) is left
+        # alone, exactly as before.
+        if provider_name == "anvil":
+            for _ in range(10):
+                try:
+                    chain_status = provider.check_status(result.tx_hash or "")
+                except Exception:
+                    current_app.logger.exception(
+                        "anvil check_status raised post-settle for run_id=%s", run_id
+                    )
+                    chain_status = SettlementStatus.SETTLING
+                if chain_status == SettlementStatus.SETTLED:
+                    settled_count = confirm_settlement(
+                        db_path, run_id, tx_hash=result.tx_hash or "", method=provider_name,
+                    )
+                    return jsonify({
+                        "run_id": run_id,
+                        "settled_count": settled_count,
+                        "status": "settled",
+                        "settlement_status": "settled",
+                        "tx_hash": result.tx_hash,
+                        "settlement_method": provider_name,
+                    })
+                if chain_status == SettlementStatus.FAILED:
+                    fail_settlement(db_path, run_id, "chain reported failure")
+                    return jsonify({
+                        "error": "chain reported failure",
+                        "run_id": run_id,
+                        "settlement_status": "failed",
+                        "tx_hash": result.tx_hash,
+                    }), 502
+                time.sleep(0.05)
+            # Fell through ~0.5s without a terminal receipt — leave the row
+            # at 'settling' and let the UI poll /royalty/status to advance it.
+
         return jsonify({
             "run_id": run_id,
             "settled_count": 0,
@@ -1827,10 +1868,12 @@ def create_app(config: dict | None = None):
         app.config["DATABASE_PATH"], app.config["PHASE1_CREATOR_ID"]
     )
 
-    # Phase 3 / U1: pick the settlement provider per env var. Tests inject a
+    # Phase 3: pick the settlement provider per env var. Tests inject a
     # pre-built provider via config={"SETTLEMENT_PROVIDER": <fake>} — we honour
     # that override so a failing-mock fixture can drive the failed/retry path
-    # without monkeypatching at module scope.
+    # without monkeypatching at module scope. Default is `mock` so a bare
+    # `python wsgi.py` boots without external dependencies; opt into anvil /
+    # cobo by setting HIRENET_SETTLEMENT_PROVIDER explicitly in .env.
     if "SETTLEMENT_PROVIDER" not in app.config:
         from app.services.settlement import get_provider
         provider_name = os.getenv("HIRENET_SETTLEMENT_PROVIDER", "mock")

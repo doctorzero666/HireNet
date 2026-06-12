@@ -4,7 +4,9 @@ Phase 3 / U1 — Settlement provider abstraction + state machine.
 This module defines the contract a settlement backend must implement, so the
 royalty path stays the same shape whether we settle through:
   - the Mock provider (this Phase, U1) — no real chain, returns fake tx_hash;
-  - Cobo Agentic Wallet (U2) — testnet/mainnet via Cobo SDK;
+  - the Anvil provider (demo) — local Foundry node, real tx_hash, 0-ETH
+    metadata tx so the receipt is verifiable via `cast receipt`;
+  - Cobo Agentic Wallet (U2, stub) — testnet/mainnet via Cobo SDK;
   - x402 or other rails (later) — same ABC, different impl.
 
 The state machine the rest of the system relies on is:
@@ -111,14 +113,25 @@ def get_provider(name: str) -> SettlementProvider:
     """Factory: resolve a provider name (env var) to a concrete instance.
 
     Unknown names raise ValueError so a typo in the deployment env is loud,
-    not silent. `cobo` reads four env vars (KEY/SECRET/BASE_URL/WALLET_ID) at
-    construction time — if any is missing, CoboSettlementProvider's __init__
-    raises ValueError, which we surface unchanged so the operator sees the
-    exact field that's empty.
+    not silent. Each provider reads its own env vars at construction time
+    — if any required field is missing, the provider's __init__ raises
+    ValueError, which we surface unchanged so the operator sees the exact
+    field that's empty.
+
+    Supported names: "mock" (default for tests), "anvil" (local-chain demo
+    via Foundry's Anvil node), "cobo" (WaaS 2.0 stub, kept for future use).
     """
     if name == "mock":
         from app.services.mock_settlement import MockSettlementProvider
         return MockSettlementProvider()
+    if name == "anvil":
+        import os
+        from app.services.anvil_settlement import AnvilSettlementProvider
+        return AnvilSettlementProvider(
+            rpc_url=os.getenv("ANVIL_RPC_URL", "http://localhost:8545"),
+            from_key=os.getenv("ANVIL_FROM_KEY", ""),
+            to_address=os.getenv("ANVIL_TO_ADDRESS", ""),
+        )
     if name == "cobo":
         import os
         from app.services.cobo_settlement import CoboSettlementProvider
