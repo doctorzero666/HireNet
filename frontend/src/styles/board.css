@@ -1,0 +1,17 @@
+/* ═══════════════ HireNet Island Board ═══════════════ */
+/* 对应 island-ref 的 .card：奶油底色圆角卡片 */
+
+.board {
+  position: relative;
+  width: 100%;
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 32px;
+  background: var(--bg-content);
+  border-radius: 20px;
+  box-shadow: var(--elev-sm);
+  transition: all 0.3s ease;
+  /* 注意：board 内含 position:fixed 的 NavBar，禁止在此用 transform 动画
+     （transform 会劫持 fixed 元素的包含块），只做透明度淡入 */
+  animation: animal-fade-in 0.4s ease both;
+}

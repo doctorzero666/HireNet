@@ -300,6 +300,35 @@ class TestRoyaltySplitSchema:
         with pytest.raises(jsonschema.ValidationError):
             validate({"creator": 0.7, "platform": 0.3}, "royalty_split")
 
+    def test_three_way_with_tax_passes(self):
+        validate({"creator": 7000, "platform": 2000, "tax": 1000}, "royalty_split")
+
+    def test_tax_optional_in_schema(self):
+        # Schema marks tax as optional (only creator + platform required).
+        # validate_split_rule() mirrors that with .get('tax', 0) — this test
+        # locks the two layers together so a change to one without the other
+        # blows up the suite.
+        from app.services.validation import load_schema
+        schema = load_schema("royalty_split")
+        assert "tax" not in schema["required"], (
+            "tax must remain optional in the schema; validation.py expects "
+            "to default it to 0 itself"
+        )
+        assert schema["properties"]["tax"].get("default") == 0, (
+            "schema 应保留 tax.default=0 作为对 .get('tax', 0) 的契约说明"
+        )
+
+    def test_missing_tax_treated_as_zero(self):
+        # Legacy 2-way split: schema accepts it, validate_split_rule treats
+        # missing tax as 0 so creator + platform must still sum to 10000.
+        validate({"creator": 7000, "platform": 3000}, "royalty_split")
+        validate_split_rule({"creator": 7000, "platform": 3000})  # must not raise
+
+    def test_three_way_sum_enforced(self):
+        # creator + platform + tax must sum to 10000 regardless of presence.
+        with pytest.raises(ValueError, match="sum to 10000"):
+            validate_split_rule({"creator": 7000, "platform": 2000, "tax": 500})
+
 
 # ─── parse_llm_json ───────────────────────────────────────────────────────────
 
@@ -328,6 +357,21 @@ class TestParseLlmJson:
     def test_extracts_json_with_nested_objects(self):
         raw = 'Output:\n{"outer": {"inner": 1}}\nDone.'
         assert parse_llm_json(raw) == {"outer": {"inner": 1}}
+
+    def test_trailing_backslash_inside_string_raises_decode_error(self):
+        # Regression: the escape-skip used to `i += 2` unconditionally, which
+        # walked past len(text) when a backslash was the last character of a
+        # truncated string. With the guard, the loop terminates cleanly and
+        # raises JSONDecodeError instead of mis-skipping into out-of-bounds.
+        raw = '{"a":"b\\'
+        with pytest.raises(json.JSONDecodeError):
+            parse_llm_json(raw)
+
+    def test_escaped_quote_inside_string_does_not_terminate_object(self):
+        # Sanity: the escape skip still works for the common case of an
+        # escaped quote inside a string value.
+        raw = '{"a":"x\\"y"}'
+        assert parse_llm_json(raw) == {"a": 'x"y'}
 
 
 # ─── validate_llm_output ─────────────────────────────────────────────────────
@@ -497,6 +541,8 @@ VALID_ROYALTY_ENTRY = {
     "id": "entry_001",
     "run_id": "run_001",
     "creator_id": "user_001",
+    "payee_id": "user_001",
+    "party": "creator",
     "asset_id": "skill_001",
     "amount": 35,
     "currency": "USD",

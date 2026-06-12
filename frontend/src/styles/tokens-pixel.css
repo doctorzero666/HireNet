@@ -1,0 +1,63 @@
+/* ═══════════════ HireNet Island Design Tokens ═══════════════ */
+/* 与 island-ref.html :root 完全一致 */
+
+:root {
+  --primary:        #19c8b9;
+  --primary-hover:  #3dd4c6;
+  --primary-active: #11a89b;
+  --primary-bg:     #e6f9f6;
+
+  --text:           #794f27;
+  --text-body:      #725d42;
+  --text-secondary: #9f927d;
+  --text-muted:     #8a7b66;
+  --text-disabled:  #c4b89e;
+
+  --bg:             #f8f8f0;
+  --bg-content:     rgb(247, 243, 223);
+  --bg-secondary:   #f0e8d8;
+  --bg-disabled:    #f0ece2;
+
+  --border:         #9f927d;
+  --border-light:   #c4b89e;
+  --border-hover:   #a89878;
+  --border-soft:    #e8dcc8;
+
+  --success:        #6fba2c;
+  --success-active: #5a9e1e;
+  --warning:        #f5c31c;
+  --warning-active: #dba90e;
+  --error:          #e05a5a;
+  --error-active:   #c94444;
+  --money:          #c8930c;
+
+  --focus-yellow:   #ffcc00;
+  --focus-yellow-d: #e0b800;
+  --sidebar-active: #B7C6E5;
+  --sidebar-hover:  #d6dff0;
+
+  --shadow-btn:     #bdaea0;
+  --shadow-input:   #d4c9b4;
+
+  --elev-sm:   0 2px 4px 0 rgba(61, 52, 40, 0.06);
+  --elev-base: 0 3px 10px 0 rgba(61, 52, 40, 0.10);
+  --elev-lg:   0 8px 24px 0 rgba(61, 52, 40, 0.14);
+
+  --app-pink:   #f8a6b2;
+  --app-blue:   #889df0;
+  --app-yellow: #f7cd67;
+  --app-orange: #e59266;
+  --app-teal:   #82d5bb;
+  --app-green:  #8ac68a;
+  --app-red:    #fc736d;
+  --purple:     #b77dee;
+
+  --r-sm: 12px;
+  --r:    18px;
+  --r-lg: 24px;
+  --pill: 50px;
+
+  --font: Nunito, 'Noto Sans SC', -apple-system, 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', sans-serif;
+  --mono: Nunito, 'Noto Sans SC', sans-serif;
+  --ease: cubic-bezier(0.4, 0, 0.2, 1);
+}

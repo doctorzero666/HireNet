@@ -2,6 +2,12 @@ def test_index(client):
     assert client.get('/').status_code == 200
 
 
+def test_index_has_creator_earnings_link(client):
+    resp = client.get('/')
+    assert resp.status_code == 200
+    assert b'href="/creator/earnings"' in resp.data
+
+
 def test_employer(client):
     assert client.get('/employer').status_code == 200
 

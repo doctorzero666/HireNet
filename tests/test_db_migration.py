@@ -238,3 +238,109 @@ def test_migration_is_idempotent(u2_db_path):
     cols = _column_names(u2_db_path, "skill_assets")
     assert "type" in cols
     assert "endpoint_url" in cols
+
+
+# ---------------------------------------------------------------------------
+# Phase 3 / U1: agent_runs gains settlement_method + tx_hash; widened CHECK
+# ---------------------------------------------------------------------------
+
+# Insert a U2-era agent_runs row to verify the table rebuild preserves it.
+_EXISTING_RUN_ID = "u2-run-existing-001"
+_U2_AGENT_RUN_INSERT_SQL = """
+    INSERT INTO agent_runs
+        (run_id, agent_name, caller_id, task_id, input_tokens, output_tokens,
+         llm_cost_usd, time_ms, success, asset_ids, royalty_splits,
+         charge_amount, charge_currency, charge_chain, payment_method,
+         settlement_status, created_at)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+"""
+_U2_EXISTING_RUN = (
+    _EXISTING_RUN_ID,
+    "OldAgent",
+    "caller_u2",
+    "task_u2",
+    None, None, None, None,
+    1,  # success
+    '["asset_u2"]',
+    '{"creator": {"amount": 70, "currency": "USD"}, "platform": {"amount": 30, "currency": "USD"}, "tax": {"amount": 0, "currency": "USD"}}',
+    100,
+    "USD",
+    None,
+    "ledger_only",
+    "settled",  # an already-settled U2 row must remain settled across the rebuild
+    "2026-06-01T00:00:00+00:00",
+)
+
+
+def _make_u2_db_with_run(path: str) -> None:
+    """U2 DDL + one pre-existing agent_runs row (settled). Used to verify the
+    Phase 3 table rebuild does not drop / corrupt historical rows."""
+    conn = sqlite3.connect(path)
+    conn.executescript(_U2_DDL)
+    conn.execute(_U2_INSERT_SQL, _U2_EXISTING_ROW)
+    conn.execute(_U2_AGENT_RUN_INSERT_SQL, _U2_EXISTING_RUN)
+    conn.commit()
+    conn.close()
+
+
+@pytest.fixture
+def u2_db_with_run():
+    fd, path = tempfile.mkstemp(suffix=".db")
+    os.close(fd)
+    _make_u2_db_with_run(path)
+    yield path
+    os.unlink(path)
+
+
+def test_phase3_migration_adds_settlement_method_column(u2_db_with_run):
+    create_app({"DATABASE_PATH": u2_db_with_run, "TESTING": True})
+    assert "settlement_method" in _column_names(u2_db_with_run, "agent_runs")
+
+
+def test_phase3_migration_adds_tx_hash_column(u2_db_with_run):
+    create_app({"DATABASE_PATH": u2_db_with_run, "TESTING": True})
+    assert "tx_hash" in _column_names(u2_db_with_run, "agent_runs")
+
+
+def test_phase3_migration_preserves_existing_run_row(u2_db_with_run):
+    """The U2 agent_runs row must survive the table rebuild with charge_amount,
+    settlement_status, etc. all intact. New columns get safe defaults."""
+    create_app({"DATABASE_PATH": u2_db_with_run, "TESTING": True})
+    conn = sqlite3.connect(u2_db_with_run)
+    conn.row_factory = sqlite3.Row
+    row = conn.execute(
+        "SELECT * FROM agent_runs WHERE run_id = ?", (_EXISTING_RUN_ID,)
+    ).fetchone()
+    conn.close()
+    assert row is not None, "Phase 3 migration must not drop pre-existing rows"
+    assert row["agent_name"] == "OldAgent"
+    assert row["charge_amount"] == 100
+    assert row["charge_currency"] == "USD"
+    assert row["settlement_status"] == "settled"  # pre-existing terminal state survives
+    assert row["settlement_method"] == "ledger_only"  # safe default for backfilled rows
+    assert row["tx_hash"] is None
+
+
+def test_phase3_migration_allows_new_status_values(u2_db_with_run):
+    """After migration, the CHECK constraint accepts 'settling' and 'failed'.
+    Pre-Phase 3 the same INSERT would have failed with a CHECK violation."""
+    create_app({"DATABASE_PATH": u2_db_with_run, "TESTING": True})
+    conn = sqlite3.connect(u2_db_with_run)
+    try:
+        for new_status in ("settling", "failed"):
+            conn.execute(
+                _U2_AGENT_RUN_INSERT_SQL,
+                (
+                    f"new-{new_status}-run",
+                    "NewAgent", "caller_x", "task_x",
+                    None, None, None, None,
+                    1,
+                    '["asset_x"]',
+                    '{"creator": {"amount": 1, "currency": "USD"}, "platform": {"amount": 0, "currency": "USD"}, "tax": {"amount": 0, "currency": "USD"}}',
+                    1, "USD", None, "ledger_only", new_status,
+                    "2026-06-11T00:00:00+00:00",
+                ),
+            )
+        conn.commit()
+    finally:
+        conn.close()

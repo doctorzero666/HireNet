@@ -1,14 +1,16 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
   "title": "RoyaltyEntry",
-  "description": "RoyaltyLedger 中的单条分成记录，字段集与 royalty_ledger 表一一对应",
+  "description": "RoyaltyLedger 中的单条分成记录，字段集与 royalty_ledger 表一一对应。Phase 2 / U2: 每个 run 在 ledger 里有三行（creator/platform/tax），用 payee_id + party 区分；creator_id 保留为向后兼容（party='creator' 时 == payee_id）。",
   "type": "object",
-  "required": ["id", "run_id", "creator_id", "asset_id", "amount", "currency", "status", "created_at"],
+  "required": ["id", "run_id", "creator_id", "payee_id", "party", "asset_id", "amount", "currency", "status", "created_at"],
   "additionalProperties": false,
   "properties": {
     "id":         { "type": "string",  "minLength": 1 },
     "run_id":     { "type": "string",  "minLength": 1 },
     "creator_id": { "type": "string",  "minLength": 1 },
+    "payee_id":   { "type": "string",  "minLength": 1 },
+    "party":      { "type": "string",  "enum": ["creator", "platform", "tax"] },
     "asset_id":   { "type": "string",  "minLength": 1 },
     "amount":     { "type": "integer", "minimum": 0 },
     "currency":   { "type": "string",  "minLength": 1 },

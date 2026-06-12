@@ -10,17 +10,17 @@ from openai import OpenAI
 from app.agents.candidate_profile import DEMO_AGENTS, get_all_resources
 
 
-# ─── LLM Client (Kimi or OpenAI-compatible) ───────────────────────────────────
+# ─── LLM Client (Zhipu GLM-4, OpenAI-compatible) ──────────────────────────────
 
 def get_llm_client() -> OpenAI:
-    """Returns OpenAI-compatible client (Kimi by default)"""
-    api_key = os.getenv("KIMI_API_KEY") or os.getenv("OPENAI_API_KEY")
-    base_url = os.getenv("KIMI_BASE_URL", "https://api.moonshot.cn/v1")
+    """Returns OpenAI-compatible client (Zhipu GLM-4 by default)"""
+    api_key = os.getenv("ZHIPU_API_KEY")
+    base_url = os.getenv("ZHIPU_BASE_URL", "https://open.bigmodel.cn/api/paas/v4")
     return OpenAI(api_key=api_key, base_url=base_url)
 
 
 def get_model() -> str:
-    return os.getenv("KIMI_MODEL", "moonshot-v1-8k")
+    return os.getenv("ZHIPU_MODEL", "glm-4-plus")
 
 
 # ─── Requirement Analysis Agent ───────────────────────────────────────────────

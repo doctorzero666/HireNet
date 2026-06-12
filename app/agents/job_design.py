@@ -14,7 +14,7 @@ def get_llm_client():
 
 
 def get_model():
-    return os.getenv("KIMI_MODEL", "moonshot-v1-8k")
+    return os.getenv("ZHIPU_MODEL", "glm-4-plus")
 
 
 JOB_DESIGN_SYSTEM_PROMPT = """你是 HireNet 的岗位设计 Agent。

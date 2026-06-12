@@ -1,12 +1,13 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
   "title": "RoyaltySplit",
-  "description": "分成比例，用整数基点表示（1 bp = 0.01%）。creator + platform 必须 == 10000，由 validate_split_rule() 在 service 层强制。",
+  "description": "分成比例，用整数基点表示（1 bp = 0.01%）。creator + platform + tax 必须 == 10000，由 validate_split_rule() 在 service 层强制。tax 可选，默认 0（向后兼容 Phase 1 的 2-way split）。schema 的 default:0 与 validation.py 中 split_rule.get('tax', 0) 一致 —— 单一来源仍是 service 层（jsonschema 不会自动注入 default），default 在这里只用于声明意图。",
   "type": "object",
   "required": ["creator", "platform"],
   "properties": {
     "creator": { "type": "integer", "minimum": 0, "maximum": 10000 },
-    "platform": { "type": "integer", "minimum": 0, "maximum": 10000 }
+    "platform": { "type": "integer", "minimum": 0, "maximum": 10000 },
+    "tax": { "type": "integer", "minimum": 0, "maximum": 10000, "default": 0 }
   },
   "additionalProperties": false
 }

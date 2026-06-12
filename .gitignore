@@ -36,3 +36,6 @@ env/
 *.png
 *.jpg
 *.jpeg
+
+.claude/claude-security-guidance.local.md
+.claude/settings.local.json

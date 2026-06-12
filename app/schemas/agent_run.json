@@ -26,7 +26,9 @@
     "charge_currency":   { "type": "string",  "minLength": 1 },
     "charge_chain":      { "type": ["string", "null"] },
     "payment_method":    { "type": "string",  "enum": ["ledger_only", "on_chain", "fiat"] },
-    "settlement_status": { "type": "string",  "enum": ["accrued", "settled"] },
+    "settlement_status": { "type": "string",  "enum": ["accrued", "settling", "settled", "failed"] },
+    "settlement_method": { "type": "string",  "minLength": 1 },
+    "tx_hash":           { "type": ["string", "null"] },
     "created_at":        { "type": "string",  "minLength": 1 }
   }
 }

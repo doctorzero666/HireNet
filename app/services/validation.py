@@ -67,7 +67,7 @@ def validate(data: dict, schema_name: str) -> None:
 
 
 def validate_split_rule(split_rule: dict) -> None:
-    """Enforce the accounting invariant: creator + platform must sum to exactly 10000 basis points.
+    """Enforce the accounting invariant: creator + platform + tax must sum to exactly 10000 basis points.
 
     Amounts are stored as integer basis points (1 bp = 0.01%, 10000 bp = 100%).
     This eliminates floating-point rounding drift in royalty calculations.
@@ -76,14 +76,20 @@ def validate_split_rule(split_rule: dict) -> None:
     Call this after schema validation whenever a split_rule is persisted or used
     to compute royalty amounts.
 
+    `tax` defaults to 0 when absent, so legacy Phase 1 rules of the shape
+    {"creator": 7000, "platform": 3000} keep validating untouched.
+
     Raises:
         ValueError: if the basis points do not sum to 10000.
     """
-    total = split_rule.get("creator", 0) + split_rule.get("platform", 0)
+    creator = split_rule.get("creator", 0)
+    platform = split_rule.get("platform", 0)
+    tax = split_rule.get("tax", 0)
+    total = creator + platform + tax
     if total != 10000:
         raise ValueError(
             f"split_rule basis points must sum to 10000, got {total} "
-            f"(creator={split_rule.get('creator')}, platform={split_rule.get('platform')})"
+            f"(creator={creator}, platform={platform}, tax={tax})"
         )
 
 
@@ -98,7 +104,7 @@ def _extract_first_json_object(text: str) -> str:
     while i < len(text):
         ch = text[i]
         if in_string:
-            if ch == "\\":
+            if ch == "\\" and i + 1 < len(text):
                 i += 2  # skip escaped character
                 continue
             if ch == '"':

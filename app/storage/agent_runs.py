@@ -82,3 +82,141 @@ def list_agent_runs_by_caller(db_path: str, caller_id: str) -> list[dict]:
         item["success"] = bool(item["success"])
         results.append(item)
     return results
+
+
+# ─── Phase 3 / U1: settlement state machine ──────────────────────────────────
+#
+# Three DAO helpers wrap the `accrued/failed → settling → settled` lifecycle.
+# Each uses a single conditional UPDATE so two threads racing on the same
+# run_id can never both move the run forward — the second one sees rowcount=0
+# and the caller turns that into a 409 Conflict. The route layer (app.py)
+# composes these into the /api/royalty/settle flow.
+#
+# Why this lives here (DAO), not in a service:
+#   - the locking guarantee IS the UPDATE … WHERE status='…' rowcount;
+#   - confirm_settlement also flips royalty_ledger rows in the same SQLite
+#     transaction so the agent_runs status and the ledger rows can never get
+#     out of sync (creator + platform + tax all paid or none).
+
+
+def claim_settlement(db_path: str, run_id: str) -> bool:
+    """Atomically flip status from accrued/failed → settling.
+
+    Returns True iff this caller "owns" the in-flight settlement (rowcount=1).
+    False means: run does not exist, or status is already settling/settled —
+    in either case the caller MUST NOT call provider.settle() to avoid a
+    double-bill.
+
+    failed is a retriable source state so a previously errored run can be
+    re-attempted without manual intervention; settled is terminal and the
+    caller should short-circuit to a no-op return.
+    """
+    with closing(_open(db_path)) as conn:
+        with conn:
+            cur = conn.execute(
+                "UPDATE agent_runs SET settlement_status = 'settling' "
+                "WHERE run_id = ? AND settlement_status IN ('accrued', 'failed')",
+                (run_id,),
+            )
+            return cur.rowcount == 1
+
+
+def confirm_settlement(
+    db_path: str,
+    run_id: str,
+    tx_hash: str,
+    method: str,
+) -> int:
+    """Flip settling → settled on agent_runs AND ledger rows in one transaction.
+
+    Both writes share the same SQLite transaction: if the ledger UPDATE fails,
+    the agent_runs change rolls back too, so we never end up with a 'settled'
+    run whose creator/platform/tax rows are still 'accrued'.
+
+    The agent_runs UPDATE is conditional on settlement_status='settling' so a
+    stray confirm on an already-settled run is a no-op (returns 0) instead of
+    overwriting an existing tx_hash.
+
+    Args:
+        tx_hash: provider's transaction identifier (e.g. "mock-abc123" for the
+            Mock provider, on-chain tx hash for Cobo). Persisted on
+            agent_runs.tx_hash.
+        method: provider name ("mock", "cobo", …). Persisted on
+            agent_runs.settlement_method so the audit trail records which
+            rail completed each settlement.
+
+    Returns:
+        rowcount of ledger rows flipped (3 for a typical creator/platform/tax
+        split). 0 means the run was not in 'settling' — caller should treat
+        as a stale confirm and not assume settlement succeeded.
+    """
+    with closing(_open(db_path)) as conn:
+        with conn:
+            run_cur = conn.execute(
+                "UPDATE agent_runs "
+                "SET settlement_status = 'settled', tx_hash = ?, settlement_method = ? "
+                "WHERE run_id = ? AND settlement_status = 'settling'",
+                (tx_hash, method, run_id),
+            )
+            if run_cur.rowcount == 0:
+                return 0
+            ledger_cur = conn.execute(
+                "UPDATE royalty_ledger SET status = 'settled' "
+                "WHERE run_id = ? AND status = 'accrued'",
+                (run_id,),
+            )
+            return ledger_cur.rowcount
+
+
+def record_settlement_submission(
+    db_path: str,
+    run_id: str,
+    tx_hash: str,
+    method: str,
+) -> bool:
+    """Persist tx_hash + settlement_method while keeping status='settling'.
+
+    Used for asynchronous providers (Cobo) where settle() success only means
+    "submitted to the rail", not "on-chain confirmed". The row needs a
+    tx_hash for a later check_status() poll to find it, but we MUST NOT flip
+    to 'settled' yet — that would short-circuit the polling loop and tell
+    the rest of the system the creator was paid before the chain confirmed.
+
+    Conditional on settlement_status='settling' so a stale write on an
+    already-settled or failed run is a no-op (returns False) rather than
+    overwriting the terminal tx_hash with a half-baked one.
+
+    Returns True iff exactly one row was updated.
+    """
+    with closing(_open(db_path)) as conn:
+        with conn:
+            cur = conn.execute(
+                "UPDATE agent_runs SET tx_hash = ?, settlement_method = ? "
+                "WHERE run_id = ? AND settlement_status = 'settling'",
+                (tx_hash, method, run_id),
+            )
+            return cur.rowcount == 1
+
+
+def fail_settlement(db_path: str, run_id: str, error_msg: str | None = None) -> bool:
+    """Flip settling → failed. ledger rows untouched (stay accrued).
+
+    `error_msg` is accepted for forward compatibility with U3 audit logging
+    but is not persisted yet — adding a column would be premature without
+    the surrounding observability story. The route layer logs it via
+    current_app.logger so a failed settlement is at least traceable in
+    request logs today.
+
+    Returns True iff a row was actually flipped (rowcount=1). False means
+    the run was not in 'settling' — a race we should treat as "someone else
+    already moved this run on", not retry.
+    """
+    _ = error_msg  # intentionally unused; see docstring above.
+    with closing(_open(db_path)) as conn:
+        with conn:
+            cur = conn.execute(
+                "UPDATE agent_runs SET settlement_status = 'failed' "
+                "WHERE run_id = ? AND settlement_status = 'settling'",
+                (run_id,),
+            )
+            return cur.rowcount == 1

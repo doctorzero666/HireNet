@@ -1,0 +1,11 @@
+/* HireNet — root reset; visual styles live in styles/*.css */
+body {
+  margin: 0;
+}
+
+#root {
+  min-height: 100svh;
+  display: flex;
+  flex-direction: column;
+  box-sizing: border-box;
+}

@@ -6,9 +6,12 @@ from app.storage.db import _open, _require_nonneg_int
 
 _INSERT_ROYALTY_ENTRY_SQL = """
     INSERT INTO royalty_ledger
-        (id, run_id, creator_id, asset_id, amount, currency, chain, status, created_at)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+        (id, run_id, creator_id, payee_id, party, asset_id,
+         amount, currency, chain, status, created_at)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
 """
+
+_VALID_PARTIES = ("creator", "platform", "tax")
 
 
 def _build_royalty_entry_row(entry: dict) -> tuple[str, tuple]:
@@ -16,14 +19,25 @@ def _build_royalty_entry_row(entry: dict) -> tuple[str, tuple]:
 
     Returns (entry_id, params). Pure: opens no connection — so a batch caller
     can reuse it inside its own transaction (see record_agent_run).
+
+    Phase 2 / U2: every entry must carry party + payee_id. party is one of
+    'creator' / 'platform' / 'tax'; the DB CHECK enforces this too, but raising
+    here gives a cleaner Python error before the SQL layer.
     """
     entry_id = str(uuid.uuid4())
     created_at = datetime.now(timezone.utc).isoformat()
     amount = _require_nonneg_int(entry["amount"], "amount")
+    party = entry["party"]
+    if party not in _VALID_PARTIES:
+        raise ValueError(
+            f"party must be one of {_VALID_PARTIES}, got {party!r}"
+        )
     params = (
         entry_id,
         entry["run_id"],
         entry["creator_id"],
+        entry["payee_id"],
+        party,
         entry["asset_id"],
         amount,
         entry["currency"],
@@ -34,19 +48,49 @@ def _build_royalty_entry_row(entry: dict) -> tuple[str, tuple]:
     return entry_id, params
 
 
-def insert_royalty_entry(db_path: str, entry: dict) -> str:
-    entry_id, params = _build_royalty_entry_row(entry)
+def insert_royalty_entries(db_path: str, entries: list[dict]) -> list[str]:
+    """Insert a batch of royalty_ledger rows in a single transaction.
+
+    Returns the list of newly assigned entry ids, one per input entry. Atomic:
+    either every row lands or none (so a 3-way split never half-records).
+    """
+    built = [_build_royalty_entry_row(entry) for entry in entries]
     with closing(_open(db_path)) as conn:
         with conn:
-            conn.execute(_INSERT_ROYALTY_ENTRY_SQL, params)
-    return entry_id
+            for _, params in built:
+                conn.execute(_INSERT_ROYALTY_ENTRY_SQL, params)
+    return [entry_id for entry_id, _ in built]
 
 
 def list_royalties_by_creator(db_path: str, creator_id: str) -> list[dict]:
+    """List the creator-party rows for one creator.
+
+    Phase 2 / U2: ledger holds 3 rows per run (creator / platform / tax). This
+    helper means "what does this creator earn", so it filters on party='creator'
+    too — pre-migration Phase 1 rows were backfilled to party='creator', so the
+    semantics stay identical for old data.
+    """
     with closing(_open(db_path)) as conn:
         rows = conn.execute(
-            "SELECT * FROM royalty_ledger WHERE creator_id = ? ORDER BY created_at DESC",
+            "SELECT * FROM royalty_ledger "
+            "WHERE creator_id = ? AND party = 'creator' "
+            "ORDER BY created_at DESC",
             (creator_id,),
+        ).fetchall()
+    return [dict(row) for row in rows]
+
+
+def list_royalties_by_payee(db_path: str, payee_id: str) -> list[dict]:
+    """List every ledger row payable to one payee, regardless of party.
+
+    For a creator id this returns the same set as list_royalties_by_creator
+    (since payee_id == creator_id for party='creator' rows). For the platform
+    or tax sentinel ids it returns the platform / tax rows directly.
+    """
+    with closing(_open(db_path)) as conn:
+        rows = conn.execute(
+            "SELECT * FROM royalty_ledger WHERE payee_id = ? ORDER BY created_at DESC",
+            (payee_id,),
         ).fetchall()
     return [dict(row) for row in rows]
 
@@ -59,6 +103,35 @@ def list_all_royalties(db_path: str) -> list[dict]:
     return [dict(row) for row in rows]
 
 
+def list_royalties_by_run(db_path: str, run_id: str) -> list[dict]:
+    with closing(_open(db_path)) as conn:
+        rows = conn.execute(
+            "SELECT * FROM royalty_ledger WHERE run_id = ? ORDER BY created_at ASC",
+            (run_id,),
+        ).fetchall()
+    return [dict(row) for row in rows]
+
+
+def settle_royalties_by_run(db_path: str, run_id: str) -> int:
+    """Flip every accrued ledger row for run_id to settled. Returns row count touched.
+
+    Idempotent: a row already in 'settled' stays settled (the UPDATE filters on
+    status='accrued'). Phase 2 / U1 settlement is bookkeeping-only — no on-chain
+    transfer happens here. Caller is responsible for run_id authentication.
+
+    Phase 2 / U2: with one row per payee, settle flips all 3 rows together so
+    the creator / platform / tax shares move in lockstep.
+    """
+    with closing(_open(db_path)) as conn:
+        with conn:
+            cur = conn.execute(
+                "UPDATE royalty_ledger SET status = 'settled' "
+                "WHERE run_id = ? AND status = 'accrued'",
+                (run_id,),
+            )
+            return cur.rowcount
+
+
 _SUMMARIZE_CREATOR_EARNINGS_SQL = """
     SELECT currency,
            chain,
@@ -66,6 +139,7 @@ _SUMMARIZE_CREATOR_EARNINGS_SQL = """
            COUNT(*)    AS call_count
       FROM royalty_ledger
      WHERE creator_id = ?
+       AND party = 'creator'
        AND status = 'accrued'
   GROUP BY currency, chain
   ORDER BY currency,
@@ -80,7 +154,7 @@ def summarize_creator_earnings(db_path: str, creator_id: str) -> dict:
     Returns:
         {
           "creator_id": str,
-          "call_count": int,                # total accrued ledger rows for this creator
+          "call_count": int,                # accrued creator rows for this creator
           "totals_by_currency": [           # one row per (currency, chain)
               {"currency": "USD", "chain": None, "amount": 350},
               ...
@@ -88,12 +162,15 @@ def summarize_creator_earnings(db_path: str, creator_id: str) -> dict:
         }
 
     Notes:
-        - Filters status='accrued' explicitly so Phase 2 'settled' rows do not
-          silently leak into the "accrued earnings" total.
+        - Filters party='creator' so the platform / tax shares of the same run
+          do not get counted as creator income (Phase 2 / U2: ledger now holds
+          all three parties).
+        - Filters status='accrued' explicitly so 'settled' rows do not silently
+          leak into the "accrued earnings" total.
         - Groups by (currency, chain) because the schema treats them as a
           triple — (USDC, ethereum) and (USDC, base) are distinct ledgers.
         - call_count is the sum of per-group COUNT(*), which equals the number
-          of ledger rows for this creator (U4 guarantees one ledger row per run).
+          of creator-party ledger rows for this creator (one per run).
     """
     with closing(_open(db_path)) as conn:
         rows = conn.execute(

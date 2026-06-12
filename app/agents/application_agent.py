@@ -77,13 +77,13 @@ DEMO_JOBS = [
 # ─── LLM ──────────────────────────────────────────────────────────────────────
 
 def _get_llm():
-    api_key = os.getenv("KIMI_API_KEY") or os.getenv("OPENAI_API_KEY")
-    base_url = os.getenv("KIMI_BASE_URL", "https://api.moonshot.cn/v1")
+    api_key = os.getenv("ZHIPU_API_KEY")
+    base_url = os.getenv("ZHIPU_BASE_URL", "https://open.bigmodel.cn/api/paas/v4")
     return OpenAI(api_key=api_key, base_url=base_url)
 
 
 def _get_model():
-    return os.getenv("KIMI_MODEL", "moonshot-v1-8k")
+    return os.getenv("ZHIPU_MODEL", "glm-4-plus")
 
 
 # ─── Cover Letter Generator ────────────────────────────────────────────────────

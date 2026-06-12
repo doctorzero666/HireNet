@@ -2,19 +2,28 @@
 U4: record a single SkillAsset invocation.
 
 Given a charge_amount (integer basis points) and the asset that was used,
-compute the creator / platform split per the asset's split_rule and
-atomically write both an agent_runs row and a royalty_ledger row.
+compute the creator / platform / tax split per the asset's split_rule and
+atomically write both the agent_runs row and the royalty_ledger rows.
 
 Phase 1 invariants enforced here:
-- charge_amount is INTEGER basis points; floor goes to creator, residual to platform.
-  creator_amt + platform_amt == charge_amount always.
+- charge_amount is INTEGER basis points; floor goes to creator and tax, residual to platform.
+  creator_amt + tax_amt + platform_amt == charge_amount always.
 - agent_runs and royalty_ledger are written in a single SQLite transaction:
-  either both rows land, or neither.
-- Only the creator gets a royalty_ledger row. The platform share lives in
-  agent_runs.royalty_splits JSON. (Per Phase 1 decision: ledger == "what is
-  owed to a creator".)
+  either every row lands, or none.
 - charge_currency must match the asset's price_currency. Cross-currency
   settlement is Phase 2.
+
+Phase 2 / U1 addition:
+- split_rule may carry an optional `tax` basis-points field. When absent,
+  tax_amt is 0 and platform absorbs the residual exactly as in Phase 1 —
+  so legacy 2-way rules behave identically.
+
+Phase 2 / U2 change (ledger granularity):
+- royalty_ledger now records ONE row per payee per run, not just the creator.
+  Each run produces three rows — party='creator' (payee_id=asset.creator_id),
+  party='platform' (payee_id='platform'), party='tax' (payee_id='tax') —
+  written inside the same transaction. The agent_runs.royalty_splits JSON is
+  unchanged so the existing /api/royalty/split shape stays stable.
 """
 from contextlib import closing
 
@@ -46,8 +55,8 @@ def record_agent_run(
     Returns:
         {
           "run_id": <uuid>,
-          "royalty_splits": {"creator": {...}, "platform": {...}},
-          "ledger_entry_id": <uuid>,
+          "royalty_splits": {"creator": {...}, "platform": {...}, "tax": {...}},
+          "ledger_entry_ids": [<creator_uuid>, <platform_uuid>, <tax_uuid>],
         }
 
     Raises:
@@ -93,8 +102,13 @@ def record_agent_run(
         raise ValueError(f"charge_amount must be >= 0, got {charge_amount}")
 
     creator_bp = asset["split_rule"]["creator"]
+    tax_bp = asset["split_rule"].get("tax", 0)
     creator_amt = charge_amount * creator_bp // 10000
-    platform_amt = charge_amount - creator_amt
+    tax_amt = charge_amount * tax_bp // 10000
+    # Platform absorbs the rounding residual so the three shares sum to charge_amount
+    # exactly. With tax_bp=0 this collapses to the Phase 1 behaviour (tax_amt=0,
+    # platform_amt = charge_amount - creator_amt).
+    platform_amt = charge_amount - creator_amt - tax_amt
 
     royalty_splits = {
         "creator": {
@@ -106,6 +120,11 @@ def record_agent_run(
         },
         "platform": {
             "amount": platform_amt,
+            "currency": charge_currency,
+            "chain": charge_chain,
+        },
+        "tax": {
+            "amount": tax_amt,
             "currency": charge_currency,
             "chain": charge_chain,
         },
@@ -131,33 +150,71 @@ def record_agent_run(
     }
     run_id, run_params = _build_agent_run_row(agent_run)
 
-    royalty_entry = {
-        "run_id": run_id,
-        "creator_id": asset["creator_id"],
-        "asset_id": asset_id,
-        "amount": creator_amt,
-        "currency": charge_currency,
-        "chain": charge_chain,
-        "status": "accrued",
-    }
-    entry_id, entry_params = _build_royalty_entry_row(royalty_entry)
+    # Phase 2 / U2: one ledger row per payee. The platform and tax shares are
+    # not "external" payees in Phase 1 sense, but they are persisted as their
+    # own rows so a downstream settlement layer can pay them out by payee_id
+    # without re-parsing agent_runs.royalty_splits JSON. The creator_id column
+    # stays on every row (set == payee_id when party=='creator'; pinned to the
+    # asset's creator on the platform/tax rows for join-friendliness).
+    creator_id = asset["creator_id"]
+    royalty_entries = [
+        {
+            "run_id": run_id,
+            "creator_id": creator_id,
+            "payee_id": creator_id,
+            "party": "creator",
+            "asset_id": asset_id,
+            "amount": creator_amt,
+            "currency": charge_currency,
+            "chain": charge_chain,
+            "status": "accrued",
+        },
+        {
+            "run_id": run_id,
+            "creator_id": creator_id,
+            "payee_id": "platform",
+            "party": "platform",
+            "asset_id": asset_id,
+            "amount": platform_amt,
+            "currency": charge_currency,
+            "chain": charge_chain,
+            "status": "accrued",
+        },
+        {
+            "run_id": run_id,
+            "creator_id": creator_id,
+            "payee_id": "tax",
+            "party": "tax",
+            "asset_id": asset_id,
+            "amount": tax_amt,
+            "currency": charge_currency,
+            "chain": charge_chain,
+            "status": "accrued",
+        },
+    ]
+    built_entries = [_build_royalty_entry_row(entry) for entry in royalty_entries]
 
     # Schema validation just before persistence: catches any drift between
-    # the dicts we assembled and what the schemas accept.
+    # the dicts we assembled and what the schemas accept. Every persisted row
+    # must pass royalty_entry validation, so all 3 are checked here.
     validate({**agent_run, "run_id": run_id, "created_at": "1970-01-01T00:00:00+00:00"}, "agent_run")
-    validate(
-        {**royalty_entry, "id": entry_id, "created_at": "1970-01-01T00:00:00+00:00"},
-        "royalty_entry",
-    )
+    for entry, (entry_id, _) in zip(royalty_entries, built_entries):
+        validate(
+            {**entry, "id": entry_id, "created_at": "1970-01-01T00:00:00+00:00"},
+            "royalty_entry",
+        )
 
-    # Single transaction: either both rows land or neither.
+    # Single transaction: either the agent_run row and ALL 3 ledger rows land,
+    # or none do. A partial 3-way split would break the per-payee accounting
+    # invariant (creator + platform + tax == charge_amount).
     with closing(_open(db_path)) as conn:
         with conn:
             conn.execute(_INSERT_AGENT_RUN_SQL, run_params)
-            conn.execute(_INSERT_ROYALTY_ENTRY_SQL, entry_params)
+            for _, entry_params in built_entries:
+                conn.execute(_INSERT_ROYALTY_ENTRY_SQL, entry_params)
 
     return {
         "run_id": run_id,
         "royalty_splits": royalty_splits,
-        "ledger_entry_id": entry_id,
+        "ledger_entry_ids": [entry_id for entry_id, _ in built_entries],
     }

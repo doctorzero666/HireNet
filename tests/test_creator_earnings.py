@@ -81,6 +81,7 @@ def _raw_insert_settled_row(db_path: str, *, creator_id: str, amount: int,
     """直插一条 status='settled' 的 ledger 行，绕过 service 层（U5 测试用）。
 
     Phase 1 service 层永远写 'accrued'，所以 'settled' 行只能用 raw SQL 制造。
+    Phase 2 / U2: ledger 表有了 payee_id + party NOT NULL 列，raw insert 也得带上。
     """
     import uuid
     from datetime import datetime, timezone
@@ -89,13 +90,16 @@ def _raw_insert_settled_row(db_path: str, *, creator_id: str, amount: int,
         conn.execute(
             """
             INSERT INTO royalty_ledger
-              (id, run_id, creator_id, asset_id, amount, currency, chain, status, created_at)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+              (id, run_id, creator_id, payee_id, party, asset_id,
+               amount, currency, chain, status, created_at)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             """,
             (
                 str(uuid.uuid4()),
                 "fake-run-id",
                 creator_id,
+                creator_id,
+                "creator",
                 "fake-asset-id",
                 amount,
                 currency,

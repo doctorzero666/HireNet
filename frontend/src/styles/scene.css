@@ -1,0 +1,51 @@
+/* ═══════════════ HireNet Island Scene ═══════════════ */
+/* 天空渐变 + 底部草丘（对应 island-ref 的 .scene-sky / .hill.h1 ~ .h3） */
+
+.scene {
+  position: fixed;
+  inset: 0;
+  width: 100vw;
+  height: 100vh;
+  overflow-y: auto;
+  overflow-x: hidden;
+  z-index: 0;
+  /* 多层背景：h3 / h2 / h1 三座椭圆草丘叠在天空渐变之上 */
+  background:
+    radial-gradient(40% 15vh at 62% calc(100% + 1vh), #cdeabf 99%, transparent 100%),
+    radial-gradient(39% 19vh at 83% calc(100% - 7vh), #a8d49a 99%, transparent 100%),
+    radial-gradient(35% 17vh at 17% calc(100% - 5vh), #b9dfae 99%, transparent 100%),
+    linear-gradient(180deg, #f8f8f0 0%, #f4f6e8 55%, #eaf2dc 100%);
+}
+
+/* ── 内容层：浮在场景之上 ── */
+.scene__content {
+  position: relative;
+  z-index: 1;
+  width: 100%;
+  min-height: 100vh;
+  padding: 96px 24px 64px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  scroll-behavior: smooth;
+  overflow-anchor: auto;
+}
+
+/* ── 飘落的树叶 ── */
+.fleaf {
+  position: absolute;
+  top: -30px;
+  animation: leaf-fall 11s linear infinite;
+  opacity: 0.8;
+  font-size: 20px;
+  pointer-events: none;
+  user-select: none;
+}
+
+@keyframes leaf-fall {
+  0%   { transform: translateY(-4vh) translateX(0) rotate(0deg); }
+  25%  { transform: translateY(26vh) translateX(26px) rotate(95deg); }
+  50%  { transform: translateY(52vh) translateX(-14px) rotate(190deg); }
+  75%  { transform: translateY(78vh) translateX(22px) rotate(280deg); }
+  100% { transform: translateY(106vh) translateX(-8px) rotate(360deg); }
+}

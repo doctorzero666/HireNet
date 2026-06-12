@@ -1,0 +1,630 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>HireNet · 雇主入口分流</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Nunito:wght@400;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  html, body {
+    height: 100%;
+    font-family: 'Nunito', system-ui, sans-serif;
+    color: #4a2800;
+    -webkit-font-smoothing: antialiased;
+    image-rendering: pixelated;
+  }
+
+  /* ====================== 场景：天空 → 草地（精确匹配 frontend/src/styles/scene.css） ====================== */
+  .scene {
+    min-height: 100vh;
+    width: 100%;
+    background: linear-gradient(180deg,
+      #4a98c8 0%,
+      #90ccec 35%,
+      #b8e2f4 55%,
+      #70be58 65%,
+      #54a63e 80%,
+      #3e8028 100%
+    );
+    position: relative;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 40px 20px 100px;
+  }
+
+  /* ── 太阳：硬边像素方块 + 多层光晕 ── */
+    .scene__sun {
+    position: absolute;
+    top: 56px;
+    right: 86px;
+    width: 56px;
+    height: 56px;
+    background: #ffe840;
+    box-shadow:
+      0 0 0 6px rgba(255, 232, 64, 0.35),
+      0 0 0 14px rgba(245, 200, 32, 0.20),
+      0 0 0 26px rgba(245, 200, 32, 0.10);
+    image-rendering: pixelated;
+    pointer-events: none;
+  }
+
+  /* ── 像素云：白矩形 + 两侧伪元素 + 横向漂移 ── */
+  .scene__cloud {
+    position: absolute;
+    width: 72px;
+    height: 22px;
+    background: #ffffff;
+    pointer-events: none;
+    animation: drift 60s linear infinite;
+  }
+  .scene__cloud::before,
+  .scene__cloud::after {
+    content: '';
+    position: absolute;
+    background: #ffffff;
+  }
+  .scene__cloud::before {
+    width: 36px;
+    height: 18px;
+    top: -14px;
+    left: 14px;
+  }
+  .scene__cloud::after {
+    width: 24px;
+    height: 12px;
+    top: -22px;
+    left: 28px;
+  }
+  .scene__cloud--1 {
+    top: 70px;
+    left: -100px;
+    animation-duration: 70s;
+  }
+  .scene__cloud--2 {
+    top: 130px;
+    left: -200px;
+    transform: scale(0.75);
+    opacity: 0.85;
+    animation-duration: 90s;
+    animation-delay: -20s;
+  }
+  .scene__cloud--3 {
+    top: 40px;
+    left: -300px;
+    transform: scale(1.2);
+    opacity: 0.9;
+    animation-duration: 110s;
+    animation-delay: -45s;
+  }
+  @keyframes drift {
+    from { transform: translateX(0) scale(var(--scale, 1)); }
+    to   { transform: translateX(120vw) scale(var(--scale, 1)); }
+  }
+
+  /* ── 树（emoji）：左右两侧两大两小 ── */
+  .scene__tree {
+    position: absolute;
+    bottom: 6vh;
+    font-size: 108px;
+    line-height: 1;
+    user-select: none;
+    pointer-events: none;
+    filter: drop-shadow(2px 2px 0 rgba(0, 0, 0, 0.25));
+  }
+  .scene__tree--left  { left: 1.5vw; }
+  .scene__tree--right { right: 1.5vw; }
+  .scene__tree--small { font-size: 70px; bottom: 4vh; }
+  .scene__tree--left-small  { left: 11vw; }
+  .scene__tree--right-small { right: 11vw; }
+
+  /* ── 花朵：底部一排，sway 微摆 ── */
+  .scene__flowers {
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 1vh;
+    display: flex;
+    justify-content: space-around;
+    font-size: 28px;
+    pointer-events: none;
+    user-select: none;
+  }
+  .scene__flower {
+    display: inline-block;
+    animation: sway 4s ease-in-out infinite;
+    transform-origin: bottom center;
+  }
+  .scene__flower:nth-child(2n) {
+    animation-delay: -1.2s;
+    animation-duration: 5s;
+  }
+  .scene__flower:nth-child(3n) {
+    animation-delay: -2.4s;
+    animation-duration: 4.5s;
+  }
+  @keyframes sway {
+    0%, 100% { transform: rotate(-6deg); }
+    50%      { transform: rotate(6deg); }
+  }
+
+  /* ── 小动物：草地上 hop 弹跳 ── */
+  .scene__critter {
+    position: absolute;
+    bottom: 7vh;
+    font-size: 36px;
+    pointer-events: none;
+    user-select: none;
+    animation: hop 1.6s ease-in-out infinite;
+    filter: drop-shadow(2px 2px 0 rgba(0, 0, 0, 0.2));
+  }
+  .scene__critter--squirrel {
+    left: 18vw;
+    animation-delay: -0.4s;
+  }
+  .scene__critter--rabbit {
+    right: 22vw;
+    font-size: 32px;
+    animation-duration: 1.9s;
+  }
+  @keyframes hop {
+    0%, 100% { transform: translateY(0); }
+    50%      { transform: translateY(-12px); }
+  }
+
+  /* ── 小鸟：横向飞过天空 ── */
+  .scene__bird {
+    position: absolute;
+    top: 25%;
+    left: -60px;
+    font-size: 22px;
+    pointer-events: none;
+    user-select: none;
+    animation: fly 28s linear infinite;
+  }
+  .scene__bird--2 {
+    top: 18%;
+    font-size: 18px;
+    animation-duration: 36s;
+    animation-delay: -12s;
+  }
+  @keyframes fly {
+    0%   { transform: translateX(0) translateY(0); }
+    50%  { transform: translateX(50vw) translateY(-18px); }
+    100% { transform: translateX(110vw) translateY(0); }
+  }
+
+  /* ── 减少动画偏好 ── */
+  @media (prefers-reduced-motion: reduce) {
+    .scene__cloud,
+    .scene__flower,
+    .scene__critter,
+    .scene__bird {
+      animation: none;
+    }
+  }
+
+  /* 草地上的小草（保留原型像素草） */
+  .grass-tuft {
+    position: absolute;
+    bottom: 30px;
+    width: 12px;
+    height: 14px;
+    background:
+      linear-gradient(180deg, transparent 0 4px, #3e8028 4px 8px, transparent 8px 10px, #3e8028 10px 14px);
+    opacity: .85;
+  }
+  .grass-tuft::before, .grass-tuft::after {
+    content: '';
+    position: absolute;
+    width: 4px;
+    height: 10px;
+    background: #2d6020;
+    bottom: 0;
+  }
+  .grass-tuft::before { left: -6px; }
+  .grass-tuft::after  { right: -6px; }
+
+  /* ====================== 木框公告板 ====================== */
+  .board {
+    position: relative;
+    max-width: 700px;
+    width: 100%;
+    background: linear-gradient(180deg, #f8ecd0 0%, #f0e0b4 50%, #f5e8c4 100%);
+    border: 7px solid #5a3010;
+    box-shadow:
+      inset 0 0 0 3px #9b7040,
+      7px 7px 0 #3a1a00,
+      0 0 0 1px #3a1a00;
+    padding: 36px 32px 28px;
+    z-index: 2;
+  }
+
+  /* 木框上的钉子装饰 */
+  .nail {
+    position: absolute;
+    width: 10px;
+    height: 10px;
+    background: radial-gradient(circle at 30% 30%, #c8a878, #6a4a20 70%, #3a1a00);
+    border-radius: 50%;
+    box-shadow: 0 0 0 1px #3a1a00;
+  }
+  .nail-tl { top: 6px;    left: 6px; }
+  .nail-tr { top: 6px;    right: 6px; }
+  .nail-bl { bottom: 6px; left: 6px; }
+  .nail-br { bottom: 6px; right: 6px; }
+
+  /* ====================== 金色铭牌 ====================== */
+  .section-label-wrap {
+    text-align: center;
+    margin-bottom: 14px;
+  }
+
+  .section-label {
+    display: inline-block;
+    font-family: 'Press Start 2P', monospace;
+    font-size: 12px;
+    line-height: 1.4;
+    background: linear-gradient(180deg, #c8903c, #a87028);
+    border: 2px solid #7a4a18;
+    color: #fff8e8;
+    text-shadow: 2px 2px 0 #5a2800;
+    padding: 8px 16px;
+    border-radius: 6px;
+    letter-spacing: 1px;
+    box-shadow: 0 3px 0 #5a2800;
+  }
+
+  .board-subtitle {
+    text-align: center;
+    margin-top: 14px;
+    margin-bottom: 26px;
+    color: #6a4a20;
+    font-size: 14px;
+    font-weight: 600;
+  }
+
+  /* ====================== 选择卡片 ====================== */
+  .cards {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+
+  .card {
+    position: relative;
+    display: flex;
+    align-items: stretch;
+    background: #fffef8;
+    border: 2px solid rgba(155, 112, 64, .55);
+    padding: 18px 20px 18px 28px;
+    box-shadow:
+      inset 0 0 0 1px rgba(255, 255, 255, .6),
+      3px 3px 0 rgba(58, 26, 0, .15);
+    transition: transform .15s ease, box-shadow .15s ease;
+    cursor: pointer;
+    overflow: hidden;
+  }
+
+  .card::before {
+    content: '';
+    position: absolute;
+    left: 0; top: 0; bottom: 0;
+    width: 8px;
+  }
+
+  .card-dashboard::before { background: #70be58; box-shadow: inset -1px 0 0 #3e8028; }
+  .card-commission::before { background: #c8903c; box-shadow: inset -1px 0 0 #7a4a18; }
+
+  .card:hover {
+    transform: translateY(-2px);
+    box-shadow:
+      inset 0 0 0 1px rgba(255, 255, 255, .6),
+      5px 5px 0 rgba(58, 26, 0, .25);
+  }
+
+  .card-icon {
+    flex: 0 0 60px;
+    width: 60px;
+    height: 60px;
+    background: linear-gradient(180deg, #f5e8c4, #e8d4a0);
+    border: 2px solid #9b7040;
+    border-radius: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 30px;
+    margin-right: 18px;
+    box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .5);
+  }
+
+  .card-dashboard .card-icon { background: linear-gradient(180deg, #d8f0c8, #b8e0a0); border-color: #54a63e; }
+  .card-commission .card-icon { background: linear-gradient(180deg, #f8e0b8, #e8c890); border-color: #a87028; }
+
+  .card-body {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    min-width: 0;
+  }
+
+  .card-title {
+    font-family: 'Press Start 2P', monospace;
+    font-size: 13px;
+    color: #4a2800;
+    margin-bottom: 8px;
+    text-shadow: 1px 1px 0 rgba(255, 255, 255, .5);
+    letter-spacing: 1px;
+  }
+
+  .card-desc {
+    font-family: 'Nunito', sans-serif;
+    font-size: 13px;
+    color: #6a4a20;
+    line-height: 1.5;
+    margin-bottom: 14px;
+  }
+
+  .card-action {
+    display: flex;
+    justify-content: flex-end;
+  }
+
+  /* ====================== 像素按钮 ====================== */
+  .pixel-btn {
+    font-family: 'Press Start 2P', monospace;
+    font-size: 11px;
+    letter-spacing: 1px;
+    padding: 10px 16px;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: transform .1s ease, box-shadow .1s ease;
+    text-shadow: 1px 1px 0 rgba(0, 0, 0, .3);
+    user-select: none;
+  }
+
+  .pixel-btn-gold {
+    background: linear-gradient(180deg, #c8903c, #a87028);
+    border: 2px solid #7a4a18;
+    color: #fff8e8;
+    box-shadow: 2px 2px 0 #4a2a08;
+  }
+
+  .pixel-btn-gold:hover {
+    box-shadow: 4px 4px 0 #4a2a08;
+    transform: translate(-2px, -2px);
+  }
+
+  .pixel-btn-gold:active {
+    box-shadow: 1px 1px 0 #4a2a08;
+    transform: translate(1px, 1px);
+  }
+
+  .pixel-btn-wood {
+    background: linear-gradient(180deg, #8b5e2e, #7a4a1c);
+    border: 2px solid #5a3010;
+    color: #e8c87a;
+    box-shadow: 2px 2px 0 #3a1a00;
+  }
+
+  .pixel-btn-wood:hover {
+    box-shadow: 4px 4px 0 #3a1a00;
+    transform: translate(-2px, -2px);
+  }
+
+  /* Dashboard 按钮专属绿色 */
+  .pixel-btn-green {
+    background: linear-gradient(180deg, #70be58, #54a63e);
+    border: 2px solid #3e8028;
+    color: #ffffff;
+    box-shadow: 2px 2px 0 #2d6020;
+  }
+
+  .pixel-btn-green:hover {
+    box-shadow: 4px 4px 0 #2d6020;
+    transform: translate(-2px, -2px);
+  }
+
+  .pixel-btn-green:active {
+    box-shadow: 1px 1px 0 #2d6020;
+    transform: translate(1px, 1px);
+  }
+
+  /* ====================== 返回链接 ====================== */
+  .back-link-wrap {
+    text-align: center;
+    margin-top: 24px;
+  }
+
+  .back-link {
+    font-family: 'Nunito', sans-serif;
+    font-size: 12px;
+    color: #8b6a40;
+    text-decoration: none;
+    border: none;
+    background: transparent;
+    cursor: pointer;
+    padding: 4px 8px;
+    border-radius: 3px;
+    transition: color .15s ease, background .15s ease;
+  }
+
+  .back-link:hover {
+    color: #4a2800;
+    background: rgba(155, 112, 64, .12);
+  }
+
+  /* ====================== 顶部品牌条 ====================== */
+  .brand-bar {
+    position: absolute;
+    top: 18px;
+    left: 24px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    z-index: 3;
+  }
+
+  .brand-logo {
+    width: 28px;
+    height: 28px;
+    background: linear-gradient(180deg, #c8903c, #a87028);
+    border: 2px solid #5a3010;
+    border-radius: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: 'Press Start 2P', monospace;
+    font-size: 10px;
+    color: #fff8e8;
+    box-shadow: 2px 2px 0 #3a1a00;
+  }
+
+  .brand-name {
+    font-family: 'Press Start 2P', monospace;
+    font-size: 11px;
+    color: #fff8e8;
+    text-shadow: 2px 2px 0 #3a1a00;
+    letter-spacing: 1px;
+  }
+
+  /* 响应式：小屏窄一点 */
+  @media (max-width: 560px) {
+    .board { padding: 28px 18px 20px; }
+    .card { padding: 14px 14px 14px 22px; flex-direction: column; align-items: flex-start; }
+    .card-icon { margin-right: 0; margin-bottom: 12px; }
+    .card-action { width: 100%; justify-content: stretch; }
+    .pixel-btn { width: 100%; text-align: center; }
+    .scene__sun { width: 40px; height: 40px; right: 30px; top: 30px; }
+  }
+</style>
+</head>
+<body>
+
+<div class="scene">
+
+  <!-- 品牌条 -->
+  <div class="brand-bar">
+    <div class="brand-logo">H</div>
+    <div class="brand-name">HIRENET</div>
+  </div>
+
+  <!-- 太阳 -->
+  <div class="scene__sun" aria-hidden="true"></div>
+
+  <!-- 云 -->
+  <div class="scene__cloud scene__cloud--1" aria-hidden="true"></div>
+  <div class="scene__cloud scene__cloud--2" aria-hidden="true"></div>
+  <div class="scene__cloud scene__cloud--3" aria-hidden="true"></div>
+
+  <!-- 小鸟 -->
+  <span class="scene__bird" aria-hidden="true">🕊️</span>
+  <span class="scene__bird scene__bird--2" aria-hidden="true">🐦</span>
+
+  <!-- 树 -->
+  <span class="scene__tree scene__tree--left" aria-hidden="true">🌲</span>
+  <span class="scene__tree scene__tree--right" aria-hidden="true">🌲</span>
+  <span class="scene__tree scene__tree--small scene__tree--left-small" aria-hidden="true">🌳</span>
+  <span class="scene__tree scene__tree--small scene__tree--right-small" aria-hidden="true">🌳</span>
+
+  <!-- 小动物 -->
+  <span class="scene__critter scene__critter--squirrel" aria-hidden="true">🐿️</span>
+  <span class="scene__critter scene__critter--rabbit" aria-hidden="true">🐰</span>
+
+  <!-- 花朵 ×14 -->
+  <div class="scene__flowers" aria-hidden="true">
+    <span class="scene__flower">🌸</span>
+    <span class="scene__flower">🌼</span>
+    <span class="scene__flower">🌷</span>
+    <span class="scene__flower">🌺</span>
+    <span class="scene__flower">🌸</span>
+    <span class="scene__flower">🌼</span>
+    <span class="scene__flower">🌷</span>
+    <span class="scene__flower">🌺</span>
+    <span class="scene__flower">🌸</span>
+    <span class="scene__flower">🌼</span>
+    <span class="scene__flower">🌷</span>
+    <span class="scene__flower">🌺</span>
+    <span class="scene__flower">🌸</span>
+    <span class="scene__flower">🌼</span>
+  </div>
+
+  <!-- 草地上的小草（保留原型像素草） -->
+  <div class="grass-tuft" style="left: 8%;"></div>
+  <div class="grass-tuft" style="left: 22%;"></div>
+  <div class="grass-tuft" style="left: 38%;"></div>
+  <div class="grass-tuft" style="left: 62%;"></div>
+  <div class="grass-tuft" style="left: 78%;"></div>
+  <div class="grass-tuft" style="left: 92%;"></div>
+
+  <!-- 公告板 -->
+  <div class="board">
+    <div class="nail nail-tl"></div>
+    <div class="nail nail-tr"></div>
+    <div class="nail nail-bl"></div>
+    <div class="nail nail-br"></div>
+
+    <div class="section-label-wrap">
+      <div class="section-label">⚔ 冒险者公会 ⚔</div>
+    </div>
+
+    <div class="board-subtitle">选择你的行动，雇主大人</div>
+
+    <div class="cards">
+
+      <!-- 卡片 A：业务大本营 -->
+      <div class="card card-dashboard" onclick="goDashboard(event)">
+        <div class="card-icon">🏰</div>
+        <div class="card-body">
+          <div class="card-title">业务大本营</div>
+          <div class="card-desc">查看你的业务全景、Agent 工作状态和关键指标。</div>
+          <div class="card-action">
+            <button class="pixel-btn pixel-btn-green" onclick="goDashboard(event)">🚪 进入大本营</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- 卡片 B：发起新委托 -->
+      <div class="card card-commission" onclick="goCommission(event)">
+        <div class="card-icon">📜</div>
+        <div class="card-body">
+          <div class="card-title">发起委托</div>
+          <div class="card-desc">描述你的业务需求，AI 帮你分析、拆解、匹配 Agent。</div>
+          <div class="card-action">
+            <button class="pixel-btn pixel-btn-gold" onclick="goCommission(event)">📜 写一份委托</button>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <div class="back-link-wrap">
+      <button class="back-link" onclick="goBack()">◂ 返回角色选择</button>
+    </div>
+  </div>
+
+</div>
+
+<script>
+  function goDashboard(e) {
+    if (e) e.stopPropagation();
+    alert('🚪 进入业务大本营\n\n跳转: /employer/dashboard');
+  }
+  function goCommission(e) {
+    if (e) e.stopPropagation();
+    alert('📜 发起新委托\n\n跳转: /employer');
+  }
+  function goBack() {
+    alert('◂ 返回角色选择\n\n跳转: /role-select');
+  }
+</script>
+
+</body>
+</html>
