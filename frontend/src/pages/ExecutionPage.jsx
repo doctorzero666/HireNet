@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import { useParams, useNavigate, useLocation } from 'react-router-dom'
 import Scene from '../components/Scene'
 import Board from '../components/Board'
@@ -18,10 +18,8 @@ const DEMO_EXECUTION = {
   tax: 5.4,
   txHash: null,
   royaltyId: 'RL-2026-0608-0042',
-  output: { count: 120, presale: 40, afterSale: 50, complaint: 30 },
+  mcpResult: null,
 }
-
-const STEPS = ['分析需求', '匹配 Agent', '生成话术', '完成']
 
 // royalty_splits amounts come from the backend as integer cents (basis points);
 // the UI talks in whole-dollar floats, so divide by 100. Falls back to 0 when
@@ -45,7 +43,7 @@ function buildExecution(taskId, data) {
     tax: centsToDollars(splits.tax?.amount),
     txHash: data.tx_hash || null,
     royaltyId: data.run_id || DEMO_EXECUTION.royaltyId,
-    output: DEMO_EXECUTION.output,
+    mcpResult: data.mcp_result || null,
   }
 }
 
@@ -55,18 +53,7 @@ export default function ExecutionPage() {
   const navigate = useNavigate()
   const settlement = location.state?.settlement || null
   const execution = buildExecution(taskId, settlement)
-  const [stepIdx, setStepIdx] = useState(0)
-  const [done, setDone] = useState(false)
   const [accepted, setAccepted] = useState(false)
-
-  useEffect(() => {
-    if (stepIdx >= STEPS.length - 1) {
-      const t = setTimeout(() => setDone(true), 600)
-      return () => clearTimeout(t)
-    }
-    const t = setTimeout(() => setStepIdx((i) => i + 1), 1000)
-    return () => clearTimeout(t)
-  }, [stepIdx])
 
   return (
     <Scene>
@@ -74,21 +61,15 @@ export default function ExecutionPage() {
         <NavBar role="employer" />
 
         <div style={{ marginTop: 8, textAlign: 'center' }}>
-          <SectionLabel>
-            {done ? '🎉 任务完成' : '⚔️ 任务执行中'}
-          </SectionLabel>
+          <SectionLabel>🎉 任务完成</SectionLabel>
         </div>
 
-        {!done ? (
-          <ProgressView stepIdx={stepIdx} execution={execution} />
-        ) : (
-          <ResultView
-            execution={execution}
-            accepted={accepted}
-            onAccept={() => setAccepted(true)}
-            onRetry={() => navigate('/employer')}
-          />
-        )}
+        <ResultView
+          execution={execution}
+          accepted={accepted}
+          onAccept={() => setAccepted(true)}
+          onRetry={() => navigate('/employer')}
+        />
 
         <div style={{ textAlign: 'center', marginTop: 16, fontSize: 12.5, fontWeight: 600, color: 'var(--text-secondary)' }}>
           Task: <code>{execution.taskId}</code>
@@ -98,107 +79,107 @@ export default function ExecutionPage() {
   )
 }
 
-function ProgressView({ stepIdx, execution }) {
-  const progress = ((stepIdx + 1) / STEPS.length) * 100
-
-  return (
-    <div style={{ padding: '12px 8px' }}>
+function McpOutputBlock({ mcpResult }) {
+  if (!mcpResult) {
+    return (
       <div
         style={{
-          textAlign: 'center',
-          fontSize: 22,
-          fontWeight: 900,
-          color: 'var(--text)',
-          marginBottom: 8,
-        }}
-      >
-        {execution.taskName}
-      </div>
-      <div
-        style={{
-          textAlign: 'center',
+          background: 'rgba(255, 255, 255, 0.6)',
+          border: '1.5px dashed var(--border-soft)',
+          borderRadius: 'var(--r)',
+          padding: '14px 18px',
+          marginBottom: 16,
           fontSize: 13,
           fontWeight: 600,
           color: 'var(--text-secondary)',
-          marginBottom: 20,
+          textAlign: 'center',
         }}
       >
-        🤖 {execution.agentName} · {execution.creator}
+        ⓘ 该 Agent 未接入 MCP，无外部产出
       </div>
+    )
+  }
 
-      {/* 进度条 */}
+  if (mcpResult.status === 'error') {
+    return (
       <div
         style={{
-          height: 18,
-          background: 'var(--bg-secondary)',
-          border: '2px solid var(--border-soft)',
-          borderRadius: 'var(--pill)',
-          margin: '0 auto 16px',
-          maxWidth: 480,
-          overflow: 'hidden',
+          background: '#fbe7e2',
+          border: '1.5px solid #f0c2b7',
+          borderRadius: 'var(--r)',
+          padding: '14px 18px',
+          marginBottom: 16,
+          fontSize: 13,
+          fontWeight: 600,
+          color: 'var(--danger-active, #c1432b)',
         }}
       >
-        <div
-          style={{
-            width: `${progress}%`,
-            height: '100%',
-            borderRadius: 'var(--pill)',
-            background: '#0ec4b6',
-            backgroundImage: 'repeating-linear-gradient(-45deg, #0ec4b6, #0ec4b6 10px, #01b0a7 10px, #01b0a7 20px)',
-            backgroundSize: '28.28px 28.28px',
-            animation: 'animal-btn-loading 1s linear infinite',
-            transition: 'width .4s ease',
-          }}
-        />
+        <div style={{ fontWeight: 800, marginBottom: 6 }}>
+          ⚠️ MCP 调用失败（结算不受影响）
+        </div>
+        <div style={{ fontSize: 12.5, fontWeight: 600 }}>
+          tool: <code>{mcpResult.tool || '?'}</code>
+        </div>
+        <div style={{ fontSize: 12.5, fontWeight: 600, marginTop: 4 }}>
+          {mcpResult.error || '未知错误'}
+        </div>
       </div>
+    )
+  }
 
-      {/* 步骤列表（pill 小标签） */}
+  const preview = Array.isArray(mcpResult.preview) ? mcpResult.preview : []
+  const total = typeof mcpResult.total === 'number' ? mcpResult.total : preview.length
+
+  return (
+    <div
+      style={{
+        background: 'rgba(255, 255, 255, 0.6)',
+        border: '1.5px solid var(--border-soft)',
+        borderRadius: 'var(--r)',
+        padding: '16px 20px',
+        marginBottom: 16,
+        fontSize: 13.5,
+        fontWeight: 500,
+        color: 'var(--text-body)',
+        boxShadow: 'var(--elev-sm)',
+      }}
+    >
       <div
         style={{
           display: 'flex',
-          justifyContent: 'center',
-          gap: 8,
-          maxWidth: 540,
-          margin: '0 auto 20px',
+          justifyContent: 'space-between',
+          alignItems: 'baseline',
+          marginBottom: 10,
           flexWrap: 'wrap',
+          gap: 8,
         }}
       >
-        {STEPS.map((s, i) => {
-          const reached = i <= stepIdx
-          return (
-            <span
-              key={s}
-              style={{
-                display: 'inline-flex',
-                alignItems: 'center',
-                fontSize: 13,
-                fontWeight: 700,
-                color: reached ? '#fff' : 'var(--text-body)',
-                background: reached ? 'var(--primary)' : 'var(--bg-content)',
-                border: reached ? '2px solid var(--primary-active)' : '2px solid var(--border-light)',
-                borderRadius: 'var(--pill)',
-                padding: '5px 14px',
-                boxShadow: 'var(--elev-sm)',
-                transition: 'all 0.25s var(--ease)',
-              }}
-            >
-              {i < stepIdx ? '✓ ' : i === stepIdx ? '▸ ' : ''}
-              {s}
-            </span>
-          )
-        })}
+        <div style={{ fontWeight: 800, fontSize: 15, color: 'var(--text)' }}>
+          📜 Agent 产出预览
+        </div>
+        <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--text-secondary)' }}>
+          tool: <code>{mcpResult.tool}</code> · 共 {total} 条
+        </div>
       </div>
-
-      <div
+      <ol
         style={{
-          textAlign: 'center',
-          fontSize: 13,
+          margin: 0,
+          paddingLeft: 22,
+          lineHeight: 1.75,
           fontWeight: 600,
-          color: 'var(--text-secondary)',
         }}
       >
-        正在 {STEPS[stepIdx]}...
-      </div>
+        {preview.map((item, i) => (
+          <li key={i} style={{ marginBottom: 4 }}>
+            {item}
+          </li>
+        ))}
+      </ol>
+      {total > preview.length && (
+        <div style={{ fontSize: 11.5, color: 'var(--text-disabled)', fontWeight: 600, marginTop: 8 }}>
+          仅展示前 {preview.length} 条 · 完整产物 {total} 条
+        </div>
+      )}
     </div>
   )
 }
@@ -250,15 +231,13 @@ function ResultView({ execution, accepted, onAccept, onRetry }) {
         <div style={{ fontWeight: 800, fontSize: 16, marginBottom: 6, color: 'var(--text)' }}>
           🤖 {e.agentName} <span style={{ color: 'var(--text-secondary)', fontWeight: 600 }}>({e.creator})</span>
         </div>
-        <div style={{ marginBottom: 10, fontWeight: 600 }}>
+        <div style={{ marginBottom: 4, fontWeight: 600 }}>
           ⏱️ 耗时 {e.hours} 小时 · <span style={{ color: 'var(--money)', fontWeight: 800 }}>💰 费用 ${e.total}</span>
         </div>
-        <div style={{ fontWeight: 800, marginBottom: 6, color: 'var(--text)' }}>📦 产出</div>
-        <div style={{ fontWeight: 600 }}>
-          话术 {e.output.count} 条 · 售前 {e.output.presale} + 售后{' '}
-          {e.output.afterSale} + 投诉 {e.output.complaint}
-        </div>
       </div>
+
+      {/* MCP 产出（替代原假进度条/假产物计数） */}
+      <McpOutputBlock mcpResult={e.mcpResult} />
 
       {/* 费用拆分 */}
       <div

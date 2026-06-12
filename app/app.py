@@ -1770,6 +1770,28 @@ def pact_settle(pact_id):
 
     pact["run_id"] = result["run_id"]
     pact["royalty_splits"] = result["royalty_splits"]
+
+    # ── MCP execution (post-billing) ─────────────────────────────────────
+    # The royalty/agent_run rows are already committed; what follows is
+    # the "actual agent invocation". The MCP client never raises (it folds
+    # every failure into status="error"), so a misconfigured endpoint
+    # cannot roll back the just-recorded settlement.
+    if asset and asset.get("endpoint_url"):
+        from app.services.mcp_client import call_mcp_tool, pick_tool_for_task
+        mcp_fn = current_app.config.get("MCP_CLIENT", call_mcp_tool)
+        tool_name = pick_tool_for_task(
+            pact.get("task_id"),
+            pact.get("agent_name"),
+            asset.get("name") if asset else None,
+        )
+        pact["mcp_result"] = mcp_fn(
+            asset["endpoint_url"],
+            tool_name,
+            {"task_id": pact.get("task_id")},
+        )
+    else:
+        pact["mcp_result"] = None
+
     return jsonify(pact)
 
 

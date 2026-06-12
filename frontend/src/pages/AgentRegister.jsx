@@ -5,6 +5,7 @@ import Board from '../components/Board'
 import NavBar from '../components/NavBar'
 import SectionLabel from '../components/SectionLabel'
 import PixelButton from '../components/PixelButton'
+import { registerSkillAsset } from '../services/api'
 
 const INPUT_STYLE = {
   width: '100%',
@@ -55,17 +56,44 @@ export default function AgentRegister() {
   const [form, setForm] = useState({
     name: '',
     description: '',
-    type: 'Skill',
+    type: 'skill',
     price: '',
     wallet: '',
+    mcpEndpointUrl: '',
   })
+  const [submitting, setSubmitting] = useState(false)
 
   const onChange = (key) => (e) => setForm({ ...form, [key]: e.target.value })
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault()
-    alert(`📜 已提交注册：${form.name || '未命名 Agent'}`)
-    navigate('/creator')
+    if (submitting) return
+    if (!form.name.trim() || !form.description.trim()) {
+      alert('请填写名称和描述')
+      return
+    }
+    /* schema requires price_amount as a non-negative integer in basis
+       points. The form takes whole-dollar floats — round to nearest cent. */
+    const priceDollars = Number(form.price) || 0
+    const price_amount = Math.max(0, Math.round(priceDollars * 100))
+
+    setSubmitting(true)
+    try {
+      const result = await registerSkillAsset({
+        name: form.name.trim(),
+        description: form.description.trim(),
+        type: form.type,
+        endpoint_url: form.mcpEndpointUrl.trim() || null,
+        price_amount,
+        price_currency: 'USD',
+      })
+      alert(`📜 注册成功：${result.skill_id}`)
+      navigate('/creator')
+    } catch (err) {
+      alert(`❌ 注册失败：${err?.message || '未知错误'}`)
+    } finally {
+      setSubmitting(false)
+    }
   }
 
   const handleFocus = (e) => {
@@ -133,9 +161,9 @@ export default function AgentRegister() {
               onBlur={handleBlur}
               style={INPUT_STYLE}
             >
-              <option value="Skill">Skill</option>
-              <option value="Agent">Agent</option>
-              <option value="Endpoint">Endpoint</option>
+              <option value="skill">Skill</option>
+              <option value="agent">Agent</option>
+              <option value="endpoint">Endpoint</option>
             </select>
           </div>
 
@@ -167,6 +195,22 @@ export default function AgentRegister() {
             />
           </div>
 
+          <div style={FIELD_WRAP}>
+            <label style={LABEL_STYLE}>🔌 MCP Endpoint URL</label>
+            <input
+              type="url"
+              value={form.mcpEndpointUrl}
+              onChange={onChange('mcpEndpointUrl')}
+              onFocus={handleFocus}
+              onBlur={handleBlur}
+              placeholder="http://localhost:5002"
+              style={INPUT_STYLE}
+            />
+            <div style={{ fontSize: 11, color: 'var(--text-disabled)', fontWeight: 600, marginTop: 6 }}>
+              留空则不接入 MCP；结算时不会调用外部工具。
+            </div>
+          </div>
+
           <div style={{
             display: 'flex',
             justifyContent: 'center',
@@ -174,8 +218,8 @@ export default function AgentRegister() {
             marginTop: 24,
             flexWrap: 'wrap',
           }}>
-            <PixelButton variant="gold" type="submit">
-              📜 提交注册
+            <PixelButton variant="gold" type="submit" disabled={submitting}>
+              {submitting ? '⌛ 提交中…' : '📜 提交注册'}
             </PixelButton>
             <PixelButton variant="wood" onClick={() => navigate('/creator')}>
               ◂ 返回工坊
