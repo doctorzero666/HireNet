@@ -14,6 +14,7 @@ import AnalysisChat from './pages/AnalysisChat'
 import AnalysisReport from './pages/AnalysisReport'
 import ExecutionPage from './pages/ExecutionPage'
 import CreatorHome from './pages/CreatorHome'
+import AgentWorld from './pages/AgentWorld'
 import AgentRegister from './pages/AgentRegister'
 import AgentPerformance from './pages/AgentPerformance'
 import CreatorLedger from './pages/CreatorLedger'
@@ -37,6 +38,7 @@ function App() {
         <Route path="/employer/report/:sessionId" element={<AnalysisReport />} />
         <Route path="/employer/execution/:taskId" element={<ExecutionPage />} />
         <Route path="/creator" element={<CreatorHome />} />
+        <Route path="/agents" element={<AgentWorld />} />
         <Route path="/creator/register" element={<AgentRegister />} />
         <Route path="/creator/agent/:agentId" element={<AgentPerformance />} />
         <Route path="/creator/ledger" element={<CreatorLedger />} />

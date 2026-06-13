@@ -23,6 +23,12 @@ from app.storage.skill_assets import list_skill_assets
 # zhang_ai 的客服话术 Agent — 字段集与 U3 注册路径接受的形状一致；split_rule 三方
 # 求和 = 10000 bp（U2 校验）。price 用 USD 基点（$30 = 3000 bp/单位时长），与
 # Pact modal 的"$30 / 小时"显示一致。
+#
+# endpoint_url 指向本地 customer_service MCP（:5002）—— Agent 世界靠它把这张
+# 卡显示为"🔗 MCP 已连接"。注意：升级既有 .hirenet/hirenet.db 时旧行的
+# endpoint_url 为 None，bootstrap 的 content_hash + expected 字段都不会匹配，
+# 会再插一条；想干净启动请 `rm ~/.hirenet/hirenet.db` 一次。content_hash 是
+# provenance 凭证（CLAUDE.md TIER 1 §2），不在 bootstrap 里 in-place 改写。
 DEMO_CS_AGENT: dict = {
     "name": "客服话术生成器",
     "description": (
@@ -30,6 +36,7 @@ DEMO_CS_AGENT: dict = {
         "输出可直接复用的客服回应模板与升级路径建议。"
     ),
     "type": "agent",
+    "endpoint_url": "http://localhost:5002",
     "io_schema": {
         "input": {
             "scenario": "string",          # 业务场景 / 客诉类型
@@ -46,6 +53,66 @@ DEMO_CS_AGENT: dict = {
     "price_chain": None,
     "split_rule": {"creator": 7000, "platform": 2000, "tax": 1000},
 }
+
+# zhao_design 的数据分析 Agent —— endpoint_url 缺省，Agent 世界显示"📋 待接入 MCP"。
+# 价格 $40 / 单位时长。split_rule 与现有客服 Agent 同结构（三方求和 = 10000 bp）。
+DEMO_DATA_ANALYST: dict = {
+    "name": "数据分析助手",
+    "description": (
+        "zhao_design 的数据分析 Agent：上传业务数据，自动产出关键指标、趋势"
+        "与异常告警，附简明洞察摘要供决策参考。"
+    ),
+    "type": "agent",
+    "io_schema": {
+        "input": {
+            "dataset_url": "string",        # CSV / Parquet URL
+            "questions": "array",            # 关心的问题
+        },
+        "output": {
+            "metrics": "array",              # 关键指标
+            "insights": "array",             # 摘要洞察
+        },
+    },
+    "price_amount": 4000,
+    "price_currency": "USD",
+    "price_chain": None,
+    "split_rule": {"creator": 7000, "platform": 2000, "tax": 1000},
+}
+
+# zhang_ai 的 SEO 优化 Agent —— endpoint_url 复用真实跑着的 customer_service MCP
+# (:5002)。两个 Agent 共享同一个 MCP server 只是 demo 化简，调用是真的；不算
+# CLAUDE.md TIER 1 §3 的"假实现冒充真实功能"。价格 $25 / 单位时长。
+DEMO_SEO_AGENT: dict = {
+    "name": "SEO 优化 Agent",
+    "description": (
+        "zhang_ai 的 SEO Agent：输入目标关键词与页面 URL，输出标题、Meta 描述、"
+        "H1/H2 结构与内链建议，照抄即用。"
+    ),
+    "type": "agent",
+    "endpoint_url": "http://localhost:5002",
+    "io_schema": {
+        "input": {
+            "keywords": "array",
+            "page_url": "string",
+        },
+        "output": {
+            "title": "string",
+            "meta_description": "string",
+            "structure_suggestions": "array",
+        },
+    },
+    "price_amount": 2500,
+    "price_currency": "USD",
+    "price_chain": None,
+    "split_rule": {"creator": 7000, "platform": 2000, "tax": 1000},
+}
+
+# (Agent 数据, 创作者 id) 元组列表 —— bootstrap_demo_extra_assets 直接迭代。
+# 客服 Agent 不在这里（它由 bootstrap_demo_cs_asset 单独管，因为还要绑历史调用）。
+_DEMO_EXTRA_ASSETS: list[tuple[dict, str]] = [
+    (DEMO_DATA_ANALYST, "zhao_design"),
+    (DEMO_SEO_AGENT,    "zhang_ai"),
+]
 
 # 固定 task_id — bootstrap_demo_runs 用它判幂等，重启不会重复插。
 _SETTLED_TASK_ID = "demo-cs-task-settled"
@@ -87,6 +154,47 @@ def bootstrap_demo_cs_asset(db_path: str, creator_id: str = "zhang_ai") -> str:
 
     result = register_skill_asset(db_path, dict(DEMO_CS_AGENT), creator_id)
     return result["skill_id"]
+
+
+def bootstrap_demo_extra_assets(db_path: str) -> list[str]:
+    """幂等注册除客服外的预设 Agent。返回新注册或复用的 asset_id 列表。
+
+    复用 bootstrap_demo_cs_asset 的"内容字段哈希 + 经济条款全字段"匹配模式 ——
+    name/desc/io_schema/endpoint_url 任一改动都会被 content_hash 反映，
+    price/split_rule 改动则被 expected dict 拦下。任一项被篡改就视为新资产，
+    避免静默替换让 Demo 的分账金额改变。
+    """
+    asset_ids: list[str] = []
+    for asset_dict, creator_id in _DEMO_EXTRA_ASSETS:
+        content_hash = compute_content_hash(
+            name=asset_dict["name"],
+            description=asset_dict["description"],
+            asset_type=asset_dict["type"],
+            io_schema=asset_dict["io_schema"],
+            endpoint_url=asset_dict.get("endpoint_url"),
+        )
+        expected = {
+            "content_hash": content_hash,
+            "creator_id": creator_id,
+            "name": asset_dict["name"],
+            "type": asset_dict["type"],
+            "price_amount": asset_dict["price_amount"],
+            "price_currency": asset_dict["price_currency"],
+            "price_chain": asset_dict.get("price_chain"),
+            "split_rule": asset_dict["split_rule"],
+            "endpoint_url": asset_dict.get("endpoint_url"),
+        }
+        existing = next(
+            (a for a in list_skill_assets(db_path)
+             if all(a.get(key) == value for key, value in expected.items())),
+            None,
+        )
+        if existing is not None:
+            asset_ids.append(existing["id"])
+            continue
+        result = register_skill_asset(db_path, dict(asset_dict), creator_id)
+        asset_ids.append(result["skill_id"])
+    return asset_ids
 
 
 def bootstrap_demo_runs(db_path: str, asset_id: str, caller_id: str = "li_boss") -> None:

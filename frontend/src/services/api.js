@@ -342,6 +342,15 @@ export async function registerSkillAsset({
   return res.json()
 }
 
+export async function fetchSkillsList() {
+  /* Returns { skills: [{ id, name, description, type, creator_id,
+     creator_name, price_amount (USD basis points), price_currency,
+     mcp_endpoint, call_count, created_at }, …] } — the Agent World index. */
+  const res = await fetch(`${API_BASE}/skills/list`, { headers: buildHeaders() })
+  if (!res.ok) throw new Error(`API error: ${res.status}`)
+  return res.json()
+}
+
 /* ── Creator earnings ── */
 
 export async function fetchCreatorEarnings() {

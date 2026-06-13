@@ -1,8 +1,11 @@
 import jsonschema
 from flask import Blueprint, current_app, jsonify, request
 
-from app.app import get_current_identity
+from app.app import DEMO_IDENTITIES, get_current_identity
 from app.services.skill_registration import register_skill_asset
+from app.storage.agent_runs import count_runs_by_asset
+from app.storage.skill_assets import list_skill_assets
+from app.storage.users import get_user
 
 skills_bp = Blueprint("skills", __name__)
 
@@ -33,3 +36,56 @@ def register_skill():
         return jsonify({"error": str(exc)}), 400
 
     return jsonify(result), 201
+
+
+def _resolve_creator_name(db_path: str, creator_id: str, cache: dict[str, str]) -> str:
+    """Best-effort creator display name. Falls back to creator_id when unknown.
+
+    Lookup order: in-request cache → DEMO_IDENTITIES (Demo identities don't
+    necessarily have a users row) → users table → raw id. Cache is mutated so
+    one /api/skills/list call reads each user/identity at most once.
+    """
+    if creator_id in cache:
+        return cache[creator_id]
+    demo = DEMO_IDENTITIES.get(creator_id)
+    if demo is not None:
+        cache[creator_id] = demo["name"]
+        return demo["name"]
+    row = get_user(db_path, creator_id)
+    name = row["name"] if row is not None else creator_id
+    cache[creator_id] = name
+    return name
+
+
+@skills_bp.route("/api/skills/list", methods=["GET"])
+def list_skills():
+    """Public Agent World index — every registered SkillAsset + per-asset call count.
+
+    Only exposes display-safe fields: id, name, description, type, creator_id,
+    creator_name, price_amount / currency, mcp_endpoint (renamed from
+    endpoint_url for frontend semantics), call_count, created_at. Internals
+    like split_rule, content_hash, io_schema, price_chain stay server-side —
+    nothing on the index page needs them, and exposing the split rule would
+    leak the creator's commercial terms.
+    """
+    db_path = current_app.config["DATABASE_PATH"]
+    assets = list_skill_assets(db_path)
+    counts = count_runs_by_asset(db_path)
+    name_cache: dict[str, str] = {}
+    skills = [
+        {
+            "id": asset["id"],
+            "name": asset["name"],
+            "description": asset["description"],
+            "type": asset["type"],
+            "creator_id": asset["creator_id"],
+            "creator_name": _resolve_creator_name(db_path, asset["creator_id"], name_cache),
+            "price_amount": asset["price_amount"],
+            "price_currency": asset["price_currency"],
+            "mcp_endpoint": asset.get("endpoint_url"),
+            "call_count": counts.get(asset["id"], 0),
+            "created_at": asset["created_at"],
+        }
+        for asset in assets
+    ]
+    return jsonify({"skills": skills})

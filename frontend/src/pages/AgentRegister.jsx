@@ -51,6 +51,32 @@ const LABEL_STYLE = {
 
 const FIELD_WRAP = { marginBottom: 16 }
 
+/* Frontend mirror of mcp_client.py's allowlist: scheme check only. The
+   backend's SSRF allowlist is the real defense for server-side calls; this
+   probe runs in the user's own browser, so we reject obviously invalid /
+   non-http URLs and let the network layer report the rest. */
+function validateProbeUrl(raw) {
+  if (!raw) return { ok: false, error: '请先填入 MCP 端点 URL' }
+  let parsed
+  try {
+    parsed = new URL(raw)
+  } catch {
+    return { ok: false, error: 'URL 格式无效' }
+  }
+  if (parsed.protocol !== 'http:' && parsed.protocol !== 'https:') {
+    return { ok: false, error: `不支持的协议 ${parsed.protocol}` }
+  }
+  return { ok: true, probeUrl: raw.replace(/\/+$/, '') + '/mcp/tools/list' }
+}
+
+/* Accept both REST-flavoured ({ tools: [...] }) and JSON-RPC
+   ({ result: { tools: [...] } }) shapes — mcp_client.py wraps either. */
+function extractTools(data) {
+  const direct = Array.isArray(data?.tools) ? data.tools : null
+  const wrapped = Array.isArray(data?.result?.tools) ? data.result.tools : null
+  return direct || wrapped || []
+}
+
 export default function AgentRegister() {
   const navigate = useNavigate()
   const [form, setForm] = useState({
@@ -62,8 +88,42 @@ export default function AgentRegister() {
     mcpEndpointUrl: '',
   })
   const [submitting, setSubmitting] = useState(false)
+  const [testing, setTesting] = useState(false)
+  const [testResult, setTestResult] = useState(null)
 
   const onChange = (key) => (e) => setForm({ ...form, [key]: e.target.value })
+
+  const handleTestConnection = async () => {
+    if (testing) return
+    setTestResult(null)
+    const check = validateProbeUrl(form.mcpEndpointUrl.trim())
+    if (!check.ok) {
+      setTestResult({ ok: false, error: check.error })
+      return
+    }
+    setTesting(true)
+    try {
+      const res = await fetch(check.probeUrl, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: '{}',
+      })
+      if (!res.ok) {
+        setTestResult({ ok: false, error: `HTTP ${res.status}` })
+        return
+      }
+      const data = await res.json().catch(() => null)
+      if (!data) {
+        setTestResult({ ok: false, error: '响应不是有效的 JSON' })
+        return
+      }
+      setTestResult({ ok: true, tools: extractTools(data) })
+    } catch (err) {
+      setTestResult({ ok: false, error: err?.message || '连接失败' })
+    } finally {
+      setTesting(false)
+    }
+  }
 
   const handleSubmit = async (e) => {
     e.preventDefault()
@@ -206,9 +266,70 @@ export default function AgentRegister() {
               placeholder="http://localhost:5002"
               style={INPUT_STYLE}
             />
-            <div style={{ fontSize: 11, color: 'var(--text-disabled)', fontWeight: 600, marginTop: 6 }}>
-              留空则不接入 MCP；结算时不会调用外部工具。
+            <div style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: 12,
+              marginTop: 8,
+              flexWrap: 'wrap',
+            }}>
+              <PixelButton
+                variant="soft"
+                onClick={handleTestConnection}
+                disabled={testing || !form.mcpEndpointUrl.trim()}
+              >
+                {testing ? '⏳ 探测中…' : '🔍 测试连接'}
+              </PixelButton>
+              <div style={{ fontSize: 11, color: 'var(--text-disabled)', fontWeight: 600, flex: 1, minWidth: 200 }}>
+                留空则不接入 MCP；结算时不会调用外部工具。
+              </div>
             </div>
+            {testResult && (
+              <div style={{
+                marginTop: 12,
+                padding: '12px 14px',
+                borderRadius: 'var(--r)',
+                background: testResult.ok ? 'rgba(111, 186, 44, 0.10)' : 'rgba(224, 90, 90, 0.10)',
+                border: `2.5px solid ${testResult.ok ? 'var(--success)' : 'var(--error)'}`,
+                fontSize: 13,
+                color: 'var(--text-body)',
+              }}>
+                {testResult.ok ? (
+                  <>
+                    <div style={{ fontWeight: 700, marginBottom: testResult.tools.length ? 8 : 0 }}>
+                      ✅ 发现 {testResult.tools.length} 个工具
+                    </div>
+                    {testResult.tools.length === 0 && (
+                      <div style={{ fontSize: 12, color: 'var(--text-muted)', marginTop: 4 }}>
+                        该端点未声明任何工具
+                      </div>
+                    )}
+                    {testResult.tools.map((t, i) => {
+                      /* Coerce in case the MCP server returns non-string
+                         values — React throws on object children. */
+                      const name = typeof t?.name === 'string' ? t.name : '?'
+                      const desc = typeof t?.description === 'string' ? t.description : ''
+                      return (
+                        <div key={`${name}-${i}`} style={{
+                          marginTop: i === 0 ? 0 : 6,
+                          fontSize: 12,
+                          lineHeight: 1.55,
+                        }}>
+                          <code style={{ fontWeight: 700, color: 'var(--text)' }}>
+                            {name}
+                          </code>
+                          {desc && (
+                            <span style={{ color: 'var(--text-muted)' }}> — {desc}</span>
+                          )}
+                        </div>
+                      )
+                    })}
+                  </>
+                ) : (
+                  <div style={{ fontWeight: 600 }}>❌ {testResult.error}</div>
+                )}
+              </div>
+            )}
           </div>
 
           <div style={{

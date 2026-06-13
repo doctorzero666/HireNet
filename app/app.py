@@ -1927,11 +1927,14 @@ def create_app(config: dict | None = None):
     # TIER 1 §2/§3 说明详见 app/services/demo_bootstrap.py。
     if not app.config.get("TESTING"):
         from app.services.demo_bootstrap import (
-            bootstrap_demo_cs_asset, bootstrap_demo_runs,
+            bootstrap_demo_cs_asset, bootstrap_demo_extra_assets, bootstrap_demo_runs,
         )
         cs_asset_id = bootstrap_demo_cs_asset(app.config["DATABASE_PATH"])
         app.config["DEMO_CS_AGENT_ASSET_ID"] = cs_asset_id
         bootstrap_demo_runs(app.config["DATABASE_PATH"], cs_asset_id)
+        # 额外预设（数据分析助手 / SEO Agent）—— 只为 Agent 世界提供更多卡片，
+        # 不绑历史调用，不影响 ExecutionPage tx_hash 演示。
+        bootstrap_demo_extra_assets(app.config["DATABASE_PATH"])
 
     # Phase 3: pick the settlement provider per env var. Tests inject a
     # pre-built provider via config={"SETTLEMENT_PROVIDER": <fake>} — we honour

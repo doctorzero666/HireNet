@@ -68,8 +68,8 @@ export default function RoleSelect() {
 
         <div className="rs-foot">
           <a
-            href="#"
-            onClick={(e) => e.preventDefault()}
+            href="/agents"
+            onClick={(e) => { e.preventDefault(); navigate('/agents') }}
           >
             看看谁正在让这个世界运转 · 进入 Agent 世界 <Icon name="arrow" size={14} />
           </a>

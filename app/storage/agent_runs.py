@@ -84,6 +84,26 @@ def list_agent_runs_by_caller(db_path: str, caller_id: str) -> list[dict]:
     return results
 
 
+def count_runs_by_asset(db_path: str) -> dict[str, int]:
+    """Per-asset run count across every caller — drives the Agent World cards.
+
+    asset_ids is stored as a JSON array (a single run can span multiple
+    assets), so the count is computed in Python by iterating decoded arrays
+    rather than relying on the optional sqlite JSON1 extension.
+    """
+    with closing(_open(db_path)) as conn:
+        rows = conn.execute("SELECT asset_ids FROM agent_runs").fetchall()
+    counts: dict[str, int] = {}
+    for row in rows:
+        try:
+            ids = json.loads(row["asset_ids"])
+        except (TypeError, ValueError):
+            continue
+        for asset_id in ids:
+            counts[asset_id] = counts.get(asset_id, 0) + 1
+    return counts
+
+
 # ─── Phase 3 / U1: settlement state machine ──────────────────────────────────
 #
 # Three DAO helpers wrap the `accrued/failed → settling → settled` lifecycle.

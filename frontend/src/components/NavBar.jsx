@@ -25,6 +25,14 @@ const ROLE_PRESETS = {
       { label: '投递记录', comingSoon: true },
     ],
   },
+  'agent-world': {
+    label: 'AGENT WORLD',
+    links: [
+      { label: '角色选择', to: '/' },
+      { label: '我是创作者', to: '/creator' },
+      { label: '我是雇主', to: '/employer/hub' },
+    ],
+  },
 }
 
 /**
