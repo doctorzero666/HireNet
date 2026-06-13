@@ -34,3 +34,25 @@ build/
 cobo-keys/
 env/
 venv/
+
+# 本地任务 + 配置
+.hermes/
+.claude/
+!.claude/agents/
+
+# 临时 prompt/修复文件
+frontend/.*-prompt.md
+frontend/.fix-*.md
+frontend/.copy-*.md
+frontend/.redesign-*.md
+frontend/.leaf-*.md
+frontend/.jobseeker-*.md
+frontend/.island-*.md
+
+# Island 设计参考
+frontend/island_script_*.jsx
+frontend/island-ref.html
+frontend/island-styles.css
+
+# Cobo 私钥
+cobo-keys/
