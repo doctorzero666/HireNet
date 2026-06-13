@@ -56,3 +56,10 @@ frontend/island-styles.css
 
 # Cobo 私钥
 cobo-keys/
+
+# 旧文档和模板（本地保留，不传GitHub）
+ARCHITECTURE.md
+hire_net_*.md
+hirenet_rpg_*.md
+app/templates/*.html
+docs/HireNet*.html
