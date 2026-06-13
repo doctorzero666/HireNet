@@ -1,45 +1,36 @@
-# macOS
-.DS_Store
 
-# Python
 __pycache__/
-*.pyc
-*.pyo
-*.pyd
-.Python
-*.egg-info/
-build/
-
-# Environment
-.env
-.env.local
-.env.*
-
-# Word documents
-*.docx
-
-# Virtual environments
-venv/
-env/
-.venv/
-
-# Database
-*.db
-
-# IDE
-.vscode/
-.idea/
-
-# Media / app assets (不进版本控制，用外部存储或 LFS)
-*.mp4
-*.png
-*.jpg
-*.jpeg
-
 .claude/claude-security-guidance.local.md
 .claude/settings.local.json
-
+.DS_Store
+.env
+.env.*
+.env.local
+.env*
+.idea/
+.Python
+.venv/
+.vscode/
+*.db
+*.docx
+*.egg-info/
+*.jpeg
+*.jpg
+*.mp4
+*.png
+*.pyc
+*.pyd
+*.pyo
 # Cobo wallet keys (private key material — never commit)
+# Database
+# Environment
+# IDE
+# macOS
+# Media / app assets (不进版本控制，用外部存储或 LFS)
+# Python
+# Virtual environments
+# Word documents
+build/
 cobo-keys/
-.env
-.env
+env/
+venv/
