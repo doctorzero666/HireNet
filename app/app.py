@@ -873,6 +873,51 @@ def set_demo_identity():
     return resp
 
 
+@main.route("/api/demo/agent", methods=["GET"])
+def get_demo_agent():
+    """Demo 预设 Agent ("客服话术生成器") 元信息 — Pact modal 启动时拉取。
+
+    返回 asset_id 让 modal 能把 royalty 落到正确的 creator (zhang_ai) 而不是
+    fallback 的 JOB_DESIGN_ASSET_ID。
+
+    404 当 DEMO_CS_AGENT_ASSET_ID 没配（TESTING 路径或 bootstrap 关掉时）—
+    前端拿到 404 应该回退到现有硬编码 demo 数据，保持降级体验。
+
+    wallet 字段刻意用 ANVIL_TO_ADDRESS（公开的本地测试地址，不是真资产）做占
+    位，让 modal 的"收款方钱包"卡显示有意义的地址；线上部署前应改成创作者
+    真实关联的钱包。
+    """
+    asset_id = current_app.config.get("DEMO_CS_AGENT_ASSET_ID")
+    if not asset_id:
+        return jsonify({"error": "Demo agent not bootstrapped"}), 404
+
+    from app.storage.skill_assets import get_skill_asset
+    from app.storage.users import get_user
+
+    asset = get_skill_asset(current_app.config["DATABASE_PATH"], asset_id)
+    if asset is None:
+        return jsonify({"error": "Demo asset record missing"}), 404
+
+    creator_id = asset["creator_id"]
+    creator_row = get_user(current_app.config["DATABASE_PATH"], creator_id)
+    creator_name = creator_row["name"] if creator_row else creator_id
+
+    # Anvil 默认账户 1，公开的本地测试地址（见 .env 注释），仅作展示。
+    wallet = os.getenv("ANVIL_TO_ADDRESS", "0x70997970C51812dc3A010C7d01b50e0d17dc79C8")
+
+    return jsonify({
+        "asset_id": asset_id,
+        "name": asset["name"],
+        "description": asset["description"],
+        "creator_id": creator_id,
+        "creator_name": creator_name,
+        "price_per_hour": asset["price_amount"] / 100,  # USD 基点 → 美元
+        "currency": asset["price_currency"],
+        "default_hours": 1,
+        "wallet": wallet,
+    })
+
+
 # ─── Demo: publish a JD to the global pool ────────────────────────────────────
 
 _ALLOWED_WORK_TYPES = {"full-time", "part-time", "contract", "freelance"}
@@ -1600,10 +1645,13 @@ def pact_create():
     Validates required fields and amount up-front so a malformed pact can
     never reach `pact_settle`, where `record_agent_run` would explode with a
     500. Optional `asset_id` binds the pact to a registered SkillAsset; when
-    omitted, settle falls back to the Phase 1 Job Design asset (legacy
-    behaviour). When supplied, the asset must already exist in the
-    skill_assets table — otherwise the pact would settle to an unknown asset
-    and silently mis-attribute royalties.
+    omitted, pact_create fills it with the bootstrapped Job Design asset so
+    the pact carries a concrete asset_id from creation (required for the
+    Anvil settlement path to resolve price_chain — without this default,
+    settle landed a row with charge_chain=None and the Anvil branch was
+    skipped, leaving tx_hash None). When supplied, the asset must already
+    exist in the skill_assets table — otherwise the pact would settle to
+    an unknown asset and silently mis-attribute royalties.
     """
     # Reject non-JSON requests up front. request.get_json(silent=True) would
     # otherwise quietly return {} for e.g. a form-encoded body, bypassing the
@@ -1650,7 +1698,11 @@ def pact_create():
 
     # Optional asset_id: when provided, must resolve to a real SkillAsset so
     # the pact's royalties land on its registered creator instead of the
-    # Phase 1 stub. When absent, pact_settle falls back to JOB_DESIGN_ASSET_ID.
+    # Phase 1 stub. When omitted, default to the bootstrapped Job Design
+    # asset here (not at settle time) so the pact carries a concrete
+    # asset_id from creation — Anvil's settlement path reads price_chain
+    # off the bound asset, and a null asset_id left the row charge_chain
+    # blank, which short-circuited the Anvil branch and left tx_hash None.
     asset_id = data.get("asset_id")
     if asset_id is not None:
         if not isinstance(asset_id, str) or not asset_id.strip():
@@ -1659,6 +1711,8 @@ def pact_create():
         from app.storage.skill_assets import get_skill_asset
         if get_skill_asset(current_app.config["DATABASE_PATH"], asset_id) is None:
             return jsonify({"error": f"Unknown asset_id: {asset_id}"}), 400
+    else:
+        asset_id = current_app.config.get("JOB_DESIGN_ASSET_ID")
 
     pact_id = "pact-" + secrets.token_hex(6)
     pact = {
@@ -1867,6 +1921,17 @@ def create_app(config: dict | None = None):
     app.config["JOB_DESIGN_ASSET_ID"] = bootstrap_job_design_asset(
         app.config["DATABASE_PATH"], app.config["PHASE1_CREATOR_ID"]
     )
+
+    # Demo preset: zhang_ai 的"客服话术生成器"Agent + 两条历史调用（li_boss 主调）。
+    # 仅在非测试启动时跑 — 526 个 pytest 走 TESTING=True 路径，不见此数据。
+    # TIER 1 §2/§3 说明详见 app/services/demo_bootstrap.py。
+    if not app.config.get("TESTING"):
+        from app.services.demo_bootstrap import (
+            bootstrap_demo_cs_asset, bootstrap_demo_runs,
+        )
+        cs_asset_id = bootstrap_demo_cs_asset(app.config["DATABASE_PATH"])
+        app.config["DEMO_CS_AGENT_ASSET_ID"] = cs_asset_id
+        bootstrap_demo_runs(app.config["DATABASE_PATH"], cs_asset_id)
 
     # Phase 3: pick the settlement provider per env var. Tests inject a
     # pre-built provider via config={"SETTLEMENT_PROVIDER": <fake>} — we honour

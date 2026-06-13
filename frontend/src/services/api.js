@@ -202,9 +202,14 @@ export async function analyzeCandidate(profile) {
 
 /* ── Pact lifecycle ── */
 
-export async function createPact({ task_id, agent_name, creator_id, amount, currency }) {
+export async function createPact({ task_id, agent_name, creator_id, asset_id, amount, currency }) {
   const payload = { task_id, agent_name, amount, currency: currency || 'USD' }
   if (creator_id) payload.creator_id = creator_id
+  /* asset_id pins which SkillAsset gets billed. When omitted, the backend
+     falls back to JOB_DESIGN_ASSET_ID (a stub creator). Demo flow passes the
+     bootstrapped customer-service Agent's asset_id so royalty lands on
+     zhang_ai, not the Phase 1 stub. */
+  if (asset_id) payload.asset_id = asset_id
   const res = await fetch(`${API_BASE}/pact/create`, {
     method: 'POST',
     headers: buildHeaders(),
@@ -274,6 +279,33 @@ export async function settlePact(pactId) {
        preview/total/tool on a real MCP call. */
     mcp_result: pact.mcp_result || null,
   }
+}
+
+/* Demo bootstrap exposes a single preset "客服话术生成器" Agent — modal pulls
+   asset_id / creator / wallet from here so the Pact settle lands on zhang_ai
+   instead of the JOB_DESIGN_ASSET_ID fallback. Returns null on 404 (e.g.
+   TESTING path) so callers can gracefully degrade to hardcoded demo data. */
+export async function fetchDemoAgent() {
+  const res = await fetch(`${API_BASE}/demo/agent`, { headers: buildHeaders() })
+  if (res.status === 404) return null
+  if (!res.ok) throw new Error(`API error: ${res.status}`)
+  return res.json()
+}
+
+/* Idempotent settle trigger. Modal calls it as part of settlePact's two-step
+   flow; ExecutionPage's 验收 button also calls it so a preset/refreshed run
+   without tx_hash still surfaces one on user sign-off. */
+export async function settleRoyalty(runId) {
+  const res = await fetch(`${API_BASE}/royalty/settle`, {
+    method: 'POST',
+    headers: buildHeaders(),
+    body: JSON.stringify({ run_id: runId }),
+  })
+  if (!res.ok) {
+    const body = await res.json().catch(() => ({}))
+    throw new Error(body.error || `Royalty settle failed: ${res.status}`)
+  }
+  return res.json()
 }
 
 /* ── SkillAsset registration ── */

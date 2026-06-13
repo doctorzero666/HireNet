@@ -5,6 +5,7 @@ import Board from '../components/Board'
 import NavBar from '../components/NavBar'
 import SectionLabel from '../components/SectionLabel'
 import PixelButton from '../components/PixelButton'
+import { settleRoyalty } from '../services/api'
 
 const DEMO_EXECUTION = {
   taskId: 'task-001',
@@ -54,6 +55,33 @@ export default function ExecutionPage() {
   const settlement = location.state?.settlement || null
   const execution = buildExecution(taskId, settlement)
   const [accepted, setAccepted] = useState(false)
+  /* settledTxHash overrides execution.txHash after the user clicks 验收. The
+     modal path already populates execution.txHash via navigate state; the
+     verify button is the only way to surface a tx_hash for runs that came in
+     without one (preset records, page refresh). */
+  const [settledTxHash, setSettledTxHash] = useState(null)
+
+  async function handleAccept() {
+    /* Idempotent: backend /royalty/settle short-circuits when the run is
+       already settled and returns the existing tx_hash. So the modal-path
+       caller gets the same tx_hash back; the preset-data caller gets the
+       newly minted one. Errors are swallowed — 验收 is UX confirmation, not
+       a blocking gate. */
+    if (execution.royaltyId) {
+      try {
+        const res = await settleRoyalty(execution.royaltyId)
+        if (res?.tx_hash && !execution.txHash) {
+          setSettledTxHash(res.tx_hash)
+        }
+      } catch (_) { /* silent — see comment above */ }
+    }
+    setAccepted(true)
+  }
+
+  const effectiveTxHash = execution.txHash || settledTxHash
+  const renderedExecution = effectiveTxHash === execution.txHash
+    ? execution
+    : { ...execution, txHash: effectiveTxHash }
 
   return (
     <Scene>
@@ -65,9 +93,9 @@ export default function ExecutionPage() {
         </div>
 
         <ResultView
-          execution={execution}
+          execution={renderedExecution}
           accepted={accepted}
-          onAccept={() => setAccepted(true)}
+          onAccept={handleAccept}
           onRetry={() => navigate('/employer')}
         />
 

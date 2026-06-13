@@ -44,6 +44,9 @@ export default function PactConfirmationModal({ agent, task, onConfirm, onReject
         task_id: task?.id || 'task-001',
         agent_name: agent?.name ?? '客服话术生成器',
         creator_id: agent?.creator_id,
+        /* asset_id (when provided by demo bootstrap) pins billing to zhang_ai's
+           Agent instead of the JOB_DESIGN_ASSET_ID fallback. */
+        asset_id: agent?.asset_id,
         amount: Number(total),
         currency: 'USD',
       })

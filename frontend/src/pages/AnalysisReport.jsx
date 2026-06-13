@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useParams, useLocation, useNavigate } from 'react-router-dom'
 import Scene from '../components/Scene'
 import Board from '../components/Board'
@@ -9,6 +9,7 @@ import HiringTaskCard from '../components/HiringTaskCard'
 import HybridTaskCard from '../components/HybridTaskCard'
 import PactConfirmationModal from '../components/PactConfirmationModal'
 import JdModal from '../components/JdModal'
+import { fetchDemoAgent } from '../services/api'
 
 export default function AnalysisReport() {
   const { sessionId } = useParams()
@@ -17,6 +18,19 @@ export default function AnalysisReport() {
   const result = location.state
   const [pactTask, setPactTask] = useState(null)
   const [jdTask, setJdTask] = useState(null)
+  /* Demo agent metadata for the Pact modal. Null until server responds;
+     fetchDemoAgent returns null on 404 (TESTING / bootstrap off), in which
+     case we fall back to the existing hardcoded values below so the demo
+     flow degrades cleanly instead of blocking on a missing endpoint. */
+  const [demoAgent, setDemoAgent] = useState(null)
+
+  useEffect(() => {
+    let cancelled = false
+    fetchDemoAgent()
+      .then((agent) => { if (!cancelled) setDemoAgent(agent) })
+      .catch(() => { /* swallow — modal falls back to hardcoded demo data */ })
+    return () => { cancelled = true }
+  }, [])
 
   if (!result) {
     return (
@@ -146,10 +160,19 @@ export default function AnalysisReport() {
       {pactTask && (
         <PactConfirmationModal
           agent={{
-            name: pactTask.decision?.recommendation?.resource?.resource_name ?? '客服话术生成器',
-            creator: '@李四',
-            wallet: '0x1234567890abcdef1234567890abcdef0000abcd',
-            pricePerHour: 30,
+            /* Prefer demoAgent (server-bootstrapped, real asset_id / creator);
+               fall back to legacy hardcoded values when /api/demo/agent 404s
+               (TESTING path or older deploys without the bootstrap). */
+            name: demoAgent?.name
+              ?? pactTask.decision?.recommendation?.resource?.resource_name
+              ?? '客服话术生成器',
+            creator: demoAgent?.creator_name
+              ? `@${demoAgent.creator_name}`
+              : '@李四',
+            wallet: demoAgent?.wallet ?? '0x1234567890abcdef1234567890abcdef0000abcd',
+            pricePerHour: demoAgent?.price_per_hour ?? 30,
+            asset_id: demoAgent?.asset_id,
+            creator_id: demoAgent?.creator_id,
           }}
           task={{
             id: pactTask.task.id,

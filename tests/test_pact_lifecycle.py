@@ -459,7 +459,7 @@ class TestPactAssetId:
         # Backwards-compat: omitting asset_id must still bill the Phase 1
         # Job Design asset, so existing demo flows keep working.
         pact = _create(client, amount=60)
-        assert pact.get("asset_id") is None
+        assert pact.get("asset_id") == client.application.config["JOB_DESIGN_ASSET_ID"]
         _approve(client, pact["pact_id"])
         resp = _settle(client, pact["pact_id"])
         assert resp.status_code == 200
