@@ -50,14 +50,13 @@ HireNet 有三个入口，对应三种角色。点击下方截图区查看每个
 
 ### 需求描述
 
-> *📸 在此插入需求输入页截图*
+> <img width="2100" height="1420" alt="image" src="https://github.com/user-attachments/assets/4a865495-2aed-4cba-93f4-a92d06649f3a" />
 
 企业用自然语言描述想完成的事——例如「为电商平台搭建智能客服系统」。不需要写 JD，不需要懂技术。系统给出示例提示引导输入。
 
 ### AI 智能追问
 
-> <img width="2100" height="1420" alt="image" src="https://github.com/user-attachments/assets/4a865495-2aed-4cba-93f4-a92d06649f3a" />
-<img width="1812" height="1312" alt="image" src="https://github.com/user-attachments/assets/5cf6d4c7-66db-4ab6-beac-53a68b74f67c" />
+> <img width="1812" height="1312" alt="image" src="https://github.com/user-attachments/assets/5cf6d4c7-66db-4ab6-beac-53a68b74f67c" />
 
 
 
