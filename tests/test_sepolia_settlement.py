@@ -421,3 +421,153 @@ def test_factory_sepolia_missing_rpc_url_raises(monkeypatch):
 
     with pytest.raises(ValueError, match="SEPOLIA_RPC_URL"):
         get_provider("sepolia")
+
+
+# ---------------------------------------------------------------------------
+# MCP wallet integration — to_address routing in settle()
+# ---------------------------------------------------------------------------
+
+
+# A second valid EVM address distinct from the test sender. Anvil account #1's
+# public address — well-known throwaway, safe to commit. Used as a stand-in
+# for "the SkillAsset's wallet_address".
+_AGENT_WALLET = "0x70997970C51812dc3A010C7d01b50e0d17dc79C8"
+_ENV_DEFAULT_WALLET = "0x3C44CdDdB6a900fa2b585dd299e03d12FA4293BC"  # Anvil #2
+
+
+class _CapturingEth(FakeEth):
+    """FakeEth that surfaces the last signed tx's `to` field so we can assert
+    on it. send_raw_transaction's raw bytes don't expose the decoded payload,
+    so we hook before signing by intercepting send_raw_transaction's tx dict
+    on the account-level signer instead."""
+
+    def send_raw_transaction(self, raw):
+        # The actual signed tx isn't easily decoded without recovering it.
+        # Tests inspect `last_tx_payload` set by a wrapper around sign.
+        return super().send_raw_transaction(raw)
+
+
+def _patch_account_capture(monkeypatch):
+    """Install a wrapper around eth_account.LocalAccount.sign_transaction that
+    records each invocation's tx dict on a module-level list, so tests can
+    assert on the `to` field of the signed tx without decoding raw bytes.
+
+    Patching LocalAccount (not Account) because that's the instance method
+    settle() actually invokes via `self._account.sign_transaction(tx)`; the
+    instance binding gives the wrapper a clean (instance, tx_dict) shape.
+    """
+    from eth_account.signers.local import LocalAccount
+    original = LocalAccount.sign_transaction
+    captured: list[dict] = []
+
+    def wrapper(self, tx, *args, **kwargs):
+        captured.append(dict(tx))
+        return original(self, tx, *args, **kwargs)
+
+    monkeypatch.setattr(LocalAccount, "sign_transaction", wrapper)
+    return captured
+
+
+def test_settle_uses_explicit_to_address_override(monkeypatch):
+    """Per-call to_address (Agent's registered wallet) wins over env default and self."""
+    captured = _patch_account_capture(monkeypatch)
+    provider = _make_provider(default_to_address=_ENV_DEFAULT_WALLET)
+
+    result = provider.settle(
+        payee_id="creator-x", amount=100, currency="USDC", chain=None,
+        to_address=_AGENT_WALLET,
+    )
+    assert result.success is True
+    assert len(captured) == 1
+    # to_address arg must override default_to_address
+    assert captured[0]["to"].lower() == _AGENT_WALLET.lower()
+
+
+def test_settle_uses_default_to_address_when_no_override(monkeypatch):
+    """No per-call override → SEPOLIA_TO_ADDRESS env default is used."""
+    captured = _patch_account_capture(monkeypatch)
+    provider = _make_provider(default_to_address=_ENV_DEFAULT_WALLET)
+
+    result = provider.settle("creator-x", 100, "USDC", None)
+    assert result.success is True
+    assert captured[0]["to"].lower() == _ENV_DEFAULT_WALLET.lower()
+
+
+def test_settle_falls_back_to_from_address_when_no_default(monkeypatch):
+    """No per-call override AND no env default → self.from_address.
+    Preserves the pre-wallet-integration self-transfer demo so misconfigs
+    don't break the existing flow."""
+    captured = _patch_account_capture(monkeypatch)
+    provider = _make_provider()  # no default_to_address
+
+    result = provider.settle("creator-x", 100, "USDC", None)
+    assert result.success is True
+    assert captured[0]["to"].lower() == provider.from_address.lower()
+
+
+def test_settle_explicit_to_address_none_is_same_as_omitted(monkeypatch):
+    """Caller passing to_address=None (e.g. asset.wallet_address was NULL)
+    must behave identically to not passing it at all."""
+    captured = _patch_account_capture(monkeypatch)
+    provider = _make_provider(default_to_address=_ENV_DEFAULT_WALLET)
+
+    result = provider.settle("creator-x", 100, "USDC", None, to_address=None)
+    assert result.success is True
+    assert captured[0]["to"].lower() == _ENV_DEFAULT_WALLET.lower()
+
+
+def test_settle_rejects_garbage_to_address():
+    """A corrupted skill_assets row that leaked a non-address through validation
+    must surface as a settlement error, not a chain-level exception."""
+    provider = _make_provider()
+    result = provider.settle(
+        "creator-x", 100, "USDC", None,
+        to_address="0xnotanaddress",
+    )
+    assert result.success is False
+    assert "Invalid recipient address" in result.error
+
+
+def test_init_rejects_malformed_default_to_address():
+    """Misconfigured SEPOLIA_TO_ADDRESS env must fail at app boot, not at
+    first settle() with a cryptic web3 error."""
+    with pytest.raises(ValueError, match="SEPOLIA_TO_ADDRESS"):
+        _make_provider(default_to_address="not-an-address")
+
+
+def test_init_accepts_none_default_to_address():
+    """Operator can leave SEPOLIA_TO_ADDRESS unset — provider boots fine,
+    settle() falls through to self.from_address."""
+    provider = _make_provider(default_to_address=None)
+    assert provider.default_to_address is None
+
+
+def test_init_normalises_default_to_address_to_checksum():
+    """Lowercase env input is normalised to EIP-55 checksum so signed-tx
+    `to` field stays consistent regardless of how the operator typed it."""
+    provider = _make_provider(default_to_address=_ENV_DEFAULT_WALLET.lower())
+    assert provider.default_to_address == _ENV_DEFAULT_WALLET
+
+
+def test_factory_reads_sepolia_to_address_env(monkeypatch):
+    """The factory wires SEPOLIA_TO_ADDRESS through to default_to_address."""
+    monkeypatch.setenv("SEPOLIA_RPC_URL", "https://eth-sepolia.test/rpc")
+    monkeypatch.setenv("SEPOLIA_PRIVATE_KEY", TEST_PRIVATE_KEY)
+    monkeypatch.setenv("SEPOLIA_FROM_ADDRESS", TEST_FROM_ADDRESS)
+    monkeypatch.setenv("SEPOLIA_TO_ADDRESS", _ENV_DEFAULT_WALLET)
+
+    provider = get_provider("sepolia")
+    assert provider.default_to_address == _ENV_DEFAULT_WALLET
+
+
+def test_factory_empty_sepolia_to_address_means_no_default(monkeypatch):
+    """An operator who set SEPOLIA_TO_ADDRESS= (empty) in .env must not
+    crash the boot — empty string normalises to None so self.from_address
+    remains the fallback."""
+    monkeypatch.setenv("SEPOLIA_RPC_URL", "https://eth-sepolia.test/rpc")
+    monkeypatch.setenv("SEPOLIA_PRIVATE_KEY", TEST_PRIVATE_KEY)
+    monkeypatch.setenv("SEPOLIA_FROM_ADDRESS", TEST_FROM_ADDRESS)
+    monkeypatch.setenv("SEPOLIA_TO_ADDRESS", "")
+
+    provider = get_provider("sepolia")
+    assert provider.default_to_address is None

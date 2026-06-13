@@ -1415,13 +1415,34 @@ def royalty_settle():
     creator_split = run["royalty_splits"].get("creator", {})
     payee_id = creator_split.get("creator_id") or run["caller_id"]
 
+    settle_kwargs = dict(
+        payee_id=payee_id,
+        amount=run["charge_amount"],
+        currency=run["charge_currency"],
+        chain=run.get("charge_chain"),
+    )
+
+    # Sepolia-only: look up the billed Agent's on-chain wallet so the ETH
+    # transfer lands on a real recipient instead of self.from_address (the
+    # pre-wallet-integration self-transfer demo). We sniff provider.name to
+    # avoid wiring a new kwarg through mock/anvil/cobo — they don't move
+    # real funds, so a recipient address is irrelevant to them and adding
+    # a no-op kwarg would just churn their signatures.
+    if provider_name == "sepolia":
+        asset_ids = run.get("asset_ids") or []
+        if asset_ids:
+            from app.storage.skill_assets import get_skill_asset
+            asset = get_skill_asset(db_path, asset_ids[0])
+            if asset is not None:
+                settle_kwargs["to_address"] = asset.get("wallet_address")
+        # If asset_ids is empty OR wallet_address is None, settle_kwargs
+        # has no to_address key → Sepolia falls back to SEPOLIA_TO_ADDRESS
+        # (env default) → self.from_address. Either of the last two paths
+        # preserves the old self-transfer behavior so the demo doesn't
+        # 502 on a legacy row that pre-dates this column.
+
     try:
-        result = provider.settle(
-            payee_id=payee_id,
-            amount=run["charge_amount"],
-            currency=run["charge_currency"],
-            chain=run.get("charge_chain"),
-        )
+        result = provider.settle(**settle_kwargs)
     except Exception as exc:
         current_app.logger.exception("settlement provider raised")
         fail_settlement(db_path, run_id, str(exc))

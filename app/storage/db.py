@@ -27,19 +27,20 @@ def _create_tables(conn: sqlite3.Connection) -> None:
     # it with these constraints — SQLite does not support ADD CONSTRAINT.
     conn.executescript("""
         CREATE TABLE IF NOT EXISTS skill_assets (
-            id             TEXT    PRIMARY KEY,
-            creator_id     TEXT    NOT NULL,
-            name           TEXT    NOT NULL,
-            description    TEXT    NOT NULL,
-            type           TEXT    NOT NULL,
-            endpoint_url   TEXT,
-            io_schema      TEXT    NOT NULL,
-            price_amount   INTEGER NOT NULL CHECK (price_amount >= 0),
-            price_currency TEXT    NOT NULL,
-            price_chain    TEXT,
-            split_rule     TEXT    NOT NULL,
-            content_hash   TEXT    NOT NULL,
-            created_at     TEXT    NOT NULL
+            id              TEXT    PRIMARY KEY,
+            creator_id      TEXT    NOT NULL,
+            name            TEXT    NOT NULL,
+            description     TEXT    NOT NULL,
+            type            TEXT    NOT NULL,
+            endpoint_url    TEXT,
+            io_schema       TEXT    NOT NULL,
+            price_amount    INTEGER NOT NULL CHECK (price_amount >= 0),
+            price_currency  TEXT    NOT NULL,
+            price_chain     TEXT,
+            split_rule      TEXT    NOT NULL,
+            content_hash    TEXT    NOT NULL,
+            wallet_address  TEXT,
+            created_at      TEXT    NOT NULL
         );
 
         CREATE TABLE IF NOT EXISTS agent_runs (
@@ -145,6 +146,7 @@ def _migrate(conn: sqlite3.Connection) -> None:
     pending = (
         "type" not in skill_cols
         or "endpoint_url" not in skill_cols
+        or "wallet_address" not in skill_cols
         or "payee_id" not in ledger_cols
         or "party" not in ledger_cols
         or "settlement_method" not in agent_run_cols
@@ -168,6 +170,16 @@ def _migrate(conn: sqlite3.Connection) -> None:
             if "endpoint_url" not in skill_cols:
                 conn.execute(
                     "ALTER TABLE skill_assets ADD COLUMN endpoint_url TEXT"
+                )
+
+            if "wallet_address" not in skill_cols:
+                # MCP wallet integration: every SkillAsset can declare a
+                # recipient wallet so Sepolia settlement transfers ETH to the
+                # Agent's address instead of the platform's faucet sender.
+                # Nullable for backward compat — legacy rows + assets without
+                # a wallet fall back to SEPOLIA_TO_ADDRESS at settle time.
+                conn.execute(
+                    "ALTER TABLE skill_assets ADD COLUMN wallet_address TEXT"
                 )
 
             if "payee_id" not in ledger_cols:

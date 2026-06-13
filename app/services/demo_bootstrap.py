@@ -29,6 +29,20 @@ from app.storage.skill_assets import list_skill_assets
 # endpoint_url 为 None，bootstrap 的 content_hash + expected 字段都不会匹配，
 # 会再插一条；想干净启动请 `rm ~/.hirenet/hirenet.db` 一次。content_hash 是
 # provenance 凭证（CLAUDE.md TIER 1 §2），不在 bootstrap 里 in-place 改写。
+# Two demo Agent wallets — each preset Agent gets its own recipient address
+# so the Sepolia path actually moves ETH between distinct accounts (no more
+# self-transfers). Addresses below are throwaway test wallets; the private
+# keys live ONLY on the operator's machine (we never need them server-side
+# — only the Sepolia FROM_ADDRESS key signs txs).
+#
+# TODO(operator): regenerate via `cast wallet new` and paste the address
+# string in here. The placeholders below are valid EIP-55 EVM addresses
+# (well-known Anvil accounts #1 and #2) so the schema accepts the row, but
+# they are NOT controlled by us — replace before any real Sepolia demo.
+DEMO_DATA_ANALYST_WALLET = "0xf2E28A84e8d51ca87CB50768a0Ebe0E29F53F7B7"
+DEMO_SEO_AGENT_WALLET    = "0x03aaE40b6FCA16CDB48b66d4841e99eEF588B78a"
+
+
 DEMO_DATA_ANALYST: dict = {
     "name": "数据分析助手",
     "description": (
@@ -51,6 +65,7 @@ DEMO_DATA_ANALYST: dict = {
     "price_currency": "USD",
     "price_chain": None,
     "split_rule": {"creator": 7000, "platform": 2000, "tax": 1000},
+    "wallet_address": DEMO_DATA_ANALYST_WALLET,
 }
 
 
@@ -80,6 +95,7 @@ DEMO_SEO_AGENT: dict = {
     "price_currency": "USD",
     "price_chain": None,
     "split_rule": {"creator": 7000, "platform": 2000, "tax": 1000},
+    "wallet_address": DEMO_SEO_AGENT_WALLET,
 }
 
 # (Agent 数据, 创作者 id) 元组列表 —— bootstrap_demo_extra_assets 直接迭代。
@@ -122,6 +138,9 @@ def bootstrap_demo_data_analyst_asset(db_path: str, creator_id: str = "zhao_desi
         "price_chain": DEMO_DATA_ANALYST.get("price_chain"),
         "split_rule": DEMO_DATA_ANALYST["split_rule"],
         "endpoint_url": DEMO_DATA_ANALYST.get("endpoint_url"),
+        # wallet_address feeds the Sepolia recipient — a swap silently
+        # redirects ETH, so include it in the "still the same asset" match.
+        "wallet_address": DEMO_DATA_ANALYST.get("wallet_address"),
     }
     for existing in list_skill_assets(db_path):
         if all(existing.get(key) == value for key, value in expected.items()):
@@ -158,6 +177,10 @@ def bootstrap_demo_extra_assets(db_path: str) -> list[str]:
             "price_chain": asset_dict.get("price_chain"),
             "split_rule": asset_dict["split_rule"],
             "endpoint_url": asset_dict.get("endpoint_url"),
+            # Same posture as the data-analyst bootstrap: a wallet swap
+            # silently redirects on-chain settlement, so include it in the
+            # idempotency match.
+            "wallet_address": asset_dict.get("wallet_address"),
         }
         existing = next(
             (a for a in list_skill_assets(db_path)

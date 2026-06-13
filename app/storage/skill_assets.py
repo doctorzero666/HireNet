@@ -17,8 +17,8 @@ def insert_skill_asset(db_path: str, asset: dict) -> str:
                 INSERT INTO skill_assets
                     (id, creator_id, name, description, type, endpoint_url,
                      io_schema, price_amount, price_currency, price_chain,
-                     split_rule, content_hash, created_at)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                     split_rule, content_hash, wallet_address, created_at)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 """,
                 (
                     skill_id,
@@ -33,6 +33,7 @@ def insert_skill_asset(db_path: str, asset: dict) -> str:
                     asset.get("price_chain"),
                     json.dumps(asset["split_rule"]),
                     asset["content_hash"],
+                    asset.get("wallet_address"),
                     created_at,
                 ),
             )

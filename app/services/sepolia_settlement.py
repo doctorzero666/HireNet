@@ -75,6 +75,7 @@ class SepoliaSettlementProvider(SettlementProvider):
         from_key: str,
         from_address: str,
         *,
+        default_to_address: str | None = None,
         chain_id: int = SEPOLIA_CHAIN_ID,
         value_wei: int = _DEMO_VALUE_WEI,
         required_confirmations: int = SEPOLIA_REQUIRED_CONFIRMATIONS,
@@ -100,6 +101,19 @@ class SepoliaSettlementProvider(SettlementProvider):
             raise ValueError(
                 f"SEPOLIA_FROM_ADDRESS is not a valid EVM address: {from_address!r}"
             )
+
+        # default_to_address is optional. When set (e.g. via SEPOLIA_TO_ADDRESS),
+        # it acts as the platform-default recipient for any settle() call that
+        # doesn't override per-call. We validate the shape so a typo'd env
+        # var fails at boot, not mid-settle.
+        if default_to_address is not None and not Web3.is_address(default_to_address):
+            raise ValueError(
+                "SEPOLIA_TO_ADDRESS is not a valid EVM address: "
+                f"{default_to_address!r}"
+            )
+        self.default_to_address = (
+            Web3.to_checksum_address(default_to_address) if default_to_address else None
+        )
 
         self.rpc_url = rpc_url
         self.from_key = from_key
@@ -142,12 +156,39 @@ class SepoliaSettlementProvider(SettlementProvider):
         amount: int,
         currency: str,
         chain: str | None,
+        *,
+        to_address: str | None = None,
     ) -> SettlementResult:
+        """Submit a Sepolia ETH transfer carrying royalty metadata.
+
+        Recipient resolution (highest priority first):
+          1. ``to_address`` arg — per-call override, e.g. the Agent's
+             registered ``wallet_address`` looked up from skill_assets.
+          2. ``self.default_to_address`` — SEPOLIA_TO_ADDRESS env, the
+             platform-default sink set at boot.
+          3. ``self.from_address`` — fallback self-transfer, preserves the
+             pre-wallet-integration behavior so a misconfigured demo still
+             produces a valid receipt (loud warning in logs, not silent).
+
+        Caller cannot bypass the chain — the route layer is responsible for
+        looking up the Agent wallet; this method just trusts what it gets.
+        Shape is re-validated here so a corrupt skill_assets row can't push
+        an unsigned-or-broken address into ``tx["to"]``.
+        """
+        # Per-call override → env default → self (current behaviour).
+        chosen = to_address or self.default_to_address or self.from_address
+        if not Web3.is_address(chosen):
+            return SettlementResult(
+                success=False,
+                error=f"Invalid recipient address: {chosen!r}",
+            )
+        recipient = Web3.to_checksum_address(chosen)
+
         try:
             data_blob = _encode_payment_data(payee_id, amount, currency, chain)
             nonce = self._w3.eth.get_transaction_count(self.from_address)
             tx = {
-                "to": self.from_address,
+                "to": recipient,
                 "value": self.value_wei,
                 "data": data_blob,
                 "gas": _DEMO_GAS_LIMIT,

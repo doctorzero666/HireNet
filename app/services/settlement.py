@@ -136,10 +136,15 @@ def get_provider(name: str) -> SettlementProvider:
     if name == "sepolia":
         import os
         from app.services.sepolia_settlement import SepoliaSettlementProvider
+        # SEPOLIA_TO_ADDRESS is the platform-default recipient — used when a
+        # SkillAsset hasn't declared its own wallet_address. Empty string
+        # → None so the provider knows to fall back to self.from_address.
+        default_to = os.getenv("SEPOLIA_TO_ADDRESS", "").strip() or None
         return SepoliaSettlementProvider(
             rpc_url=os.getenv("SEPOLIA_RPC_URL", ""),
             from_key=os.getenv("SEPOLIA_PRIVATE_KEY", ""),
             from_address=os.getenv("SEPOLIA_FROM_ADDRESS", ""),
+            default_to_address=default_to,
         )
     if name == "cobo":
         import os

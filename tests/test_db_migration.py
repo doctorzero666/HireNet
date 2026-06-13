@@ -166,6 +166,24 @@ def test_migration_adds_endpoint_url_column(u2_db_path):
     assert "endpoint_url" in _column_names(u2_db_path, "skill_assets")
 
 
+def test_migration_adds_wallet_address_column(u2_db_path):
+    """Phase 3+ MCP wallet integration: upgrading a U2 DB must gain the
+    wallet_address column so Sepolia settlement can route to the Agent's
+    on-chain address. Backfill is NULL — legacy rows have no declared
+    wallet and fall back to SEPOLIA_TO_ADDRESS at settle time."""
+    create_app({"DATABASE_PATH": u2_db_path, "TESTING": True})
+    assert "wallet_address" in _column_names(u2_db_path, "skill_assets")
+
+
+def test_migration_backfills_wallet_address_as_null(u2_db_path):
+    """Pre-migration rows must end up with wallet_address=NULL (not a
+    placeholder) so settle() falls back rather than misrouting funds."""
+    create_app({"DATABASE_PATH": u2_db_path, "TESTING": True})
+    row = _read_row(u2_db_path, _EXISTING_ID)
+    assert row is not None
+    assert row["wallet_address"] is None
+
+
 # ---------------------------------------------------------------------------
 # Data preservation
 # ---------------------------------------------------------------------------

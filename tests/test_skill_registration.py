@@ -396,3 +396,96 @@ def test_get_skill_asset_passes_schema_validation(app_and_client):
     assert stored is not None
     # Must not raise
     validate(stored, "skill_asset")
+
+
+# ---------------------------------------------------------------------------
+# C-14: wallet_address — optional EVM recipient for Sepolia settlement
+# ---------------------------------------------------------------------------
+
+_TEST_WALLET = "0x70997970C51812dc3A010C7d01b50e0d17dc79C8"
+
+
+def test_wallet_address_persists_in_db(app_and_client):
+    """A valid EVM address in the payload is stored verbatim on the asset row."""
+    app, c, db_path = app_and_client
+    payload = _base_payload(wallet_address=_TEST_WALLET)
+    resp = c.post("/api/skills/register", json=payload)
+    assert resp.status_code == 201
+    stored = get_skill_asset(db_path, resp.get_json()["skill_id"])
+    assert stored["wallet_address"] == _TEST_WALLET
+
+
+def test_wallet_address_absent_stored_as_null(app_and_client):
+    """Omitting the field stores NULL — the Sepolia provider then falls back
+    to SEPOLIA_TO_ADDRESS / self.from_address."""
+    app, c, db_path = app_and_client
+    resp = c.post("/api/skills/register", json=_base_payload())
+    assert resp.status_code == 201
+    stored = get_skill_asset(db_path, resp.get_json()["skill_id"])
+    assert stored["wallet_address"] is None
+
+
+def test_wallet_address_empty_string_stored_as_null(app_and_client):
+    """Empty string from a half-filled form must normalise to NULL, not pass
+    a "" through to the chain (which Web3.is_address would reject at settle)."""
+    app, c, db_path = app_and_client
+    resp = c.post("/api/skills/register", json=_base_payload(wallet_address=""))
+    assert resp.status_code == 201
+    stored = get_skill_asset(db_path, resp.get_json()["skill_id"])
+    assert stored["wallet_address"] is None
+
+
+def test_wallet_address_explicit_null_stored_as_null(app_and_client):
+    """Explicit JSON null is accepted and stored as NULL."""
+    app, c, db_path = app_and_client
+    resp = c.post("/api/skills/register", json=_base_payload(wallet_address=None))
+    assert resp.status_code == 201
+    stored = get_skill_asset(db_path, resp.get_json()["skill_id"])
+    assert stored["wallet_address"] is None
+
+
+@pytest.mark.parametrize("bad", [
+    "not-an-address",
+    "0xdeadbeef",                      # too short
+    "70997970C51812dc3A010C7d01b50e0d17dc79C8",  # missing 0x prefix
+    "0xZZ997970C51812dc3A010C7d01b50e0d17dc79C8",  # non-hex char
+    "0x70997970C51812dc3A010C7d01b50e0d17dc79C8AA",  # too long
+])
+def test_wallet_address_malformed_returns_400(client, bad):
+    """Malformed addresses are rejected at the route layer; a corrupt row
+    must never reach the chain."""
+    resp = client.post("/api/skills/register", json=_base_payload(wallet_address=bad))
+    assert resp.status_code == 400, f"Expected 400 for {bad!r}, got {resp.status_code}"
+
+
+def test_wallet_address_non_string_returns_400(client):
+    """A number / bool / object in wallet_address is a 400, not a 500."""
+    resp = client.post(
+        "/api/skills/register",
+        json=_base_payload(wallet_address=12345),
+    )
+    assert resp.status_code == 400
+
+
+def test_wallet_address_not_in_content_hash(client):
+    """wallet_address is an economic/operational field, NOT a provenance one.
+    Changing it must not invalidate the SkillAsset's content_hash — otherwise
+    rotating a key would look like minting a new asset. Same content + diff
+    wallet → identical hash."""
+    p1 = _base_payload(wallet_address=_TEST_WALLET)
+    p2 = _base_payload(wallet_address="0x" + "ab" * 20)  # different valid address
+    r1 = client.post("/api/skills/register", json=p1)
+    r2 = client.post("/api/skills/register", json=p2)
+    assert r1.status_code == 201
+    assert r2.status_code == 201
+    assert r1.get_json()["content_hash"] == r2.get_json()["content_hash"]
+
+
+def test_registered_asset_with_wallet_passes_schema_validation(app_and_client):
+    """The DB row including wallet_address must satisfy the SkillAsset schema —
+    catches a misalignment between schema and DAO."""
+    app, c, db_path = app_and_client
+    resp = c.post("/api/skills/register", json=_base_payload(wallet_address=_TEST_WALLET))
+    assert resp.status_code == 201
+    stored = get_skill_asset(db_path, resp.get_json()["skill_id"])
+    validate(stored, "skill_asset")  # must not raise

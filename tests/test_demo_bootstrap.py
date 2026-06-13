@@ -71,6 +71,18 @@ def test_bootstrap_cs_asset_is_idempotent(db_path):
     assert len(list_skill_assets(db_path)) == 1
 
 
+def test_bootstrap_data_analyst_persists_wallet(db_path):
+    """预设 Agent 必须带钱包地址 — Sepolia 结算才能转到正确的收款方
+    而不是回退到 SEPOLIA_FROM_ADDRESS（自转）。"""
+    from app.services.demo_bootstrap import DEMO_DATA_ANALYST_WALLET
+    asset_id = bootstrap_demo_data_analyst_asset(db_path)
+    asset = get_skill_asset(db_path, asset_id)
+    assert asset["wallet_address"] == DEMO_DATA_ANALYST_WALLET
+    # 形状自检：是合法 EVM 地址（避免后续粘贴时手滑）
+    assert asset["wallet_address"].startswith("0x")
+    assert len(asset["wallet_address"]) == 42
+
+
 # ---------------------------------------------------------------------------
 # bootstrap_demo_runs
 # ---------------------------------------------------------------------------

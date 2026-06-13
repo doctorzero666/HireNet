@@ -137,6 +137,12 @@ export default function AgentRegister() {
     const priceDollars = Number(form.price) || 0
     const price_amount = Math.max(0, Math.round(priceDollars * 100))
 
+    /* wallet is optional. Trim + tolerate empty so the backend's
+       _normalize_wallet_address sees a real null instead of "".  When set,
+       the backend re-validates shape and 400s on garbage, so no need to
+       block submission client-side for malformed input. */
+    const wallet_address = form.wallet.trim() || null
+
     setSubmitting(true)
     try {
       const result = await registerSkillAsset({
@@ -144,6 +150,7 @@ export default function AgentRegister() {
         description: form.description.trim(),
         type: form.type,
         endpoint_url: form.mcpEndpointUrl.trim() || null,
+        wallet_address,
         price_amount,
         price_currency: 'USD',
       })

@@ -311,14 +311,14 @@ export async function settleRoyalty(runId) {
 /* ── SkillAsset registration ── */
 
 export async function registerSkillAsset({
-  name, description, type, endpoint_url,
+  name, description, type, endpoint_url, wallet_address,
   price_amount, price_currency, io_schema, split_rule,
 }) {
   /* Required by app/schemas/skill_asset.json: name, description, type
      (lowercase enum), io_schema (object), price_amount (int basis points),
      price_currency, split_rule (must sum to 10000). Server computes
      content_hash + assigns creator_id from the Phase 1 stub, so we don't
-     send them. endpoint_url is optional and may be null. */
+     send them. endpoint_url + wallet_address are optional and may be null. */
   const payload = {
     name,
     description,
@@ -329,6 +329,7 @@ export async function registerSkillAsset({
     split_rule: split_rule || { creator: 7000, platform: 2000, tax: 1000 },
   }
   if (endpoint_url) payload.endpoint_url = endpoint_url
+  if (wallet_address) payload.wallet_address = wallet_address
 
   const res = await fetch(`${API_BASE}/skills/register`, {
     method: 'POST',
