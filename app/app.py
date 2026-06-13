@@ -1887,6 +1887,23 @@ def create_app(config: dict | None = None):
     if config:
         app.config.update(config)
 
+    # Serve frontend static files (built React app) — must be on main blueprint
+    # BEFORE register_blueprint, otherwise route decorators are silently ignored.
+    @main.route("/assets/<path:filename>")
+    def frontend_assets(filename):
+        return send_from_directory(
+            os.path.join(os.path.dirname(__file__), "..", "frontend", "dist", "assets"),
+            filename,
+        )
+
+    @main.route("/", defaults={"path": ""})
+    @main.route("/<path:path>")
+    def serve_frontend(path):
+        frontend_dir = os.path.join(os.path.dirname(__file__), "..", "frontend", "dist")
+        if path and os.path.isfile(os.path.join(frontend_dir, path)):
+            return send_from_directory(frontend_dir, path)
+        return send_from_directory(frontend_dir, "index.html")
+
     init_db(app)
     app.register_blueprint(main)
 
@@ -1927,22 +1944,6 @@ def create_app(config: dict | None = None):
         from app.services.settlement import get_provider
         provider_name = os.getenv("HIRENET_SETTLEMENT_PROVIDER", "mock")
         app.config["SETTLEMENT_PROVIDER"] = get_provider(provider_name)
-
-    # Serve frontend static files (built React app)
-    @main.route("/assets/<path:filename>")
-    def frontend_assets(filename):
-        return send_from_directory(
-            os.path.join(os.path.dirname(__file__), "..", "frontend", "dist", "assets"),
-            filename,
-        )
-
-    @main.route("/", defaults={"path": ""})
-    @main.route("/<path:path>")
-    def serve_frontend(path):
-        frontend_dir = os.path.join(os.path.dirname(__file__), "..", "frontend", "dist")
-        if path and os.path.isfile(os.path.join(frontend_dir, path)):
-            return send_from_directory(frontend_dir, path)
-        return send_from_directory(frontend_dir, "index.html")
 
     return app
 
