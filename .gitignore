@@ -41,3 +41,5 @@ env/
 
 # Cobo wallet keys (private key material — never commit)
 cobo-keys/
+.env
+.env
