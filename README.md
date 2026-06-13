@@ -186,6 +186,14 @@ Agent 被调用得越多，平台收益越多——一个自增长的飞轮。
 
 ---
 
+## 🌐 在线 Demo
+
+👉 **https://frontend-nine-gamma-37.vercel.app**
+
+（后端 Railway + 前端 Vercel，可直接体验全部功能）
+
+---
+
 ## 🚀 本地运行
 
 ```bash
