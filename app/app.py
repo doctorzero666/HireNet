@@ -1889,20 +1889,40 @@ def create_app(config: dict | None = None):
 
     # Serve frontend static files (built React app) — must be on main blueprint
     # BEFORE register_blueprint, otherwise route decorators are silently ignored.
+    #
+    # Path resolution: absolute path computed once at app creation, so gunicorn's
+    # working directory does not matter. On Railway (nixpacks), the repo lands at
+    # /app and this file at /app/app/app.py — so frontend_dir resolves to
+    # /app/frontend/dist. If that directory or index.html is missing (e.g.
+    # nixpacks build step didn't run, or dist wasn't committed), every SPA route
+    # would otherwise return a silent 404 from send_from_directory. Print a
+    # loud warning at boot so Railway logs surface the real cause.
+    frontend_dir = os.path.abspath(
+        os.path.join(os.path.dirname(__file__), "..", "frontend", "dist")
+    )
+    app.config["FRONTEND_DIR"] = frontend_dir
+    if not os.path.isfile(os.path.join(frontend_dir, "index.html")):
+        print(
+            f"[hirenet] WARNING: frontend dist missing at {frontend_dir} — "
+            "SPA routes will 404. Check railway.toml buildCommand or that "
+            "frontend/dist is committed.",
+            flush=True,
+        )
+
     @main.route("/assets/<path:filename>")
     def frontend_assets(filename):
         return send_from_directory(
-            os.path.join(os.path.dirname(__file__), "..", "frontend", "dist", "assets"),
+            os.path.join(current_app.config["FRONTEND_DIR"], "assets"),
             filename,
         )
 
     @main.route("/", defaults={"path": ""})
     @main.route("/<path:path>")
     def serve_frontend(path):
-        frontend_dir = os.path.join(os.path.dirname(__file__), "..", "frontend", "dist")
-        if path and os.path.isfile(os.path.join(frontend_dir, path)):
-            return send_from_directory(frontend_dir, path)
-        return send_from_directory(frontend_dir, "index.html")
+        dist = current_app.config["FRONTEND_DIR"]
+        if path and os.path.isfile(os.path.join(dist, path)):
+            return send_from_directory(dist, path)
+        return send_from_directory(dist, "index.html")
 
     init_db(app)
     app.register_blueprint(main)

@@ -1,6 +1,17 @@
 [build]
 builder = "nixpacks"
-buildCommand = "cd frontend && npm install && npm run build && cd .."
+# Build the React SPA into frontend/dist so app.py can serve it. We use npm ci
+# (lockfile-strict) for reproducibility, then `npm run build` (vite) emits to
+# frontend/dist/. The Python side of nixpacks installs requirements.txt
+# automatically — no Python step needed here.
+buildCommand = "cd frontend && npm ci && npm run build"
+
+[build.env]
+# Nixpacks auto-detects this as a Python project, so Node is NOT in the build
+# image by default. NIXPACKS_PKGS adds packages from nixpkgs into the build
+# environment — without this, the buildCommand silently fails because `npm`
+# isn't on PATH, dist never gets built, and Flask returns 404 for /.
+NIXPACKS_PKGS = "nodejs_20"
 
 [deploy]
 startCommand = "gunicorn wsgi:app --bind 0.0.0.0:$PORT --workers 1 --timeout 120"
