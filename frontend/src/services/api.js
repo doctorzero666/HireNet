@@ -318,6 +318,14 @@ export async function fetchCreatorEarnings() {
   return res.json()
 }
 
+export async function fetchCreatorLedger() {
+  /* Per-run ledger view. Returns { creator_id, entries, settled_totals,
+     accrued_totals }. entries are sorted newest-first by created_at. */
+  const res = await fetch(`${API_BASE}/creator/ledger`, { headers: buildHeaders() })
+  if (!res.ok) throw new Error(`API error: ${res.status}`)
+  return res.json()
+}
+
 /* ── Phase 2 / U6: JWT auth ── */
 
 export async function login(user_id, password) {

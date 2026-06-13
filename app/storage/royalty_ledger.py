@@ -192,3 +192,53 @@ def summarize_creator_earnings(db_path: str, creator_id: str) -> dict:
         "call_count": call_count,
         "totals_by_currency": totals_by_currency,
     }
+
+
+_LIST_CREATOR_LEDGER_SQL = """
+    SELECT
+        rl.run_id      AS run_id,
+        rl.amount      AS amount,
+        rl.currency    AS currency,
+        rl.chain       AS chain,
+        rl.status      AS status,
+        rl.created_at  AS created_at,
+        ar.agent_name  AS agent_name,
+        ar.caller_id   AS caller_id,
+        ar.tx_hash     AS tx_hash,
+        u.name         AS caller_name
+      FROM royalty_ledger rl
+      LEFT JOIN agent_runs ar ON ar.run_id    = rl.run_id
+      LEFT JOIN users      u  ON u.id         = ar.caller_id
+     WHERE rl.creator_id = ?
+       AND rl.party      = 'creator'
+  ORDER BY rl.created_at DESC
+"""
+
+
+def list_creator_ledger(db_path: str, creator_id: str) -> list[dict]:
+    """Per-run ledger view for the creator's earnings page.
+
+    One row per agent_run paid to this creator. Joins agent_runs for the
+    caller-facing labels (agent_name, tx_hash) and users for the caller's
+    display name. LEFT JOIN so a ledger row with a missing run / caller still
+    surfaces — the UI gets a None name instead of dropping the entry.
+    """
+    with closing(_open(db_path)) as conn:
+        rows = conn.execute(
+            _LIST_CREATOR_LEDGER_SQL, (creator_id,)
+        ).fetchall()
+    return [
+        {
+            "run_id": row["run_id"],
+            "agent_name": row["agent_name"],
+            "caller_id": row["caller_id"],
+            "caller_name": row["caller_name"],
+            "amount": int(row["amount"]),
+            "currency": row["currency"],
+            "chain": row["chain"],
+            "status": row["status"],
+            "tx_hash": row["tx_hash"],
+            "created_at": row["created_at"],
+        }
+        for row in rows
+    ]

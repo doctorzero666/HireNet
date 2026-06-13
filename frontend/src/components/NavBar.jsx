@@ -14,7 +14,7 @@ const ROLE_PRESETS = {
     label: 'CREATOR',
     links: [
       { label: '我的 Agent', to: '/creator' },
-      { label: '收益账本', comingSoon: true },
+      { label: '收益账本', to: '/creator/ledger' },
     ],
   },
   jobseeker: {

@@ -16,6 +16,7 @@ import ExecutionPage from './pages/ExecutionPage'
 import CreatorHome from './pages/CreatorHome'
 import AgentRegister from './pages/AgentRegister'
 import AgentPerformance from './pages/AgentPerformance'
+import CreatorLedger from './pages/CreatorLedger'
 import JobSeekerHome from './pages/JobSeekerHome'
 import JobDetail from './pages/JobDetail'
 import CandidateProfile from './pages/CandidateProfile'
@@ -38,6 +39,7 @@ function App() {
         <Route path="/creator" element={<CreatorHome />} />
         <Route path="/creator/register" element={<AgentRegister />} />
         <Route path="/creator/agent/:agentId" element={<AgentPerformance />} />
+        <Route path="/creator/ledger" element={<CreatorLedger />} />
         <Route path="/jobseeker" element={<JobSeekerHome />} />
         <Route path="/jobseeker/job/:jobId" element={<JobDetail />} />
         <Route path="/jobseeker/profile" element={<CandidateProfile />} />
