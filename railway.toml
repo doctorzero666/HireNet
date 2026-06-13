@@ -3,6 +3,6 @@ builder = "nixpacks"
 buildCommand = "cd frontend && npm install && npm run build && cd .."
 
 [deploy]
-startCommand = "gunicorn wsgi:app --bind 0.0.0.0:$PORT --workers 1 --timeout 120"
+startCommand = "bash -c 'pip install -r requirements.txt && cd frontend && npm install && npm run build && cd .. && gunicorn wsgi:app --bind 0.0.0.0:$PORT --workers 1 --timeout 120'"
 restartPolicyType = "on_failure"
 restartPolicyMaxRetries = 3
