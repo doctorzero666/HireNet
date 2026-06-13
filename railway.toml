@@ -15,5 +15,6 @@ NIXPACKS_PKGS = "nodejs_20"
 
 [deploy]
 startCommand = "gunicorn wsgi:app --bind 0.0.0.0:$PORT --workers 1 --timeout 120"
+healthcheckPath = "/api/skills/list"
 restartPolicyType = "on_failure"
 restartPolicyMaxRetries = 3
