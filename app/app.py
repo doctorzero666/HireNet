@@ -1936,6 +1936,18 @@ def create_app(config: dict | None = None):
     from app.routes.earnings import earnings_bp
     app.register_blueprint(earnings_bp)
 
+    # Codex P1: /api/audit/run/<run_id> currently has @login_required but no
+    # per-caller IDOR check (any authenticated user can read any run's audit
+    # trail). Until that's closed in the broader Phase 2 IDOR cleanup, only
+    # register the blueprint when the harness is explicitly dev-shaped —
+    # TESTING=True for pytest fixtures, app.debug for the local Flask dev
+    # server. A production gunicorn boot has neither flag, so the endpoint
+    # returns 404 (not registered) instead of leaking cross-user audit data
+    # behind nothing but a valid JWT.
+    if app.config.get("TESTING") or app.debug:
+        from app.routes.audit import audit_bp
+        app.register_blueprint(audit_bp)
+
     # U6: register the Job Design Agent as the first SkillAsset (idempotent across
     # restarts), so a real employer task that uses it can be billed to its creator.
     from app.services.asset_bootstrap import bootstrap_job_design_asset

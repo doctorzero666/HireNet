@@ -3,6 +3,7 @@ import uuid
 from contextlib import closing
 from datetime import datetime, timezone
 
+from app.storage.audit_log import _insert_audit_event_conn
 from app.storage.db import _open, _require_nonneg_int
 
 _INSERT_AGENT_RUN_SQL = """
@@ -130,15 +131,42 @@ def claim_settlement(db_path: str, run_id: str) -> bool:
     failed is a retriable source state so a previously errored run can be
     re-attempted without manual intervention; settled is terminal and the
     caller should short-circuit to a no-op return.
+
+    U3: emits a 'claim' audit event inside the same transaction as the state
+    flip — so a successful claim never leaves the audit trail short by one
+    row even on a crash mid-call. The from-state is derived from WHICH of
+    two conditional UPDATEs matched (accrued first, then failed), rather
+    than a pre-flip SELECT — the previous SELECT-then-UPDATE had a TOCTOU
+    window where a concurrent writer could change the status between read
+    and write, leaving the audit row labelled with a stale status_from.
+    The first conditional UPDATE takes a RESERVED lock even when rowcount=0,
+    so no other writer can slip in between the two UPDATEs; the rowcount=1
+    branch is therefore an atomic statement about the prior state.
     """
     with closing(_open(db_path)) as conn:
         with conn:
             cur = conn.execute(
                 "UPDATE agent_runs SET settlement_status = 'settling' "
-                "WHERE run_id = ? AND settlement_status IN ('accrued', 'failed')",
+                "WHERE run_id = ? AND settlement_status = 'accrued'",
                 (run_id,),
             )
-            return cur.rowcount == 1
+            if cur.rowcount == 1:
+                prev_status = "accrued"
+            else:
+                cur = conn.execute(
+                    "UPDATE agent_runs SET settlement_status = 'settling' "
+                    "WHERE run_id = ? AND settlement_status = 'failed'",
+                    (run_id,),
+                )
+                if cur.rowcount != 1:
+                    return False
+                prev_status = "failed"
+            _insert_audit_event_conn(
+                conn, run_id, "claim",
+                status_from=prev_status,
+                status_to="settling",
+            )
+            return True
 
 
 def confirm_settlement(
@@ -185,6 +213,30 @@ def confirm_settlement(
                 "WHERE run_id = ? AND status = 'accrued'",
                 (run_id,),
             )
+            # Phase 1 wrote exactly 1 ledger row (creator only); Phase 2 / U2
+            # rebuilt this to 3 rows (creator + platform + tax) for new runs,
+            # but pre-U2 rows migrated via _migrate keep their single-row
+            # shape. So the rowcount we see here is whatever was 'accrued'
+            # for this run — 1 for legacy, 3 for modern, or 0 if the ledger
+            # was advanced out-of-band before this confirm fired. The atomic
+            # conditional UPDATE itself is the integrity guarantee: every
+            # row that WAS 'accrued' is now 'settled', under the same
+            # transaction as the agent_runs flip, so the two can never
+            # disagree. We no longer reject (1 or 2) as "partial corruption"
+            # because that check was incompatible with the U2 migration and
+            # the loss of a CHECK constraint at this layer is acceptable —
+            # reconcile() in app/services/audit.py is the authoritative
+            # creator+platform+tax == charge_amount audit.
+            # U3 audit: status_from is 'settling' because the UPDATE WHERE
+            # clause guarantees that — we only reach here when the conditional
+            # flip actually consumed a 'settling' row.
+            _insert_audit_event_conn(
+                conn, run_id, "confirm",
+                status_from="settling",
+                status_to="settled",
+                method=method,
+                tx_hash=tx_hash,
+            )
             return ledger_cur.rowcount
 
 
@@ -215,23 +267,35 @@ def record_settlement_submission(
                 "WHERE run_id = ? AND settlement_status = 'settling'",
                 (tx_hash, method, run_id),
             )
-            return cur.rowcount == 1
+            if cur.rowcount != 1:
+                return False
+            # U3 audit: status stays 'settling' (this is the async "submitted
+            # to rail, awaiting confirmation" event), so status_from ==
+            # status_to. The tx_hash + method are what's worth preserving —
+            # they're the join key for a later check_status poll.
+            _insert_audit_event_conn(
+                conn, run_id, "submit",
+                status_from="settling",
+                status_to="settling",
+                method=method,
+                tx_hash=tx_hash,
+            )
+            return True
 
 
 def fail_settlement(db_path: str, run_id: str, error_msg: str | None = None) -> bool:
     """Flip settling → failed. ledger rows untouched (stay accrued).
 
-    `error_msg` is accepted for forward compatibility with U3 audit logging
-    but is not persisted yet — adding a column would be premature without
-    the surrounding observability story. The route layer logs it via
-    current_app.logger so a failed settlement is at least traceable in
-    request logs today.
-
     Returns True iff a row was actually flipped (rowcount=1). False means
     the run was not in 'settling' — a race we should treat as "someone else
     already moved this run on", not retry.
+
+    U3: error_msg is now persisted on the audit_log row so the operator
+    can see why each retriable failure happened without grepping app
+    logs. The agent_runs row itself still has no error column — failure
+    reason lives with the audit event, not the run, so retries don't
+    pile up successive error strings on a single row.
     """
-    _ = error_msg  # intentionally unused; see docstring above.
     with closing(_open(db_path)) as conn:
         with conn:
             cur = conn.execute(
@@ -239,4 +303,12 @@ def fail_settlement(db_path: str, run_id: str, error_msg: str | None = None) -> 
                 "WHERE run_id = ? AND settlement_status = 'settling'",
                 (run_id,),
             )
-            return cur.rowcount == 1
+            if cur.rowcount != 1:
+                return False
+            _insert_audit_event_conn(
+                conn, run_id, "fail",
+                status_from="settling",
+                status_to="failed",
+                error=error_msg,
+            )
+            return True

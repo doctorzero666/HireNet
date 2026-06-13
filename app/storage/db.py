@@ -85,6 +85,21 @@ def _create_tables(conn: sqlite3.Connection) -> None:
             password_hash TEXT    NOT NULL,
             created_at    TEXT    NOT NULL
         );
+
+        CREATE TABLE IF NOT EXISTS audit_log (
+            id            TEXT    PRIMARY KEY,
+            run_id        TEXT    NOT NULL,
+            event_ordinal INTEGER NOT NULL,
+            event         TEXT    NOT NULL CHECK (event IN ('claim', 'submit', 'confirm', 'fail')),
+            status_from   TEXT,
+            status_to     TEXT    NOT NULL,
+            method        TEXT,
+            tx_hash       TEXT,
+            error         TEXT,
+            created_at    TEXT    NOT NULL
+        );
+
+        CREATE INDEX IF NOT EXISTS idx_audit_log_run_id ON audit_log (run_id);
     """)
 
 
@@ -123,6 +138,9 @@ def _migrate(conn: sqlite3.Connection) -> None:
     agent_run_cols = {
         row[1] for row in conn.execute("PRAGMA table_info(agent_runs)").fetchall()
     }
+    audit_cols = {
+        row[1] for row in conn.execute("PRAGMA table_info(audit_log)").fetchall()
+    }
 
     pending = (
         "type" not in skill_cols
@@ -131,6 +149,7 @@ def _migrate(conn: sqlite3.Connection) -> None:
         or "party" not in ledger_cols
         or "settlement_method" not in agent_run_cols
         or "tx_hash" not in agent_run_cols
+        or "event_ordinal" not in audit_cols
     )
     if not pending:
         return
@@ -168,6 +187,31 @@ def _migrate(conn: sqlite3.Connection) -> None:
                     "UPDATE royalty_ledger SET party = 'creator' "
                     "WHERE party IS NULL"
                 )
+
+            if "event_ordinal" not in audit_cols:
+                # U3 Phase 3 (codereviewer P1): explicit per-run insertion ordinal
+                # so list ordering doesn't rely on created_at + rowid ties. Added
+                # nullable here (SQLite forbids ADD COLUMN NOT NULL without a
+                # DEFAULT); backfilled per run_id in created_at + rowid order so
+                # historical rows preserve their visible sequence.
+                conn.execute(
+                    "ALTER TABLE audit_log ADD COLUMN event_ordinal INTEGER"
+                )
+                run_rows = conn.execute(
+                    "SELECT DISTINCT run_id FROM audit_log"
+                ).fetchall()
+                for run_row in run_rows:
+                    rid = run_row[0]
+                    ordered = conn.execute(
+                        "SELECT id FROM audit_log WHERE run_id = ? "
+                        "ORDER BY created_at ASC, rowid ASC",
+                        (rid,),
+                    ).fetchall()
+                    for idx, row in enumerate(ordered, start=1):
+                        conn.execute(
+                            "UPDATE audit_log SET event_ordinal = ? WHERE id = ?",
+                            (idx, row[0]),
+                        )
 
             if (
                 "settlement_method" not in agent_run_cols
