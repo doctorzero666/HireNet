@@ -28,7 +28,8 @@ HireNet 有三个入口，对应三种角色。点击下方截图区查看每个
 
 ## 🏠 起始页：角色选择
 
-> *📸 在此插入起始页截图*
+> <img width="2418" height="1648" alt="image" src="https://github.com/user-attachments/assets/b99d69c2-4e45-40d5-8fb6-addba90a00a5" />
+
 
 进入系统后，用户选择自己的身份——雇主、创作者、求职者。三个角色各有独立的操作流程和收益模型，共享底层 AI 分析引擎和链上结算网络。
 
@@ -40,7 +41,8 @@ HireNet 有三个入口，对应三种角色。点击下方截图区查看每个
 
 ### 雇主分流页
 
-> *📸 在此插入雇主分流页截图*
+> <img width="2510" height="1644" alt="image" src="https://github.com/user-attachments/assets/17dbf778-1eb9-4d5d-b9c9-1fb86bf4271b" />
+
 
 选择「雇主」后到达分流页。两条路径可选：
 - **业务大本营**：查看 Dashboard，了解正在运行的 Agent 和业务指标
@@ -54,13 +56,17 @@ HireNet 有三个入口，对应三种角色。点击下方截图区查看每个
 
 ### AI 智能追问
 
-> *📸 在此插入 AI 追问页截图*
+> <img width="2100" height="1420" alt="image" src="https://github.com/user-attachments/assets/4a865495-2aed-4cba-93f4-a92d06649f3a" />
+<img width="1812" height="1312" alt="image" src="https://github.com/user-attachments/assets/5cf6d4c7-66db-4ab6-beac-53a68b74f67c" />
+
+
 
 智谱 GLM-4 驱动的需求分析 Agent 自动追问关键信息——覆盖场景、预算、渠道等。用户通过快捷选项或自然语言回答。只有真正理解需求后，系统才进入下一步。
 
 ### 分析报告：任务拆解 + Agent 匹配
 
-> *📸 在此插入分析报告页截图*
+> <img width="1640" height="1660" alt="image" src="https://github.com/user-attachments/assets/f9197a22-4332-4c66-89dc-04e79e001121" />
+
 
 AI 将需求拆解为多个任务，并对每个任务做出智能决策：
 - 🟢 **Agent 可完成**：已有 AI Agent 能独立处理
@@ -69,19 +75,22 @@ AI 将需求拆解为多个任务，并对每个任务做出智能决策：
 
 ### Pact 授权：Cobo/Anvil 链上支付
 
-> *📸 在此插入 Pact 弹窗截图*
+> <img width="1030" height="1484" alt="image" src="https://github.com/user-attachments/assets/0d15d0ce-f764-4d34-95c0-f4c6c2ca5b1d" />
+
 
 点击「启动 Agent」后，弹窗展示费用构成、创作者钱包地址、预估工时。用户确认后，系统通过 Cobo Agentic Wallet（或本地 Anvil 链）完成链上结算。**这是核心闭环。**
 
 ### 执行交付 + 链上可查
 
-> *📸 在此插入执行页截图*
+> <img width="1600" height="1288" alt="image" src="https://github.com/user-attachments/assets/16c4f30a-21ee-42a3-a8f9-ac4d01ca4b20" />
+
 
 Agent 完成后，页面展示费用拆分——创作者、平台、税费各分多少，一分不差。**交易哈希（tx_hash）可直接在 Anvil 本地链上查验**，实现「链上可查、不可篡改」。
 
 ### 企业控制台 Dashboard
 
-> *📸 在此插入 Dashboard 截图*
+> <img width="1868" height="1618" alt="image" src="https://github.com/user-attachments/assets/7ea990bd-c6c8-4bcf-82ed-5e8fe67488d4" />
+
 
 雇主可随时查看业务全景——月销售额、活跃 Agent 数、任务完成率、节省的人力成本。所有 Agent 的调用次数和准确率一目了然。
 
@@ -91,25 +100,29 @@ Agent 完成后，页面展示费用拆分——创作者、平台、税费各�
 
 ### 创作者工坊
 
-> *📸 在此插入创作者工坊截图*
+> <img width="2228" height="1556" alt="image" src="https://github.com/user-attachments/assets/6632aa06-a568-4892-9185-91b98e5e51db" />
+
 
 展示创作者已注册的所有 Agent。每个 Agent 标注是否已连接 MCP 端点。点击可查看详细性能数据。
 
 ### 注册 Agent + MCP 接入
 
-> *📸 在此插入 Agent 注册页截图*
+> <img width="2406" height="1764" alt="image" src="https://github.com/user-attachments/assets/cb7bfb87-7636-4ff3-8fc4-83e636ff1c5c" />
+
 
 创作者填写 Agent 信息（名称、描述、类型、时薪、钱包地址），并配置 MCP 端点 URL。点击「测试连接」可验证 MCP Server 是否返回可用工具列表——**这是 Demo 关键展示点**，证明 Agent 不是静态数据，而是可以真实调用的服务。
 
 ### Agent 性能面板
 
-> *📸 在此插入性能面板截图*
+><img width="2150" height="1802" alt="image" src="https://github.com/user-attachments/assets/7485b0d4-fa79-43ce-9938-d9d324c79055" />
+
 
 展示单个 Agent 的调用次数、准确率、累计收益。每次被企业调用，Cobo/Anvil 自动结算一笔版税到创作者钱包。
 
 ### 收益账本
 
-> *📸 在此插入收益账本截图*
+> <img width="2072" height="1596" alt="image" src="https://github.com/user-attachments/assets/1afc9715-5602-4f22-865e-9002c84c0e27" />
+
 
 创作者的所有收益记录——累计收益、已结算、待结算、调用记录、交易哈希。每一笔都有链上 tx_hash 可追溯。
 
@@ -119,19 +132,24 @@ Agent 完成后，页面展示费用拆分——创作者、平台、税费各�
 
 ### 岗位广场
 
-> *📸 在此插入岗位广场截图*
+> <img width="2140" height="1572" alt="image" src="https://github.com/user-attachments/assets/88d94aee-2228-4c63-ba20-4f7c0af46abe" />
+
 
 不是海投简历。浏览由企业端自动生成的精准岗位，薪资区间、工作类型、技术要求一目了然。
 
 ### 岗位详情 + 一键投递
 
-> *📸 在此插入岗位详情截图*
+> <img width="2118" height="1584" alt="image" src="https://github.com/user-attachments/assets/efade0d3-c0c8-4c15-9c1c-31d5504d6cd8" />
+<img width="2136" height="1698" alt="image" src="https://github.com/user-attachments/assets/7a327998-d5ac-4254-b1e0-1c8acb23a94a" />
+
+
 
 查看完整 JD 后，一键投递。系统自动匹配候选人与岗位的契合度。
 
 ### 我的资料 + AI 分析优势
 
-> *📸 在此插入资料页截图*
+> <img width="2062" height="1816" alt="image" src="https://github.com/user-attachments/assets/c3f6fe01-ceeb-4bf7-b73b-8fb27e1e869e" />
+
 
 填写个人资料后，AI 分析技能和经历，告诉你最适合什么方向、核心优势在哪里。从「被筛选」到「认识自己」。
 
@@ -139,7 +157,8 @@ Agent 完成后，页面展示费用拆分——创作者、平台、税费各�
 
 ## 🤖 Agent 世界
 
-> *📸 在此插入 Agent 世界截图*
+> <img width="2384" height="1474" alt="image" src="https://github.com/user-attachments/assets/30a7a2d6-35cb-4e27-9804-7fc96a6567da" />
+
 
 所有已注册的 Agent 在此陈列——创作者名、时薪、调用次数、MCP 连接状态。hover 卡片展示青绿边框动画。
 
