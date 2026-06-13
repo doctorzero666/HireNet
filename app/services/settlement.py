@@ -119,7 +119,8 @@ def get_provider(name: str) -> SettlementProvider:
     field that's empty.
 
     Supported names: "mock" (default for tests), "anvil" (local-chain demo
-    via Foundry's Anvil node), "cobo" (WaaS 2.0 stub, kept for future use).
+    via Foundry's Anvil node), "sepolia" (public Ethereum testnet via HTTP
+    RPC), "cobo" (WaaS 2.0 stub, kept for future use).
     """
     if name == "mock":
         from app.services.mock_settlement import MockSettlementProvider
@@ -131,6 +132,14 @@ def get_provider(name: str) -> SettlementProvider:
             rpc_url=os.getenv("ANVIL_RPC_URL", "http://localhost:8545"),
             from_key=os.getenv("ANVIL_FROM_KEY", ""),
             to_address=os.getenv("ANVIL_TO_ADDRESS", ""),
+        )
+    if name == "sepolia":
+        import os
+        from app.services.sepolia_settlement import SepoliaSettlementProvider
+        return SepoliaSettlementProvider(
+            rpc_url=os.getenv("SEPOLIA_RPC_URL", ""),
+            from_key=os.getenv("SEPOLIA_PRIVATE_KEY", ""),
+            from_address=os.getenv("SEPOLIA_FROM_ADDRESS", ""),
         )
     if name == "cobo":
         import os

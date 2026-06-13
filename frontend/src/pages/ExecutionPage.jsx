@@ -297,9 +297,9 @@ function ResultView({ execution, accepted, onAccept, onRetry }) {
         </div>
       </div>
 
-      {/* 链上 tx_hash 卡 — 仅在有真实 tx_hash 时显示。Anvil 没在线
-          浏览器，点击弹 alert 展示完整 hash（demo 验证用：把它喂给
-          `cast receipt <hash>` 或本地 RPC 即可见 receipt）。 */}
+      {/* 链上 tx_hash 卡 — 仅在有真实 tx_hash 时显示。Sepolia 测试网
+          有公开浏览器，点击直接跳 Etherscan 查 receipt / value /
+          input data。 */}
       {e.txHash && (
         <div
           style={{
@@ -314,27 +314,25 @@ function ResultView({ execution, accepted, onAccept, onRetry }) {
           }}
         >
           <div style={{ fontWeight: 800, marginBottom: 6, color: 'var(--success-active)' }}>
-            🔗 链上可查
+            🔗 链上可查 (Sepolia)
           </div>
           <div style={{ marginBottom: 8 }}>
             <code style={{ fontSize: 12.5 }}>{txShort}</code>
           </div>
-          <button
-            type="button"
-            onClick={() => alert(`完整 tx_hash:\n\n${e.txHash}\n\n在本地终端验证:\n  cast receipt ${e.txHash} --rpc-url http://localhost:8545`)}
+          <a
+            href={`https://sepolia.etherscan.io/tx/${e.txHash}`}
+            target="_blank"
+            rel="noopener noreferrer"
             style={{
               fontSize: 12.5,
               fontWeight: 800,
               color: 'var(--success-active)',
-              background: 'transparent',
-              border: 'none',
-              padding: 0,
-              cursor: 'pointer',
+              textDecoration: 'none',
               borderBottom: '1.5px dashed var(--success-active)',
             }}
           >
-            查看完整 tx_hash →
-          </button>
+            在 Etherscan 查看 →
+          </a>
         </div>
       )}
 

@@ -5,12 +5,7 @@ import Board from '../components/Board'
 import NavBar from '../components/NavBar'
 import SectionLabel from '../components/SectionLabel'
 import PixelButton from '../components/PixelButton'
-import { fetchCreatorEarnings } from '../services/api'
-
-const AGENTS = [
-  { id: 'agent-1', name: '客服话术生成器', online: true },
-  { id: 'agent-2', name: '数据分析助手', online: true },
-]
+import { fetchCreatorEarnings, fetchSkillsList } from '../services/api'
 
 function formatAmount(amountCents, currency) {
   if (amountCents == null) return '$0.00'
@@ -22,12 +17,16 @@ function formatAmount(amountCents, currency) {
 export default function CreatorHome() {
   const navigate = useNavigate()
   const [earnings, setEarnings] = useState(null)
+  const [agents, setAgents] = useState(null)
 
   useEffect(() => {
     let cancelled = false
     fetchCreatorEarnings()
       .then((data) => { if (!cancelled) setEarnings(data) })
       .catch(() => { /* silent: CreatorHome still renders without earnings */ })
+    fetchSkillsList()
+      .then((data) => { if (!cancelled) setAgents(Array.isArray(data?.skills) ? data.skills : []) })
+      .catch(() => { if (!cancelled) setAgents([]) })
     return () => { cancelled = true }
   }, [])
 
@@ -66,7 +65,31 @@ export default function CreatorHome() {
           gap: 14,
           marginBottom: 28,
         }}>
-          {AGENTS.map((a) => (
+          {agents === null && (
+            <div style={{
+              textAlign: 'center',
+              fontSize: 13,
+              fontWeight: 600,
+              color: 'var(--text-muted)',
+              padding: '18px 0',
+            }}>
+              载入中…
+            </div>
+          )}
+          {agents !== null && agents.length === 0 && (
+            <div style={{
+              textAlign: 'center',
+              fontSize: 13,
+              fontWeight: 600,
+              color: 'var(--text-muted)',
+              padding: '18px 0',
+            }}>
+              还没有注册任何 Agent，点击下方 ⚒️ 注册新 Agent 开始
+            </div>
+          )}
+          {(agents ?? []).map((a) => {
+            const online = !!a.mcp_endpoint
+            return (
             <button
               key={a.id}
               type="button"
@@ -123,11 +146,11 @@ export default function CreatorHome() {
                       borderRadius: 'var(--pill)',
                       fontSize: 11.5,
                       fontWeight: 800,
-                      color: a.online ? 'var(--success-active)' : 'var(--text-secondary)',
-                      background: a.online ? '#e9f4dd' : 'var(--bg-secondary)',
+                      color: online ? 'var(--success-active)' : 'var(--text-secondary)',
+                      background: online ? '#e9f4dd' : 'var(--bg-secondary)',
                       marginRight: 8,
                     }}>
-                      {a.online ? '● 在线' : '○ 离线'}
+                      {online ? '● 在线' : '○ 离线'}
                     </span>
                     📞 {callCount} 次调用 · <span style={{ color: 'var(--money)', fontWeight: 800 }}>💰 {earnedDisplay} 累计</span>
                   </div>
@@ -141,7 +164,8 @@ export default function CreatorHome() {
                 </span>
               </div>
             </button>
-          ))}
+            )
+          })}
         </div>
 
         {/* 注册入口 */}

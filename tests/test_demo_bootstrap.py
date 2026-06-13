@@ -1,5 +1,5 @@
 """
-Demo bootstrap 测试 — 预填 zhang_ai 的"客服话术生成器"Agent + 两条历史调用。
+Demo bootstrap 测试 — 预填 zhao_design 的"数据分析助手"Agent + 两条历史调用。
 
 测试用自己的 fixture（不走 conftest 的 TESTING=True 路径），直接拿 db_path 调
 bootstrap 函数 — bootstrap 模块本身不读 app.config。
@@ -15,8 +15,8 @@ import pytest
 
 from app.app import create_app
 from app.services.demo_bootstrap import (
-    DEMO_CS_AGENT,
-    bootstrap_demo_cs_asset,
+    DEMO_DATA_ANALYST,
+    bootstrap_demo_data_analyst_asset,
     bootstrap_demo_runs,
 )
 from app.services.mock_settlement import MockSettlementProvider
@@ -44,20 +44,20 @@ def db_path():
 
 
 # ---------------------------------------------------------------------------
-# bootstrap_demo_cs_asset
+# bootstrap_demo_data_analyst_asset
 # ---------------------------------------------------------------------------
 
-def test_bootstrap_creates_zhang_ai_asset(db_path):
-    """注册一份属于 zhang_ai 的客服话术 Agent，字段全对。"""
-    asset_id = bootstrap_demo_cs_asset(db_path)
+def test_bootstrap_creates_zhao_design_asset(db_path):
+    """注册一份属于 zhao_design 的客服话术 Agent，字段全对。"""
+    asset_id = bootstrap_demo_data_analyst_asset(db_path)
     assert isinstance(asset_id, str) and asset_id
 
     asset = get_skill_asset(db_path, asset_id)
     assert asset is not None
-    assert asset["name"] == "客服话术生成器"
+    assert asset["name"] == "数据分析助手"
     assert asset["type"] == "agent"
-    assert asset["creator_id"] == "zhang_ai"
-    assert asset["price_amount"] == 3000
+    assert asset["creator_id"] == "zhao_design"
+    assert asset["price_amount"] == 4000
     assert asset["price_currency"] == "USD"
     assert asset["split_rule"] == {"creator": 7000, "platform": 2000, "tax": 1000}
     assert len(asset["content_hash"]) == 64
@@ -65,8 +65,8 @@ def test_bootstrap_creates_zhang_ai_asset(db_path):
 
 def test_bootstrap_cs_asset_is_idempotent(db_path):
     """二次调用复用同一份资产；list_skill_assets 仍只有 1 条。"""
-    a1 = bootstrap_demo_cs_asset(db_path)
-    a2 = bootstrap_demo_cs_asset(db_path)
+    a1 = bootstrap_demo_data_analyst_asset(db_path)
+    a2 = bootstrap_demo_data_analyst_asset(db_path)
     assert a1 == a2
     assert len(list_skill_assets(db_path)) == 1
 
@@ -77,35 +77,35 @@ def test_bootstrap_cs_asset_is_idempotent(db_path):
 
 def test_bootstrap_runs_creates_settled_and_accrued(db_path):
     """li_boss 名下产生一条 settled+tx_hash、一条 accrued；royalty_ledger 6 条。"""
-    asset_id = bootstrap_demo_cs_asset(db_path)
+    asset_id = bootstrap_demo_data_analyst_asset(db_path)
     bootstrap_demo_runs(db_path, asset_id)
 
     runs = list_agent_runs_by_caller(db_path, "li_boss")
     assert len(runs) == 2
 
     by_task = {r["task_id"]: r for r in runs}
-    settled = by_task["demo-cs-task-settled"]
-    accrued = by_task["demo-cs-task-accrued"]
+    settled = by_task["demo-data-task-settled"]
+    accrued = by_task["demo-data-task-accrued"]
 
     # settled run：状态机走完，tx_hash + method 都带 demo-preset 前缀（不冒充真凭证）
     assert settled["settlement_status"] == "settled"
     assert settled["tx_hash"].startswith("demo-preset-")
     assert settled["settlement_method"] == "demo-preset"
-    assert settled["charge_amount"] == 3000  # 1 小时 @ $30
+    assert settled["charge_amount"] == 4000  # 1 小时 @ $40
 
     # accrued run：未结算，无 tx_hash
     assert accrued["settlement_status"] == "accrued"
     assert accrued["tx_hash"] is None
-    assert accrued["charge_amount"] == 6000  # 2 小时 @ $30
+    assert accrued["charge_amount"] == 8000  # 2 小时 @ $40
 
-    # zhang_ai 的 creator ledger 行：两笔（一 settled 一 accrued），份额 7000bp
-    creator_rows = list_royalties_by_creator(db_path, "zhang_ai")
+    # zhao_design 的 creator ledger 行：两笔（一 settled 一 accrued），份额 7000bp
+    creator_rows = list_royalties_by_creator(db_path, "zhao_design")
     assert len(creator_rows) == 2
     statuses = sorted(r["status"] for r in creator_rows)
     assert statuses == ["accrued", "settled"]
     amounts = sorted(r["amount"] for r in creator_rows)
-    # creator 份额: settled 70% of 3000 = 2100, accrued 70% of 6000 = 4200
-    assert amounts == [2100, 4200]
+    # creator 份额: settled 70% of 4000 = 2800, accrued 70% of 6000 = 5600
+    assert amounts == [2800, 5600]
 
     # settled run 的 3 行 ledger 全部翻为 settled（creator/platform/tax 一致）
     settled_ledger = list_royalties_by_run(db_path, settled["run_id"])
@@ -122,7 +122,7 @@ def test_bootstrap_runs_creates_settled_and_accrued(db_path):
 
 def test_bootstrap_runs_is_idempotent(db_path):
     """二次调用不重复插行 — task_id 用固定值，幂等判据明确。"""
-    asset_id = bootstrap_demo_cs_asset(db_path)
+    asset_id = bootstrap_demo_data_analyst_asset(db_path)
     bootstrap_demo_runs(db_path, asset_id)
     bootstrap_demo_runs(db_path, asset_id)
 
@@ -168,10 +168,10 @@ def test_demo_agent_endpoint_returns_metadata_when_bootstrapped():
 
         assert resp.status_code == 200
         body = resp.get_json()
-        assert body["name"] == DEMO_CS_AGENT["name"]
-        assert body["creator_id"] == "zhang_ai"
-        assert body["creator_name"] == "张AI"
-        assert body["price_per_hour"] == 30.0
+        assert body["name"] == DEMO_DATA_ANALYST["name"]
+        assert body["creator_id"] == "zhao_design"
+        assert body["creator_name"] == "赵设计"
+        assert body["price_per_hour"] == 40.0
         assert body["currency"] == "USD"
         assert body["asset_id"]
         # wallet 至少是 0x 开头的地址样式（占位的本地 Anvil 默认账户）

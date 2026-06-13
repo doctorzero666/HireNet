@@ -11,6 +11,7 @@ talk to a real MCP server later without rewriting the client.
 from __future__ import annotations
 
 from flask import Flask, jsonify, request
+from flask_cors import CORS
 
 
 _GREETINGS = [
@@ -193,6 +194,7 @@ def create_mcp_app() -> Flask:
     Factored so tests can grab a `test_client()` without booting :5002.
     """
     app = Flask(__name__)
+    CORS(app)
 
     @app.get("/health")
     def health():

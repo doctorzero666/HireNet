@@ -9,7 +9,7 @@ import decimal
 import threading
 import time
 from datetime import datetime, timezone
-from flask import Flask, Blueprint, request, jsonify, session, render_template, current_app, make_response
+from flask import Flask, Blueprint, request, jsonify, session, render_template, current_app, make_response, send_from_directory
 from dotenv import load_dotenv
 
 from app.agents.agents import RequirementAnalysisAgent, decompose_tasks, run_resource_decision, CareerStrategyAgent
@@ -887,7 +887,7 @@ def get_demo_agent():
     位，让 modal 的"收款方钱包"卡显示有意义的地址；线上部署前应改成创作者
     真实关联的钱包。
     """
-    asset_id = current_app.config.get("DEMO_CS_AGENT_ASSET_ID")
+    asset_id = current_app.config.get("DEMO_DA_AGENT_ASSET_ID")
     if not asset_id:
         return jsonify({"error": "Demo agent not bootstrapped"}), 404
 
@@ -1218,25 +1218,6 @@ def mcp_endpoint():
 
 
 # ─── Serve frontend ───────────────────────────────────────────────────────────
-
-@main.route("/")
-def index():
-    """Serve the main page"""
-    return render_template('index.html')
-
-
-@main.route('/employer')
-def employer():
-    return render_template('employer.html')
-
-@main.route('/jobseeker')
-def jobseeker():
-    return render_template('jobseeker.html')
-
-@main.route('/agents')
-def agents():
-    return render_template('agents.html')
-
 
 @main.route("/api/analyze/quick", methods=["POST"])
 def quick_analyze():
@@ -1927,11 +1908,11 @@ def create_app(config: dict | None = None):
     # TIER 1 §2/§3 说明详见 app/services/demo_bootstrap.py。
     if not app.config.get("TESTING"):
         from app.services.demo_bootstrap import (
-            bootstrap_demo_cs_asset, bootstrap_demo_extra_assets, bootstrap_demo_runs,
+            bootstrap_demo_data_analyst_asset, bootstrap_demo_extra_assets, bootstrap_demo_runs,
         )
-        cs_asset_id = bootstrap_demo_cs_asset(app.config["DATABASE_PATH"])
-        app.config["DEMO_CS_AGENT_ASSET_ID"] = cs_asset_id
-        bootstrap_demo_runs(app.config["DATABASE_PATH"], cs_asset_id)
+        da_asset_id = bootstrap_demo_data_analyst_asset(app.config["DATABASE_PATH"])
+        app.config["DEMO_DA_AGENT_ASSET_ID"] = da_asset_id
+        bootstrap_demo_runs(app.config["DATABASE_PATH"], da_asset_id)
         # 额外预设（数据分析助手 / SEO Agent）—— 只为 Agent 世界提供更多卡片，
         # 不绑历史调用，不影响 ExecutionPage tx_hash 演示。
         bootstrap_demo_extra_assets(app.config["DATABASE_PATH"])
@@ -1946,6 +1927,22 @@ def create_app(config: dict | None = None):
         from app.services.settlement import get_provider
         provider_name = os.getenv("HIRENET_SETTLEMENT_PROVIDER", "mock")
         app.config["SETTLEMENT_PROVIDER"] = get_provider(provider_name)
+
+    # Serve frontend static files (built React app)
+    @main.route("/assets/<path:filename>")
+    def frontend_assets(filename):
+        return send_from_directory(
+            os.path.join(os.path.dirname(__file__), "..", "frontend", "dist", "assets"),
+            filename,
+        )
+
+    @main.route("/", defaults={"path": ""})
+    @main.route("/<path:path>")
+    def serve_frontend(path):
+        frontend_dir = os.path.join(os.path.dirname(__file__), "..", "frontend", "dist")
+        if path and os.path.isfile(os.path.join(frontend_dir, path)):
+            return send_from_directory(frontend_dir, path)
+        return send_from_directory(frontend_dir, "index.html")
 
     return app
 

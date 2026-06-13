@@ -13,5 +13,5 @@
   transition: all 0.3s ease;
   /* 注意：board 内含 position:fixed 的 NavBar，禁止在此用 transform 动画
      （transform 会劫持 fixed 元素的包含块），只做透明度淡入 */
-  animation: animal-fade-in 0.4s ease both;
+  animation: none;
 }
