@@ -1887,8 +1887,11 @@ def create_app(config: dict | None = None):
     if config:
         app.config.update(config)
 
-    # Serve frontend static files (built React app) — must be on main blueprint
-    # BEFORE register_blueprint, otherwise route decorators are silently ignored.
+    # Serve frontend static files (built React app). Registered on the `app`
+    # object (not the module-level `main` blueprint) because create_app runs
+    # once per test, and Flask raises AssertionError if you add routes to a
+    # blueprint after the first register_blueprint. `app` is rebuilt each call,
+    # so app-level decorators stay legal across many create_app invocations.
     #
     # Path resolution: absolute path computed once at app creation, so gunicorn's
     # working directory does not matter. On Railway (nixpacks), the repo lands at
@@ -1909,15 +1912,15 @@ def create_app(config: dict | None = None):
             flush=True,
         )
 
-    @main.route("/assets/<path:filename>")
+    @app.route("/assets/<path:filename>")
     def frontend_assets(filename):
         return send_from_directory(
             os.path.join(current_app.config["FRONTEND_DIR"], "assets"),
             filename,
         )
 
-    @main.route("/", defaults={"path": ""})
-    @main.route("/<path:path>")
+    @app.route("/", defaults={"path": ""})
+    @app.route("/<path:path>")
     def serve_frontend(path):
         dist = current_app.config["FRONTEND_DIR"]
         if path and os.path.isfile(os.path.join(dist, path)):

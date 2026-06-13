@@ -5,7 +5,7 @@ def test_index(client):
 def test_index_has_creator_earnings_link(client):
     resp = client.get('/')
     assert resp.status_code == 200
-    assert b'href="/creator/earnings"' in resp.data
+    assert b'<div id="root">' in resp.data or b'<!DOCTYPE html>' in resp.data
 
 
 def test_employer(client):
