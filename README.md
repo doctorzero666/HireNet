@@ -190,6 +190,8 @@ Agent 被调用得越多，平台收益越多——一个自增长的飞轮。
 
 👉 **https://frontend-nine-gamma-37.vercel.app**
 
+📺 **Demo 视频**：https://drive.google.com/file/d/1A2L54Iv-zLuL4tUXiGSNKi7Kwem7mEVc/view
+
 （后端 Railway + 前端 Vercel，可直接体验全部功能）
 
 ---
@@ -233,3 +235,4 @@ HireNet/
 - **赛道**：AI × Web3 Agentic Builders — Cobo Track
 - **赞助方**：Cobo（Agentic Wallet）+ 智谱（GLM-4）
 - **提交材料**：代码仓库 + Demo 视频 + README
+- **Demo 视频**：https://drive.google.com/file/d/1A2L54Iv-zLuL4tUXiGSNKi7Kwem7mEVc/view
