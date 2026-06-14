@@ -16,6 +16,8 @@
 
 📺 **Demo 视频**：https://drive.google.com/file/d/1A2L54Iv-zLuL4tUXiGSNKi7Kwem7mEVc/view
 
+📊 **答辩 PPT**：https://drive.google.com/file/d/1axLuycdxmpXh5V1KkorojJoHCM_lvzy5/view
+
 （后端 Railway + 前端 Vercel，可直接体验全部功能）
 
 ---
