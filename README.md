@@ -10,6 +10,16 @@
 
 ---
 
+## 🌐 在线 Demo
+
+👉 **https://frontend-nine-gamma-37.vercel.app**
+
+📺 **Demo 视频**：https://drive.google.com/file/d/1A2L54Iv-zLuL4tUXiGSNKi7Kwem7mEVc/view
+
+（后端 Railway + 前端 Vercel，可直接体验全部功能）
+
+---
+
 ## 💥 为什么是 HireNet
 
 今天的招聘流程：写 JD → 发岗位 → 筛简历 → 面试。但我们很少质疑前提——**"需要招聘一个人"** 真的是默认答案吗？
@@ -183,16 +193,6 @@ Agent 被调用得越多，平台收益越多——一个自增长的飞轮。
 | Agent 协议 | MCP (Model Context Protocol) |
 | 鉴权 | JWT + pbkdf2 |
 | 测试 | pytest 532 passed |
-
----
-
-## 🌐 在线 Demo
-
-👉 **https://frontend-nine-gamma-37.vercel.app**
-
-📺 **Demo 视频**：https://drive.google.com/file/d/1A2L54Iv-zLuL4tUXiGSNKi7Kwem7mEVc/view
-
-（后端 Railway + 前端 Vercel，可直接体验全部功能）
 
 ---
 
