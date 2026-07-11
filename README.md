@@ -1,6 +1,10 @@
-# 🍃 HireNet — AI 劳动力调度与交易平台
+<div align="center">
 
-> 企业不必先决定“招一个人”还是“买一个 Agent”，只需描述业务目标。
+# 🍃 HireNet
+
+### AI 劳动力调度与交易平台
+
+**企业不必先决定“招一个人”还是“买一个 Agent”，只需描述业务目标。**
 
 ![Python](https://img.shields.io/badge/Python-3.11-blue?style=flat-square&logo=python)
 ![Flask](https://img.shields.io/badge/Flask-3.x-lightgrey?style=flat-square&logo=flask)
@@ -8,7 +12,26 @@
 ![Tests](https://img.shields.io/badge/tests-532_passed-brightgreen?style=flat-square)
 ![Hackathon](https://img.shields.io/badge/AI×Web3-Hackathon-orange?style=flat-square)
 
-**[在线体验](https://frontend-nine-gamma-37.vercel.app)** · **[Demo 视频](https://drive.google.com/file/d/1A2L54Iv-zLuL4tUXiGSNKi7Kwem7mEVc/view)** · **[答辩 PPT](https://drive.google.com/file/d/1axLuycdxmpXh5V1KkorojJoHCM_lvzy5/view)**
+</div>
+
+<table>
+  <tr>
+    <td width="33%" align="center">
+      <strong>🌐 在线体验</strong><br />
+      <a href="https://frontend-nine-gamma-37.vercel.app">打开 HireNet Demo</a>
+    </td>
+    <td width="33%" align="center">
+      <strong>📺 演示视频</strong><br />
+      <a href="https://drive.google.com/file/d/1A2L54Iv-zLuL4tUXiGSNKi7Kwem7mEVc/view">观看完整 Demo</a>
+    </td>
+    <td width="33%" align="center">
+      <strong>📊 答辩材料</strong><br />
+      <a href="https://drive.google.com/file/d/1axLuycdxmpXh5V1KkorojJoHCM_lvzy5/view">查看答辩 PPT</a>
+    </td>
+  </tr>
+</table>
+
+---
 
 HireNet 是一个 AI 劳动力调度与交易平台。企业用自然语言描述业务目标，平台通过 AI 澄清和拆解需求，判断每项任务应由 **AI Agent、人类人才或人机协同** 完成，并继续完成资源匹配、任务执行与链上结算。
 
@@ -16,7 +39,7 @@ HireNet 是一个 AI 劳动力调度与交易平台。企业用自然语言描�
 
 > 面对一个业务需求，企业应该招聘一个人、调用一个 Agent，还是采用人机协同？
 
-## 核心价值
+## 🎯 一句话看懂 HireNet
 
 | 角色 | 核心痛点 | HireNet 提供的价值 |
 | --- | --- | --- |
@@ -41,9 +64,11 @@ flowchart LR
 
 HireNet 将传统招聘平台的“岗位匹配”，扩展成了更前置的**劳动力类型决策**。
 
-## 产品流程
+---
 
-### 企业端：从业务目标到执行
+## 🧭 产品流程
+
+### 🏢 企业端：从业务目标到执行
 
 1. 企业用自然语言描述希望完成的业务目标；
 2. AI 主动追问场景、预算、周期和交付标准；
@@ -75,7 +100,7 @@ HireNet 将传统招聘平台的“岗位匹配”，扩展成了更前置的**�
   </tr>
 </table>
 
-### 求职者端：从海投到精准匹配
+### 🧑‍💼 求职者端：从海投到精准匹配
 
 1. 填写技能、经历、目标和工作偏好；
 2. AI 提炼候选人的核心优势与发展方向；
@@ -96,7 +121,7 @@ HireNet 将传统招聘平台的“岗位匹配”，扩展成了更前置的**�
   </tr>
 </table>
 
-### Agent 创作者端：从能力接入到持续收益
+### 🧩 Agent 创作者端：从能力接入到持续收益
 
 1. 填写 Agent 名称、能力、适用任务、计费方式和创作者钱包；
 2. 配置 MCP Server 端点；
@@ -128,7 +153,9 @@ HireNet 将传统招聘平台的“岗位匹配”，扩展成了更前置的**�
   </tr>
 </table>
 
-## 商业模式
+---
+
+## 💰 商业模式
 
 平台的基础收入来自 Agent 任务服务费。MVP 使用以下**模拟分账规则**验证交易闭环，不代表正式商业定价：
 
@@ -140,7 +167,9 @@ HireNet 将传统招聘平台的“岗位匹配”，扩展成了更前置的**�
 
 后续可扩展企业订阅、私有 Agent 接入与部署、Agent 认证与审计、优质 Agent 推广，以及人才匹配服务费。
 
-## 技术架构
+---
+
+## 🏗️ 技术架构
 
 | 模块 | 技术与职责 |
 | --- | --- |
@@ -164,7 +193,9 @@ HireNet/
 └── start.sh           # 一键启动
 ```
 
-## 本地运行
+---
+
+## 🚀 本地运行
 
 ```bash
 git clone https://github.com/doctorzero666/HireNet.git
@@ -179,20 +210,48 @@ bash start.sh
 # → http://localhost:5173
 ```
 
-## 团队分工
+---
 
-| 成员 | 角色 | 主要贡献 |
-| --- | --- | --- |
-| Kevin（[doctorzero666](https://github.com/doctorzero666)） | 队长 / 产品与技术负责人 | 主导项目前期产品设计与整体方案，规划三端核心体验、MCP 接入、链上交易闭环、商业模式与演示叙事；负责技术方案设计、前后端开发、系统集成、测试、部署与演示环境搭建。 |
-| Jade（[JadeTwinkle](https://github.com/JadeTwinkle)） | 产品协作 | 与队长共同讨论和梳理产品思路，参与产品定位、三方角色关系与核心业务流程的整理，协助完善产品表达和项目材料。 |
+## 👥 团队分工
 
-## Hackathon
+<table>
+  <tr>
+    <td width="50%" valign="top">
+      <h3 align="center">⚙️ Kevin</h3>
+      <p align="center"><strong>队长 · 技术负责人</strong></p>
+      <p align="center"><a href="https://github.com/doctorzero666">@doctorzero666</a></p>
+      <hr />
+      <ul>
+        <li>主导项目前期产品设计与整体方案</li>
+        <li>负责技术方案与系统架构设计</li>
+        <li>负责前后端开发、系统集成与测试</li>
+        <li>负责部署与演示环境搭建</li>
+      </ul>
+    </td>
+    <td width="50%" valign="top">
+      <h3 align="center">🎬 Jade</h3>
+      <p align="center"><strong>产品 · 视频剪辑</strong></p>
+      <p align="center"><a href="https://github.com/JadeTwinkle">@JadeTwinkle</a></p>
+      <hr />
+      <ul>
+        <li>与队长共同讨论和梳理产品思路</li>
+        <li>参与产品定位、三方角色关系与核心流程整理</li>
+        <li>协助完善产品表达与项目材料</li>
+        <li>负责 Demo 视频策划、剪辑与成片输出</li>
+      </ul>
+    </td>
+  </tr>
+</table>
+
+---
+
+## 🏆 Hackathon
 
 - **赛事**：AI × Web3 Agentic Builders Hackathon
 - **赛道**：Cobo Track
 - **关键集成**：Cobo Agentic Wallet、智谱 GLM、MCP
 - **交付物**：可运行代码、在线 Demo、演示视频与答辩材料
 
-## 说明
+## 📌 说明
 
 HireNet 当前为 Hackathon MVP。链上分账比例、性能指标与商业模式均用于验证产品和技术闭环，不构成正式服务承诺。
