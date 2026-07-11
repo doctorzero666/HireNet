@@ -1,240 +1,200 @@
-# 🍃 HireNet — AI 劳动力网络
+# 🍃 HireNet — AI 劳动力调度与交易平台
 
-> 如果"招聘"这件事，本身就是错的呢？
+> 企业不必先决定“招一个人”还是“买一个 Agent”，只需描述业务目标。
 
-![Python](https://img.shields.io/badge/Python-3.11-blue?style=flat-square&logo=python)
-![Flask](https://img.shields.io/badge/Flask-3.x-lightgrey?style=flat-square&logo=flask)
-![React](https://img.shields.io/badge/React-18-61DAFB?style=flat-square&logo=react)
-![Tests](https://img.shields.io/badge/tests-532_passed-brightgreen?style=flat-square)
-![Hackathon](https://img.shields.io/badge/AI×Web3-Hackathon-orange?style=flat-square)
+[![Python](https://img.shields.io/badge/Python-3.11-3776AB?style=flat-square&logo=python&logoColor=white)](https://www.python.org/)
+[![Flask](https://img.shields.io/badge/Flask-3.x-000000?style=flat-square&logo=flask)](https://flask.palletsprojects.com/)
+[![React](https://img.shields.io/badge/React-19-61DAFB?style=flat-square&logo=react&logoColor=black)](https://react.dev/)
+[![MCP](https://img.shields.io/badge/Protocol-MCP-6C5CE7?style=flat-square)](https://modelcontextprotocol.io/)
+[![Hackathon](https://img.shields.io/badge/AI%20%C3%97%20Web3-Hackathon-F59E0B?style=flat-square)](#hackathon)
 
----
+**[在线体验](https://frontend-nine-gamma-37.vercel.app)** · **[Demo 视频](https://drive.google.com/file/d/1A2L54Iv-zLuL4tUXiGSNKi7Kwem7mEVc/view)** · **[答辩 PPT](https://drive.google.com/file/d/1axLuycdxmpXh5V1KkorojJoHCM_lvzy5/view)**
 
-## 🌐 在线 Demo
+HireNet 是一个 AI 劳动力调度与交易平台。企业用自然语言描述业务目标，平台通过 AI 澄清和拆解需求，判断每项任务应由 **AI Agent、人类人才或人机协同** 完成，并继续完成资源匹配、任务执行与链上结算。
 
-👉 **https://frontend-nine-gamma-37.vercel.app**
+它解决的不是“怎样更快招聘”，而是更前置的问题：
 
-📺 **Demo 视频**：https://drive.google.com/file/d/1A2L54Iv-zLuL4tUXiGSNKi7Kwem7mEVc/view
-
-📊 **答辩 PPT**：https://drive.google.com/file/d/1axLuycdxmpXh5V1KkorojJoHCM_lvzy5/view
-
-（后端 Railway + 前端 Vercel，可直接体验全部功能）
-
----
-
-## 💥 为什么是 HireNet
-
-今天的招聘流程：写 JD → 发岗位 → 筛简历 → 面试。但我们很少质疑前提——**"需要招聘一个人"** 真的是默认答案吗？
-
-HireNet 不做招聘。企业描述需求，AI 拆解任务，Agent 自动执行，Cobo/Anvil 链上结算——创作者获得版税，求职者精准匹配。
-
-> **一个让 AI 替你工作、链上替你分钱的劳动力网络。**
-
----
-
-## 🎬 产品全貌
-
-HireNet 有三个入口，对应三种角色。点击下方截图区查看每个界面的详细介绍。
-
----
-
-## 🏠 起始页：角色选择
-
-> <img width="2418" height="1648" alt="image" src="https://github.com/user-attachments/assets/b99d69c2-4e45-40d5-8fb6-addba90a00a5" />
-
-
-进入系统后，用户选择自己的身份——雇主、创作者、求职者。三个角色各有独立的操作流程和收益模型，共享底层 AI 分析引擎和链上结算网络。
-
-底部「进入 Agent 世界」可浏览所有已注册的 AI Agent，查看谁在让这个世界运转。
-
----
-
-## 🏢 雇主端：从需求到执行
-
-### 雇主分流页
-
-> <img width="2510" height="1644" alt="image" src="https://github.com/user-attachments/assets/17dbf778-1eb9-4d5d-b9c9-1fb86bf4271b" />
-
-
-选择「雇主」后到达分流页。两条路径可选：
-- **业务大本营**：查看 Dashboard，了解正在运行的 Agent 和业务指标
-- **发起委托**：描述需求，让 AI 拆解并匹配 Agent
-
-### 需求描述
-
-> <img width="2100" height="1420" alt="image" src="https://github.com/user-attachments/assets/4a865495-2aed-4cba-93f4-a92d06649f3a" />
-
-企业用自然语言描述想完成的事——例如「为电商平台搭建智能客服系统」。不需要写 JD，不需要懂技术。系统给出示例提示引导输入。
-
-### AI 智能追问
-
-> <img width="1812" height="1312" alt="image" src="https://github.com/user-attachments/assets/5cf6d4c7-66db-4ab6-beac-53a68b74f67c" />
-
-
-
-智谱 GLM-4 驱动的需求分析 Agent 自动追问关键信息——覆盖场景、预算、渠道等。用户通过快捷选项或自然语言回答。只有真正理解需求后，系统才进入下一步。
-
-### 分析报告：任务拆解 + Agent 匹配
-
-> <img width="1640" height="1660" alt="image" src="https://github.com/user-attachments/assets/f9197a22-4332-4c66-89dc-04e79e001121" />
-
-
-AI 将需求拆解为多个任务，并对每个任务做出智能决策：
-- 🟢 **Agent 可完成**：已有 AI Agent 能独立处理
-- 🟡 **需招聘人才**：仍需人类参与，自动生成精准 JD
-- 🔵 **人机协同**：Agent + 人类配合完成
-
-### Pact 授权：Cobo/Anvil 链上支付
-
-> <img width="1030" height="1484" alt="image" src="https://github.com/user-attachments/assets/0d15d0ce-f764-4d34-95c0-f4c6c2ca5b1d" />
-
-
-点击「启动 Agent」后，弹窗展示费用构成、创作者钱包地址、预估工时。用户确认后，系统通过 Cobo Agentic Wallet（或本地 Anvil 链）完成链上结算。**这是核心闭环。**
-
-### 执行交付 + 链上可查
-
-> <img width="1600" height="1288" alt="image" src="https://github.com/user-attachments/assets/16c4f30a-21ee-42a3-a8f9-ac4d01ca4b20" />
-
-
-Agent 完成后，页面展示费用拆分——创作者、平台、税费各分多少，一分不差。**交易哈希（tx_hash）可直接在 Anvil 本地链上查验**，实现「链上可查、不可篡改」。
-
-### 企业控制台 Dashboard
-
-> <img width="1868" height="1618" alt="image" src="https://github.com/user-attachments/assets/7ea990bd-c6c8-4bcf-82ed-5e8fe67488d4" />
-
-
-雇主可随时查看业务全景——月销售额、活跃 Agent 数、任务完成率、节省的人力成本。所有 Agent 的调用次数和准确率一目了然。
-
----
-
-## 🎨 创作者端：注册 Agent 并获利
-
-### 创作者工坊
-
-> <img width="2228" height="1556" alt="image" src="https://github.com/user-attachments/assets/6632aa06-a568-4892-9185-91b98e5e51db" />
-
-
-展示创作者已注册的所有 Agent。每个 Agent 标注是否已连接 MCP 端点。点击可查看详细性能数据。
-
-### 注册 Agent + MCP 接入
-
-> <img width="2406" height="1764" alt="image" src="https://github.com/user-attachments/assets/cb7bfb87-7636-4ff3-8fc4-83e636ff1c5c" />
-
-
-创作者填写 Agent 信息（名称、描述、类型、时薪、钱包地址），并配置 MCP 端点 URL。点击「测试连接」可验证 MCP Server 是否返回可用工具列表——**这是 Demo 关键展示点**，证明 Agent 不是静态数据，而是可以真实调用的服务。
-
-### Agent 性能面板
-
-><img width="2150" height="1802" alt="image" src="https://github.com/user-attachments/assets/7485b0d4-fa79-43ce-9938-d9d324c79055" />
-
-
-展示单个 Agent 的调用次数、准确率、累计收益。每次被企业调用，Cobo/Anvil 自动结算一笔版税到创作者钱包。
-
-### 收益账本
-
-> <img width="2072" height="1596" alt="image" src="https://github.com/user-attachments/assets/1afc9715-5602-4f22-865e-9002c84c0e27" />
-
-
-创作者的所有收益记录——累计收益、已结算、待结算、调用记录、交易哈希。每一笔都有链上 tx_hash 可追溯。
-
----
-
-## 👤 求职者端：精准匹配 + AI 分析
-
-### 岗位广场
-
-> <img width="2140" height="1572" alt="image" src="https://github.com/user-attachments/assets/88d94aee-2228-4c63-ba20-4f7c0af46abe" />
-
-
-不是海投简历。浏览由企业端自动生成的精准岗位，薪资区间、工作类型、技术要求一目了然。
-
-### 岗位详情 + 一键投递
-
-> <img width="2118" height="1584" alt="image" src="https://github.com/user-attachments/assets/efade0d3-c0c8-4c15-9c1c-31d5504d6cd8" />
-<img width="2136" height="1698" alt="image" src="https://github.com/user-attachments/assets/7a327998-d5ac-4254-b1e0-1c8acb23a94a" />
-
-
-
-查看完整 JD 后，一键投递。系统自动匹配候选人与岗位的契合度。
-
-### 我的资料 + AI 分析优势
-
-> <img width="2062" height="1816" alt="image" src="https://github.com/user-attachments/assets/c3f6fe01-ceeb-4bf7-b73b-8fb27e1e869e" />
-
-
-填写个人资料后，AI 分析技能和经历，告诉你最适合什么方向、核心优势在哪里。从「被筛选」到「认识自己」。
-
----
-
-## 🤖 Agent 世界
-
-> <img width="2384" height="1474" alt="image" src="https://github.com/user-attachments/assets/30a7a2d6-35cb-4e27-9804-7fc96a6567da" />
-
-
-所有已注册的 Agent 在此陈列——创作者名、时薪、调用次数、MCP 连接状态。hover 卡片展示青绿边框动画。
-
-已接入 MCP 的 Agent 带 🔗 标签，点击可进入性能面板查看详情。
-
----
-
-## 💰 商业模式
-
-HireNet 的收入来自每笔交易的平台分成：**企业支付，创作者拿七成，平台抽两成，税费一成**。
-
-Agent 被调用得越多，平台收益越多——一个自增长的飞轮。
-
----
-
-## 🏗 技术架构
-
-| 层 | 技术 |
-|----|------|
-| 前端 | React 18 + Vite + Island 动森风 UI |
-| 后端 | Flask + SQLite + 智谱 GLM-4 |
-| 链上结算 | Anvil 本地测试链（可切换 Cobo WaaS 2.0）|
-| Agent 协议 | MCP (Model Context Protocol) |
-| 鉴权 | JWT + pbkdf2 |
-| 测试 | pytest 532 passed |
-
----
-
-## 🚀 本地运行
+> 面对一个业务需求，企业应该招聘一个人、调用一个 Agent，还是采用人机协同？
+
+## 核心价值
+
+| 角色 | 核心痛点 | HireNet 提供的价值 |
+| --- | --- | --- |
+| 企业 / 雇主 | 不知道如何拆解需求，也难以判断应该招人还是使用 Agent | AI 澄清目标、拆解任务并匹配合适的执行资源 |
+| 求职者 | 海投低效，不清楚自身优势与岗位匹配度 | AI 分析个人优势，匹配真正需要人类参与的任务 |
+| Agent 创作者 | Agent 难以被发现、验证、调用和商业化 | 通过 MCP 接入 Agent，获得调用收入和持续收益 |
+
+```mermaid
+flowchart LR
+    A["企业描述业务目标"] --> B["AI 澄清与任务拆解"]
+    B --> C{"执行方式判断"}
+    C -->|"Agent 可完成"| D["匹配并调用 Agent"]
+    C -->|"需要人类"| E["生成岗位并匹配求职者"]
+    C -->|"人机协同"| F["Agent 与求职者协作"]
+    G["创作者通过 MCP 注册 Agent"] --> D
+    D --> H["交付结果"]
+    E --> H
+    F --> H
+    H --> I["企业支付与链上分账"]
+    I --> G
+```
+
+HireNet 将传统招聘平台的“岗位匹配”，扩展成了更前置的**劳动力类型决策**。
+
+## 产品流程
+
+### 企业端：从业务目标到执行
+
+1. 企业用自然语言描述希望完成的业务目标；
+2. AI 主动追问场景、预算、周期和交付标准；
+3. 将业务目标拆解成可执行任务；
+4. 判断任务适合 Agent、人类还是人机协同；
+5. Agent 任务进入授权、执行与结算，人类任务生成结构化岗位；
+6. 企业在控制台查看进度、成本和交付结果。
+
+<img width="1640" alt="AI 任务分析与资源匹配" src="https://github.com/user-attachments/assets/f9197a22-4332-4c66-89dc-04e79e001121" />
+
+### 求职者端：从海投到精准匹配
+
+1. 填写技能、经历、目标和工作偏好；
+2. AI 提炼候选人的核心优势与发展方向；
+3. 匹配平台中必须由人类参与的真实任务；
+4. 推荐岗位并解释匹配原因；
+5. 候选人确认后一键投递。
+
+<img width="2062" alt="求职者资料与 AI 优势分析" src="https://github.com/user-attachments/assets/c3f6fe01-ceeb-4bf7-b73b-8fb27e1e869e" />
+
+### Agent 创作者端：从能力接入到持续收益
+
+1. 填写 Agent 名称、能力、适用任务、计费方式和创作者钱包；
+2. 配置 MCP Server 端点；
+3. 平台测试连接并读取可用工具；
+4. Agent 通过验证后进入市场；
+5. 企业调用 Agent，平台记录调用、准确率、完成率与收益；
+6. 创作者按调用获得结算收入。
+
+<img width="2406" alt="Agent 注册与 MCP 接入" src="https://github.com/user-attachments/assets/cb7bfb87-7636-4ff3-8fc4-83e636ff1c5c" />
+
+## 核心能力
+
+- **AI 需求澄清与任务拆解**：基于智谱 `glm-4-plus` 的多轮分析流程，将模糊目标转成结构化任务。
+- **三类劳动力决策**：为每项任务判断 Agent 执行、人工执行或人机协同。
+- **Agent 市场与 MCP 接入**：验证 MCP 端点、发现工具，并支持真实工具调用。
+- **求职者优势分析与岗位匹配**：让岗位来自已拆解的实际任务，并解释匹配原因。
+- **Pact 授权与结算**：覆盖创建、确认、执行、分账和状态查询的完整生命周期。
+- **可替换结算层**：支持 Mock、Anvil 本地链、Sepolia 测试网与 Cobo WaaS。
+- **收益账本与审计**：记录调用、分账、交易哈希和结算状态，便于追踪与对账。
+
+## 商业模式
+
+平台的基础收入来自 Agent 任务服务费。MVP 使用以下**模拟分账规则**验证交易闭环，不代表正式商业定价：
+
+| 参与方 | 演示分账比例 |
+| --- | ---: |
+| Agent 创作者 | 70% |
+| HireNet 平台 | 20% |
+| 税费 | 10% |
+
+后续可扩展企业订阅、私有 Agent 接入与部署、Agent 认证与审计、优质 Agent 推广，以及人才匹配服务费。
+
+## 技术架构
+
+| 模块 | 技术与职责 |
+| --- | --- |
+| Web 前端 | React 19、Vite 8、React Router 7 |
+| API 服务 | Flask 3、REST API、JWT 鉴权 |
+| AI 能力 | 智谱 `glm-4-plus`，支持通过环境变量切换兼容模型 |
+| Agent 协议 | MCP 工具发现与调用 |
+| 数据层 | SQLite、结构化 Schema、收益与审计账本 |
+| Web3 结算 | Mock、Anvil、Sepolia、Cobo WaaS 可替换 Provider |
+| 测试 | pytest，覆盖鉴权、MCP、Pact、结算、账本和端到端流程 |
+
+```text
+HireNet/
+├── app/
+│   ├── agents/          # 需求分析、岗位设计、候选人匹配
+│   ├── mcp_servers/     # 客服与数据分析 Demo MCP Server
+│   ├── routes/          # Agent、收益与审计 API
+│   ├── services/        # 鉴权、MCP、Pact 与多 Provider 结算
+│   ├── storage/         # SQLite 数据访问与账本
+│   └── schemas/         # 核心业务对象 JSON Schema
+├── frontend/            # React 单页应用
+├── tests/               # 自动化测试
+├── docs/                # PRD、UX、阶段规格与 Demo 材料
+└── start.sh             # 本地一键启动脚本
+```
+
+## 本地运行
+
+### 1. 环境要求
+
+- Python 3.11+
+- Node.js 20+
+- npm
+- 可选：Foundry / Anvil（仅在使用本地链结算时需要）
+
+### 2. 安装依赖
 
 ```bash
 git clone https://github.com/doctorzero666/HireNet.git
 cd HireNet
 
-# 安装依赖
+python -m venv .venv
+source .venv/bin/activate          # Windows PowerShell: .venv\Scripts\Activate.ps1
 pip install -r requirements.txt
-cd frontend && npm install && cd ..
 
-# 启动全部服务（Anvil + 后端 + MCP Server + 前端）
+cd frontend
+npm install
+cd ..
+```
+
+### 3. 配置 AI（可选）
+
+未配置 API Key 时仍可体验部分演示流程；如需调用真实模型，可设置：
+
+```bash
+export ZHIPU_API_KEY="your-api-key"
+export ZHIPU_MODEL="glm-4-plus"
+```
+
+### 4. 启动
+
+```bash
 bash start.sh
-# → http://localhost:5173
 ```
 
----
+启动后访问：
 
-## 📂 项目结构
+- 前端：`http://localhost:5173`
+- 后端 API：`http://localhost:5001`
+- Demo MCP Server：`http://localhost:5002`
 
+默认使用 Mock 结算。如需本地链，将 `HIRENET_SETTLEMENT_PROVIDER` 设置为 `anvil`，并配置 `ANVIL_RPC_URL`、`ANVIL_FROM_KEY` 和 `ANVIL_TO_ADDRESS`。
+
+## 测试与构建
+
+```bash
+pytest -q
+
+cd frontend
+npm run lint
+npm run build
 ```
-HireNet/
-├── app/               # Flask 后端
-│   ├── agents/        # AI Agent（需求分析/JD生成/候选人匹配）
-│   ├── mcp_servers/   # Demo MCP Server（数据分析/客服）
-│   ├── services/      # 结算提供者/auth/bootstrap
-│   └── storage/       # SQLite DAO
-├── frontend/          # React SPA（15 个页面）
-├── tests/             # pytest 532 passed
-├── docs/              # PRD/UX Spec/Demo 配音脚本
-└── start.sh           # 一键启动
-```
 
----
+## 团队分工
 
-## 🏆 Hackathon
+| 成员 | 角色 | 主要贡献 |
+| --- | --- | --- |
+| [JadeTwinkle](https://github.com/JadeTwinkle) | 产品经理 / 产品设计 | 定义“AI 劳动力调度与交易平台”定位；设计企业、求职者、Agent 创作者三方模型；梳理 AI 需求澄清、任务拆解与劳动力类型决策流程；规划三端核心体验、MCP 接入与链上交易闭环；设计商业模式与演示叙事。 |
+| [doctorzero666](https://github.com/doctorzero666) | 技术开发 / 工程实现 | 负责 Flask 后端、React 前端、AI Agent 工作流、MCP Server 接入、SQLite 数据层、Pact 授权与多 Provider 链上结算等工程实现，并完成自动化测试、部署与演示环境搭建。 |
 
-- **赛道**：AI × Web3 Agentic Builders — Cobo Track
-- **赞助方**：Cobo（Agentic Wallet）+ 智谱（GLM-4）
-- **提交材料**：代码仓库 + Demo 视频 + README
-- **Demo 视频**：https://drive.google.com/file/d/1A2L54Iv-zLuL4tUXiGSNKi7Kwem7mEVc/view
+## Hackathon
+
+- **赛事**：AI × Web3 Agentic Builders Hackathon
+- **赛道**：Cobo Track
+- **关键集成**：Cobo Agentic Wallet、智谱 GLM、MCP
+- **交付物**：可运行代码、在线 Demo、演示视频与答辩材料
+
+## 说明
+
+HireNet 当前为 Hackathon MVP。链上分账比例、性能指标与商业模式均用于验证产品和技术闭环，不构成正式服务承诺。
