@@ -52,7 +52,28 @@ HireNet 将传统招聘平台的“岗位匹配”，扩展成了更前置的**�
 5. Agent 任务进入授权、执行与结算，人类任务生成结构化岗位；
 6. 企业在控制台查看进度、成本和交付结果。
 
-<img width="1640" alt="AI 任务分析与资源匹配" src="https://github.com/user-attachments/assets/f9197a22-4332-4c66-89dc-04e79e001121" />
+<table>
+  <tr>
+    <td width="50%" align="center">
+      <img alt="企业需求描述" src="https://github.com/user-attachments/assets/4a865495-2aed-4cba-93f4-a92d06649f3a" />
+      <br /><sub>企业使用自然语言描述业务目标</sub>
+    </td>
+    <td width="50%" align="center">
+      <img alt="AI 任务分析与资源匹配" src="https://github.com/user-attachments/assets/f9197a22-4332-4c66-89dc-04e79e001121" />
+      <br /><sub>AI 拆解任务并判断执行方式</sub>
+    </td>
+  </tr>
+  <tr>
+    <td width="50%" align="center">
+      <img alt="Pact 授权与支付" src="https://github.com/user-attachments/assets/0d15d0ce-f764-4d34-95c0-f4c6c2ca5b1d" />
+      <br /><sub>Pact 授权与链上支付</sub>
+    </td>
+    <td width="50%" align="center">
+      <img alt="企业控制台" src="https://github.com/user-attachments/assets/7ea990bd-c6c8-4bcf-82ed-5e8fe67488d4" />
+      <br /><sub>企业控制台查看业务进度</sub>
+    </td>
+  </tr>
+</table>
 
 ### 求职者端：从海投到精准匹配
 
@@ -62,7 +83,18 @@ HireNet 将传统招聘平台的“岗位匹配”，扩展成了更前置的**�
 4. 推荐岗位并解释匹配原因；
 5. 候选人确认后一键投递。
 
-<img width="2062" alt="求职者资料与 AI 优势分析" src="https://github.com/user-attachments/assets/c3f6fe01-ceeb-4bf7-b73b-8fb27e1e869e" />
+<table>
+  <tr>
+    <td width="50%" align="center">
+      <img alt="求职者岗位广场" src="https://github.com/user-attachments/assets/88d94aee-2228-4c63-ba20-4f7c0af46abe" />
+      <br /><sub>浏览真正需要人类参与的岗位</sub>
+    </td>
+    <td width="50%" align="center">
+      <img alt="求职者资料与 AI 优势分析" src="https://github.com/user-attachments/assets/c3f6fe01-ceeb-4bf7-b73b-8fb27e1e869e" />
+      <br /><sub>AI 分析个人优势与发展方向</sub>
+    </td>
+  </tr>
+</table>
 
 ### Agent 创作者端：从能力接入到持续收益
 
@@ -73,7 +105,28 @@ HireNet 将传统招聘平台的“岗位匹配”，扩展成了更前置的**�
 5. 企业调用 Agent，平台记录调用、准确率、完成率与收益；
 6. 创作者按调用获得结算收入。
 
-<img width="2406" alt="Agent 注册与 MCP 接入" src="https://github.com/user-attachments/assets/cb7bfb87-7636-4ff3-8fc4-83e636ff1c5c" />
+<table>
+  <tr>
+    <td width="50%" align="center">
+      <img alt="Agent 注册与 MCP 接入" src="https://github.com/user-attachments/assets/cb7bfb87-7636-4ff3-8fc4-83e636ff1c5c" />
+      <br /><sub>注册 Agent 并接入 MCP 服务</sub>
+    </td>
+    <td width="50%" align="center">
+      <img alt="Agent 性能面板" src="https://github.com/user-attachments/assets/7485b0d4-fa79-43ce-9938-d9d324c79055" />
+      <br /><sub>查看 Agent 调用与性能数据</sub>
+    </td>
+  </tr>
+  <tr>
+    <td width="50%" align="center">
+      <img alt="创作者收益账本" src="https://github.com/user-attachments/assets/1afc9715-5602-4f22-865e-9002c84c0e27" />
+      <br /><sub>追踪调用收入与结算记录</sub>
+    </td>
+    <td width="50%" align="center">
+      <img alt="Agent 世界" src="https://github.com/user-attachments/assets/30a7a2d6-35cb-4e27-9804-7fc96a6567da" />
+      <br /><sub>在 Agent 世界展示可用能力</sub>
+    </td>
+  </tr>
+</table>
 
 ## 商业模式
 
@@ -130,8 +183,8 @@ bash start.sh
 
 | 成员 | 角色 | 主要贡献 |
 | --- | --- | --- |
-| [JadeTwinkle](https://github.com/JadeTwinkle) | 产品经理 / 产品设计 | 定义“AI 劳动力调度与交易平台”定位；设计企业、求职者、Agent 创作者三方模型；梳理 AI 需求澄清、任务拆解与劳动力类型决策流程；规划三端核心体验、MCP 接入与链上交易闭环；设计商业模式与演示叙事。 |
-| [doctorzero666](https://github.com/doctorzero666) | 技术开发 / 工程实现 | 负责技术方案设计、前后端开发、系统集成、自动化测试、部署与演示环境搭建。 |
+| Kevin（[doctorzero666](https://github.com/doctorzero666)） | 队长 / 产品与技术负责人 | 主导项目前期产品设计与整体方案，规划三端核心体验、MCP 接入、链上交易闭环、商业模式与演示叙事；负责技术方案设计、前后端开发、系统集成、测试、部署与演示环境搭建。 |
+| Jade（[JadeTwinkle](https://github.com/JadeTwinkle)） | 产品协作 | 与队长共同讨论和梳理产品思路，参与产品定位、三方角色关系与核心业务流程的整理，协助完善产品表达和项目材料。 |
 
 ## Hackathon
 
