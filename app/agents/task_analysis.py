@@ -47,6 +47,7 @@ import jsonschema
 import app.agents.agents as agents_module
 from app.agents import candidate_profile
 from app.agents.decision_policy import decide, sort_evaluations
+from app.agents.lang_support import with_lang_messages
 from app.agents.pricing import estimate_cost_usd
 from app.agents.prompts import load_prompt, render_prompt
 from app.services.validation import (
@@ -348,6 +349,7 @@ class TaskAnalysisAgent:
         resource_pool: list[dict] | None = None,
         cost_lookup: Mapping[str, str] | None = None,
         on_llm_call: Callable[[dict], None] | None = None,
+        lang: str | None = None,
     ):
         """
         Args:
@@ -367,6 +369,13 @@ class TaskAnalysisAgent:
                 to write `analysis_traces` rows; this class never touches the DB.
                 An exception raised by the hook is logged and swallowed: losing
                 telemetry must not lose the employer's analysis.
+            lang: WP-I18N / I2 — optional output-language flag ("en"/"zh"/None).
+                Applied uniformly to every LLM call this agent makes, in the
+                single `_chat` seam (see `_chat` below and
+                `app.agents.lang_support.with_lang_messages`). Not part of
+                `self.state`: it is per-session config carried by the Flask
+                route, not conversational state to round-trip through
+                `to_state()`/`from_state()`.
         """
         self.client = llm_client if llm_client is not None else agents_module.get_llm_client()
         self.model = model if model is not None else agents_module.get_model()
@@ -374,6 +383,7 @@ class TaskAnalysisAgent:
         self._resource_pool = resource_pool
         self.cost_lookup = cost_lookup
         self.on_llm_call = on_llm_call
+        self.lang = lang
         self.state: dict = _empty_state()
 
     # ── state (D4) ────────────────────────────────────────────────────────────
@@ -790,7 +800,16 @@ class TaskAnalysisAgent:
         return self._resource_pool
 
     def _chat(self, stage: str, messages: list[dict], temperature: float) -> dict:
-        """Make one LLM call, account for it, and return its (unemitted) record."""
+        """Make one LLM call, account for it, and return its (unemitted) record.
+
+        WP-I18N / I2: this is the single seam every stage (clarify, decompose,
+        extract, evaluate, and both repair paths) funnels through, so
+        `with_lang_messages` here is enough to cover every LLM call the agent
+        makes — no per-stage wiring needed. A no-op when `self.lang != "en"`
+        (returns the same `messages` object), so the wire format is
+        byte-identical to pre-i18n behaviour when `lang` is absent.
+        """
+        messages = with_lang_messages(messages, self.lang)
         started = time.monotonic()
         resp = self.client.chat.completions.create(
             model=self.model,

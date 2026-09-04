@@ -8,6 +8,7 @@ import os
 import json
 from openai import OpenAI
 from app.agents.candidate_profile import DEMO_AGENTS, get_all_resources
+from app.agents.lang_support import with_lang_messages
 
 
 # ─── LLM Client (Zhipu GLM-4, OpenAI-compatible) ──────────────────────────────
@@ -47,9 +48,21 @@ REQUIREMENT_SYSTEM_PROMPT = """你是 HireNet 的需求分析 Agent。
 
 
 class RequirementAnalysisAgent:
-    def __init__(self):
+    def __init__(self, lang: str | None = None):
+        """
+        Args:
+            lang: optional output-language flag ("en"/"zh"/None). WP-I18N /
+                I2: when "en", every LLM call this agent makes gets
+                `lang_support.LANG_SUFFIX` appended to its system prompt at
+                request time. `self.history` itself never carries the
+                suffix — `with_lang_messages` builds a fresh, suffixed copy
+                for the wire on each call, so REQUIREMENT_SYSTEM_PROMPT stays
+                byte-identical in `self.history` across the whole session
+                (audit §7.4 / tests/test_prompts.py).
+        """
         self.client = get_llm_client()
         self.history = []
+        self.lang = lang
 
     def start(self, initial_input: str) -> str:
         """Start requirement analysis with user's initial description"""
@@ -65,9 +78,10 @@ class RequirementAnalysisAgent:
         return self._call_llm()
 
     def _call_llm(self) -> str:
+        messages = with_lang_messages(self.history, self.lang)
         resp = self.client.chat.completions.create(
             model=get_model(),
-            messages=self.history,
+            messages=messages,
             temperature=0.3,
         )
         assistant_msg = resp.choices[0].message.content
@@ -115,8 +129,12 @@ DECOMPOSITION_SYSTEM_PROMPT = """你是任务拆解 Agent。
 }"""
 
 
-def decompose_tasks(requirement: dict) -> dict:
-    """Break requirement into task units"""
+def decompose_tasks(requirement: dict, lang: str | None = None) -> dict:
+    """Break requirement into task units.
+
+    `lang`: WP-I18N / I2 — "en" appends the output-language directive to the
+    system prompt at request time (see `app.agents.lang_support`).
+    """
     client = get_llm_client()
 
     prompt = f"""请将以下项目需求拆解为任务单元：
@@ -127,12 +145,16 @@ def decompose_tasks(requirement: dict) -> dict:
 持续时间：{requirement.get('duration', 'unknown')}
 团队背景：{requirement.get('team_context', '未知')}"""
 
-    resp = client.chat.completions.create(
-        model=get_model(),
-        messages=[
+    messages = with_lang_messages(
+        [
             {"role": "system", "content": DECOMPOSITION_SYSTEM_PROMPT},
             {"role": "user", "content": prompt},
         ],
+        lang,
+    )
+    resp = client.chat.completions.create(
+        model=get_model(),
+        messages=messages,
         temperature=0.2,
     )
 
@@ -143,13 +165,20 @@ def decompose_tasks(requirement: dict) -> dict:
 
 # ─── Resource Decision Engine ─────────────────────────────────────────────────
 
-def evaluate_resource_for_task(resource: dict, task: dict) -> dict:
+def evaluate_resource_for_task(resource: dict, task: dict, lang: str | None = None) -> dict:
     """Evaluate if a resource (agent or candidate) can complete a given task."""
-    return _llm_evaluate_resource(resource, task)
+    return _llm_evaluate_resource(resource, task, lang=lang)
 
 
-def _llm_evaluate_resource(resource: dict, task: dict) -> dict:
-    """Fallback: use local LLM to evaluate resource-task fit"""
+def _llm_evaluate_resource(resource: dict, task: dict, lang: str | None = None) -> dict:
+    """Fallback: use local LLM to evaluate resource-task fit
+
+    `lang`: WP-I18N / I2 — "en" appends the output-language directive at
+    request time. This call has no system message in the v1 wire format
+    (single "user" message); `with_lang_messages` inserts a leading system
+    message carrying only the suffix when lang=="en", and is a no-op
+    otherwise (see `app.agents.lang_support`).
+    """
     client = get_llm_client()
 
     capability_desc = resource.get("capability_summary") or \
@@ -177,9 +206,10 @@ def _llm_evaluate_resource(resource: dict, task: dict) -> dict:
   "strengths": ["优势1", "优势2"]
 }}"""
 
+    messages = with_lang_messages([{"role": "user", "content": prompt}], lang)
     resp = client.chat.completions.create(
         model=get_model(),
-        messages=[{"role": "user", "content": prompt}],
+        messages=messages,
         temperature=0.2,
     )
     raw = resp.choices[0].message.content.strip()
@@ -364,10 +394,13 @@ class CareerStrategyAgent:
         raise ValueError("Could not parse strategy JSON")
 
 
-def run_resource_decision(tasks: list[dict]) -> dict:
+def run_resource_decision(tasks: list[dict], lang: str | None = None) -> dict:
     """
     For each task, evaluate all resources and make final decision.
     Returns decision result for each task.
+
+    `lang`: WP-I18N / I2, threaded down to every `evaluate_resource_for_task`
+    call this makes.
     """
     resources = get_all_resources()
     decisions = []
@@ -386,7 +419,7 @@ def run_resource_decision(tasks: list[dict]) -> dict:
 
         # Evaluate filtered resources for this task
         for resource in filtered_resources:
-            eval_result = evaluate_resource_for_task(resource, task)
+            eval_result = evaluate_resource_for_task(resource, task, lang=lang)
             task_result["evaluations"].append(eval_result)
 
         # Sort by confidence

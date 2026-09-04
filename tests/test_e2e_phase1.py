@@ -69,7 +69,7 @@ _CANNED_JOB_DESIGN = {
 }
 
 
-def _stub_decompose_tasks(requirement):
+def _stub_decompose_tasks(requirement, **kwargs):
     return {"tasks": [{"id": "t1", "name": "搭建后端", "type": "engineering"}]}
 
 
@@ -83,12 +83,12 @@ def _human_decision(task_id, name):
     }
 
 
-def _stub_run_resource_decision(tasks):
+def _stub_run_resource_decision(tasks, **kwargs):
     # 一个需要人来做的任务 → generate_jd_report 会真生成 job design 并触发计费
     return {"decisions": [_human_decision("t1", "搭建后端")]}
 
 
-def _stub_design_job(requirement, task, original_description=""):
+def _stub_design_job(requirement, task, original_description="", **kwargs):
     jd = dict(_CANNED_JOB_DESIGN)
     jd["task_id"] = task.get("id")
     jd["task_name"] = task.get("name")
@@ -187,7 +187,7 @@ def test_two_human_tasks_bill_per_task(app_and_db, stub_llm, monkeypatch):
     monkeypatch.setattr(
         app_module,
         "run_resource_decision",
-        lambda tasks: {"decisions": [_human_decision("t1", "搭建后端"), _human_decision("t2", "搭建前端")]},
+        lambda tasks, **kw: {"decisions": [_human_decision("t1", "搭建后端"), _human_decision("t2", "搭建前端")]},
     )
 
     resp = client.post(

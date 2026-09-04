@@ -14,6 +14,7 @@ from dotenv import load_dotenv
 
 from app.agents.agents import RequirementAnalysisAgent, decompose_tasks, run_resource_decision, CareerStrategyAgent
 from app.agents.job_design import generate_jd_report
+from app.agents.lang_support import normalize_lang
 from app.agents.task_analysis import TaskAnalysisAgent
 from app.services.auth import login_required
 from app.storage.analysis_traces import build_trace, insert_trace
@@ -229,7 +230,7 @@ def _write_decide_trace(session_id: str, sess: dict, decisions: dict) -> None:
         current_app.logger.exception("failed to write the decide trace row")
 
 
-def _new_v2_session(session_id: str, initial_input: str, requirement=None) -> dict:
+def _new_v2_session(session_id: str, initial_input: str, requirement=None, lang: str = "zh") -> dict:
     """Create the session record for a v2 run.
 
     Keeps every key the other routes already read off `analysis_sessions`
@@ -237,6 +238,11 @@ def _new_v2_session(session_id: str, initial_input: str, requirement=None) -> di
     live agent object with `agent_state` — the serialised dict (D4). `agent` is
     kept as an explicit None so any code that does `sess["agent"]` still finds
     the key; nothing in the v2 path reads it.
+
+    `lang` (WP-I18N / I2): the output-language flag chosen when this session
+    started, carried on the session dict (not the agent state) so `/reply`
+    and `/decide` — which never see a fresh `lang` argument — reconstruct the
+    agent with the same language every turn.
     """
     return {
         "agent": None,
@@ -246,16 +252,22 @@ def _new_v2_session(session_id: str, initial_input: str, requirement=None) -> di
         "history": [initial_input] if initial_input else [],
         "requirement": requirement,
         "trace_step": 0,
+        "lang": lang,
     }
 
 
 def _v2_agent(session_id: str, sess: dict) -> TaskAnalysisAgent:
-    """Rebuild the session's agent from its stored state, traces wired up."""
+    """Rebuild the session's agent from its stored state, traces wired up.
+
+    `lang` is read off the session dict (WP-I18N / I2), not the serialised
+    agent state — see `_new_v2_session`.
+    """
     hook = _v2_trace_writer(session_id, sess)
+    lang = sess.get("lang", "zh")
     state = sess.get("agent_state")
     if state is None:
-        return TaskAnalysisAgent(on_llm_call=hook)
-    return TaskAnalysisAgent.from_state(state, on_llm_call=hook)
+        return TaskAnalysisAgent(on_llm_call=hook, lang=lang)
+    return TaskAnalysisAgent.from_state(state, on_llm_call=hook, lang=lang)
 
 
 def _v2_pipeline(session_id: str, sess: dict) -> tuple[list, dict, TaskAnalysisAgent]:
@@ -283,10 +295,17 @@ def start_analysis():
     if not initial_input:
         return jsonify({"error": "Message is required"}), 400
 
+    # WP-I18N / I2: optional lang ("en"|"zh"); absent -> "zh" (today's
+    # behaviour); anything else -> 400. Stored on the session so /reply and
+    # /decide keep using the language this session started with.
+    lang = normalize_lang(data.get("lang"))
+    if lang is None:
+        return jsonify({"error": "unsupported lang"}), 400
+
     session_id = secrets.token_hex(8)
 
     if _task_agent_version() == "v2":
-        sess = _new_v2_session(session_id, initial_input)
+        sess = _new_v2_session(session_id, initial_input, lang=lang)
         analysis_sessions[session_id] = sess
         agent = _v2_agent(session_id, sess)
         result = agent.start(initial_input)
@@ -305,7 +324,7 @@ def start_analysis():
         })
 
     # Create new analysis session
-    agent = RequirementAnalysisAgent()
+    agent = RequirementAnalysisAgent(lang=lang)
     response = agent.start(initial_input)
 
     # Store session
@@ -314,6 +333,7 @@ def start_analysis():
         "initial_input": initial_input,
         "history": [initial_input],
         "requirement": None,
+        "lang": lang,
     }
 
     is_complete = agent.is_complete(response)
@@ -345,6 +365,19 @@ def reply_analysis():
 
     sess = analysis_sessions[session_id]
 
+    # WP-I18N / I2: optional lang on /reply too. Absent -> keep whatever the
+    # session already carries (defaults to "zh" from /start); present and
+    # invalid -> 400; present and valid -> updates the session's language for
+    # this and every subsequent turn (including /decide).
+    raw_lang = data.get("lang")
+    if raw_lang is None:
+        lang = sess.get("lang", "zh")
+    else:
+        lang = normalize_lang(raw_lang)
+        if lang is None:
+            return jsonify({"error": "unsupported lang"}), 400
+        sess["lang"] = lang
+
     # Dispatch on what the SESSION was started with, not on the current flag:
     # a v1 session holds a live RequirementAnalysisAgent and a v2 session holds
     # a state dict, so flipping HIRENET_TASK_AGENT mid-conversation must not
@@ -364,6 +397,7 @@ def reply_analysis():
         })
 
     agent = sess["agent"]
+    agent.lang = lang
     response = agent.reply(message)
     sess["history"].append(message)
 
@@ -407,6 +441,11 @@ def run_decision():
     if not requirement:
         return jsonify({"error": "Requirement analysis not complete"}), 400
 
+    # WP-I18N / I2: /decide has no lang parameter of its own — it reuses
+    # whatever /start (and any later /reply) put on the session, defaulting
+    # to "zh" for sessions that predate this flag or never set one.
+    lang = sess.get("lang", "zh")
+
     try:
         if sess.get("agent_version") == "v2":
             # Steps 1+2 in one object; usage totals (D8) ride along to billing.
@@ -414,11 +453,11 @@ def run_decision():
             recorder = _job_design_recorder(usage=agent.usage_summary())
         else:
             # Step 1: Decompose tasks
-            task_data = decompose_tasks(requirement)
+            task_data = decompose_tasks(requirement, lang=lang)
             tasks = task_data.get("tasks", [])
 
             # Step 2: Resource decision for each task
-            decisions = run_resource_decision(tasks)
+            decisions = run_resource_decision(tasks, lang=lang)
 
             recorder = _job_design_recorder()
 
@@ -429,6 +468,7 @@ def run_decision():
             requirement,
             original_description=sess.get("initial_input", ""),
             on_design=recorder,
+            lang=lang,
         )
         # Stage 1 / D11a (audit risk 8): /quick has always written this
         # (app.py:1252) and /decide never did, so GET /api/jobs — which reads
@@ -1425,10 +1465,15 @@ def quick_analyze():
     if not requirement:
         return jsonify({"error": "requirement is required"}), 400
 
+    # WP-I18N / I2: same optional lang as /start.
+    lang = normalize_lang(data.get("lang"))
+    if lang is None:
+        return jsonify({"error": "unsupported lang"}), 400
+
     session_id = secrets.token_hex(8)
     use_v2 = _task_agent_version() == "v2"
     if use_v2:
-        sess = _new_v2_session(session_id, original_description, requirement=requirement)
+        sess = _new_v2_session(session_id, original_description, requirement=requirement, lang=lang)
         # /quick skips the conversation entirely: the client already knows the
         # requirement, so it is seeded straight into the agent state and the
         # clarification loop never runs. `history` stays empty — there was no
@@ -1445,6 +1490,7 @@ def quick_analyze():
             "initial_input": original_description,
             "history": [],
             "requirement": requirement,
+            "lang": lang,
         }
 
     try:
@@ -1452,13 +1498,14 @@ def quick_analyze():
             tasks, decisions, agent = _v2_pipeline(session_id, analysis_sessions[session_id])
             recorder = _job_design_recorder(usage=agent.usage_summary())
         else:
-            task_data = decompose_tasks(requirement)
+            task_data = decompose_tasks(requirement, lang=lang)
             tasks = task_data.get("tasks", [])
-            decisions = run_resource_decision(tasks)
+            decisions = run_resource_decision(tasks, lang=lang)
             recorder = _job_design_recorder()
         jd_report = generate_jd_report(
             decisions, requirement, original_description=original_description,
             on_design=recorder,
+            lang=lang,
         )
         # store jd_report in session for job listing
         analysis_sessions[session_id]["jd_report"] = jd_report

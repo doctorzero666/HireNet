@@ -257,7 +257,7 @@ def _v1_recommendation(monkeypatch, evaluations):
     monkeypatch.setattr(
         agents_module,
         "evaluate_resource_for_task",
-        lambda resource, task: next(e for e in queue if e["resource_id"] == resource["id"]),
+        lambda resource, task, **kw: next(e for e in queue if e["resource_id"] == resource["id"]),
     )
     out = agents_module.run_resource_decision([TASK])
     return out["decisions"][0]["recommendation"]

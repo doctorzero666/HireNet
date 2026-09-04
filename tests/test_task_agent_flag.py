@@ -173,7 +173,7 @@ def captured_tasks(monkeypatch):
     """Capture the task dict generate_jd_report hands to design_job."""
     seen = []
 
-    def _design_job(requirement, task, original_description=""):
+    def _design_job(requirement, task, original_description="", **kwargs):
         seen.append(task)
         return dict(CANNED_JD)
 

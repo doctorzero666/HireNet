@@ -798,12 +798,12 @@ class TestBillingAndUsage:
         v1_client, db_path = make_app_client()
         try:
             monkeypatch.setattr(
-                app_module, "decompose_tasks", lambda r: {"tasks": [TASK_HUMAN]}
+                app_module, "decompose_tasks", lambda r, **kw: {"tasks": [TASK_HUMAN]}
             )
             monkeypatch.setattr(
                 app_module,
                 "run_resource_decision",
-                lambda tasks: {"decisions": [_v1_human_decision()]},
+                lambda tasks, **kw: {"decisions": [_v1_human_decision()]},
             )
             monkeypatch.setattr(
                 job_design_module, "design_job",
@@ -828,12 +828,12 @@ class TestBillingAndUsage:
         try:
             monkeypatch.setenv("HIRENET_TASK_AGENT", "v1")
             monkeypatch.setattr(
-                app_module, "decompose_tasks", lambda r: {"tasks": [TASK_HUMAN]}
+                app_module, "decompose_tasks", lambda r, **kw: {"tasks": [TASK_HUMAN]}
             )
             monkeypatch.setattr(
                 app_module,
                 "run_resource_decision",
-                lambda tasks: {"decisions": [_v1_human_decision()]},
+                lambda tasks, **kw: {"decisions": [_v1_human_decision()]},
             )
             monkeypatch.setattr(
                 job_design_module, "design_job",

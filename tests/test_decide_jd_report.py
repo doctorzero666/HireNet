@@ -98,12 +98,12 @@ def _pin_v1(monkeypatch):
 def decide_stubs(monkeypatch):
     """Stub only the two decomposition/routing boundaries; design_job is real."""
     monkeypatch.setattr(
-        app_module, "decompose_tasks", lambda requirement: {"tasks": [HUMAN_TASK]}
+        app_module, "decompose_tasks", lambda requirement, **kw: {"tasks": [HUMAN_TASK]}
     )
     monkeypatch.setattr(
         app_module,
         "run_resource_decision",
-        lambda tasks: {"decisions": [human_decision(t["id"], t["name"]) for t in tasks]},
+        lambda tasks, **kw: {"decisions": [human_decision(t["id"], t["name"]) for t in tasks]},
     )
 
 
@@ -174,12 +174,12 @@ class TestDecidePersistsJdReport:
         monkeypatch.setattr(
             app_module,
             "decompose_tasks",
-            lambda requirement: {"tasks": [HUMAN_TASK, dict(HUMAN_TASK, id="t2", name="话术沉淀")]},
+            lambda requirement, **kw: {"tasks": [HUMAN_TASK, dict(HUMAN_TASK, id="t2", name="话术沉淀")]},
         )
         monkeypatch.setattr(
             app_module,
             "run_resource_decision",
-            lambda tasks: {"decisions": [human_decision(t["id"], t["name"]) for t in tasks]},
+            lambda tasks, **kw: {"decisions": [human_decision(t["id"], t["name"]) for t in tasks]},
         )
         session_id = start_completed_session(client, fake_llm)
         fake_llm.queue(jd_json("客户成功专员"), jd_json("客服内容运营"))

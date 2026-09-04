@@ -7,6 +7,7 @@ import os
 import uuid
 from openai import OpenAI
 
+from app.agents.lang_support import with_lang_messages
 from app.services.validation import parse_llm_json
 
 
@@ -44,7 +45,12 @@ JOB_DESIGN_SYSTEM_PROMPT = """你是 HireNet 的岗位设计 Agent。
 }"""
 
 
-def design_job(requirement: dict, task: dict, original_description: str = "") -> dict:
+def design_job(
+    requirement: dict,
+    task: dict,
+    original_description: str = "",
+    lang: str | None = None,
+) -> dict:
     """
     Generate a clean, realistic job description based on actual needs.
 
@@ -52,6 +58,9 @@ def design_job(requirement: dict, task: dict, original_description: str = "") ->
         requirement: Structured requirement from RequirementAnalysisAgent
         task: Specific task that needs human execution
         original_description: The original raw input for water score comparison
+        lang: WP-I18N / I2 — "en" appends the output-language directive to
+            the system prompt at request time (`app.agents.lang_support`).
+            JOB_DESIGN_SYSTEM_PROMPT itself is never edited.
     """
     client = get_llm_client()
 
@@ -77,12 +86,16 @@ def design_job(requirement: dict, task: dict, original_description: str = "") ->
 
 请生成精准、去水的岗位定义。"""
 
-    resp = client.chat.completions.create(
-        model=get_model(),
-        messages=[
+    messages = with_lang_messages(
+        [
             {"role": "system", "content": JOB_DESIGN_SYSTEM_PROMPT},
             {"role": "user", "content": prompt},
         ],
+        lang,
+    )
+    resp = client.chat.completions.create(
+        model=get_model(),
+        messages=messages,
         temperature=0.3,
     )
 
@@ -107,7 +120,13 @@ def design_job(requirement: dict, task: dict, original_description: str = "") ->
     return job_design
 
 
-def generate_jd_report(decisions: dict, requirement: dict, original_description: str, on_design=None) -> dict:
+def generate_jd_report(
+    decisions: dict,
+    requirement: dict,
+    original_description: str,
+    on_design=None,
+    lang: str | None = None,
+) -> dict:
     """
     For all tasks that need human hiring, generate job designs.
     Returns a full hiring report.
@@ -118,6 +137,8 @@ def generate_jd_report(decisions: dict, requirement: dict, original_description:
     keeps existing behaviour unchanged. The callback runs OUTSIDE the design_job
     try block on purpose: a design failure must not trigger billing, and a billing
     failure must propagate (not be swallowed) so no royalty is silently lost.
+
+    lang: WP-I18N / I2 — forwarded to every `design_job` call this makes.
     """
     # `(d.get("recommendation") or {})`: a decision may carry recommendation=None
     # (no evaluations survived), and the two-arg .get default only covers a
@@ -173,7 +194,7 @@ def generate_jd_report(decisions: dict, requirement: dict, original_description:
         }
 
         try:
-            jd = design_job(requirement, task, original_description)
+            jd = design_job(requirement, task, original_description, lang=lang)
         except Exception as e:
             print(f"Job design failed for task {task['id']}: {e}")
             continue
