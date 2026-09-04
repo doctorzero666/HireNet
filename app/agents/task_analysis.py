@@ -112,6 +112,111 @@ SHORTLIST_MAX = 3
 TASK_TYPES = ("technical", "creative", "analytical", "strategic", "operational")
 
 
+# ─── Echo / placeholder guards (WP5, golden case g15) ─────────────────────────
+#
+# What went wrong on g15 (`evals/reports/2026-09-04-v1-vs-v2.md` §5): the
+# employer message was a prompt injection, the model answered by printing the
+# system prompt back, and that prompt *contains* both the completion marker
+# (rule 4) and the empty JSON template. v2's prose-tolerant `parse_llm_json`
+# then found the template, the repair round-trip filled in enum values that the
+# schema accepts, and the run completed at turn 0 on a requirement whose
+# `core_description` was the literal string `核心需求描述`.
+#
+# v1 survived the same response by accident: its stricter parser choked. The
+# lesson is not "parse less" — it is that a parser tolerant of prose has to
+# know the difference between the model's answer and the model quoting us.
+
+#: `parsed_ok=False` reasons stamped on the trace record (D9) so a replay says
+#: *why* a turn produced nothing, instead of only that it did.
+PROMPT_ECHO_REASON = "prompt_echo"
+PLACEHOLDER_REASON = "template_placeholder"
+SHORT_DESCRIPTION_REASON = "core_description_too_short"
+
+#: A `core_description` shorter than this is not a requirement, whatever the
+#: schema says (`minLength: 1` only rules out the empty string). Four characters
+#: is deliberately small: `官网改版` is a real four-character description, and
+#: this guard exists to catch `""` / `"-"` / `"无"`, not to second-guess brevity.
+MIN_CORE_DESCRIPTION_CHARS = 4
+
+#: A line of the system prompt has to be at least this long before it is used
+#: as an echo signature. Short lines ("规则：") appear in ordinary answers.
+ECHO_SIGNATURE_MIN_CHARS = 8
+
+#: Prompts whose JSON template the model might echo back at us.
+_TEMPLATE_PROMPTS = ("requirement_system", "force_extract")
+
+
+def _iter_strings(value: object):
+    """Yield every string *value* inside a nested dict/list (keys excluded)."""
+    if isinstance(value, str):
+        yield value
+    elif isinstance(value, dict):
+        for item in value.values():
+            yield from _iter_strings(item)
+    elif isinstance(value, list):
+        for item in value:
+            yield from _iter_strings(item)
+
+
+def _template_placeholders() -> frozenset[str]:
+    """Every literal string in the prompts' example JSON, read from the prompts.
+
+    Derived from the prompt files rather than hard-coded, so editing
+    `requirement_system.md` cannot leave a stale list behind: whatever the
+    prompt shows the model as a placeholder is exactly what this rejects.
+    """
+    placeholders: set[str] = set()
+    for name in _TEMPLATE_PROMPTS:
+        try:
+            template = parse_llm_json(load_prompt(name))
+        except (KeyError, json.JSONDecodeError, ValueError):
+            logger.warning("no JSON template found in prompt %r; echo guard is weaker", name)
+            continue
+        placeholders.update(s.strip() for s in _iter_strings(template) if s.strip())
+    return frozenset(placeholders)
+
+
+def _prompt_echo_signatures() -> tuple[str, ...]:
+    """Distinctive lines of the system prompt that a normal answer never repeats.
+
+    Two of them: the prompt's opening line, and the first line of its rules
+    block (the first numbered line). Both are long, specific and about *how to
+    behave*, so an employer-facing answer has no reason to contain them —
+    whereas a reply that merely discusses 需求 shares no full line with the
+    prompt at all.
+    """
+    lines = [line.strip() for line in load_prompt("requirement_system").splitlines()]
+    usable = [line for line in lines if len(line) >= ECHO_SIGNATURE_MIN_CHARS]
+    signatures = usable[:1]
+    signatures += [line for line in usable if line.startswith("1.")][:1]
+    return tuple(dict.fromkeys(signatures))
+
+
+#: Built once at import, from the prompt files.
+TEMPLATE_PLACEHOLDERS = _template_placeholders()
+PROMPT_ECHO_SIGNATURES = _prompt_echo_signatures()
+
+
+def is_prompt_echo(text: str) -> bool:
+    """True when the response quotes the system prompt back at us (g15)."""
+    return any(signature in text for signature in PROMPT_ECHO_SIGNATURES)
+
+
+def requirement_rejection_reason(requirement: dict) -> str | None:
+    """None if this is a real requirement, else why it is not one.
+
+    Schema-valid is not the same as meaningful: the empty template in the
+    prompt validates once its enum fields are filled in.
+    """
+    core = (requirement.get("core_description") or "").strip()
+    if len(core) < MIN_CORE_DESCRIPTION_CHARS:
+        return SHORT_DESCRIPTION_REASON
+    for value in _iter_strings(requirement):
+        if value.strip() in TEMPLATE_PLACEHOLDERS:
+            return PLACEHOLDER_REASON
+    return None
+
+
 def _relaxed_task_schema() -> dict:
     """`task.json` with the `type` enum removed (D10: advisory, not enforced)."""
     schema = load_schema("task")
@@ -440,8 +545,17 @@ class TaskAnalysisAgent:
         self.state["history"].append({"role": "assistant", "content": text})
         self.state["turn_count"] += 1
 
-        if COMPLETION_MARKER in text:
-            requirement = self._extract_requirement(text.split(COMPLETION_MARKER, 1)[1], record)
+        if is_prompt_echo(text):
+            # The model is quoting our own system prompt, which contains both
+            # the marker and the empty JSON template (g15). Anything extracted
+            # from it would be our text, not the employer's requirement, so this
+            # turn is simply not a completion — same as a parse failure.
+            logger.warning("clarify response echoes the system prompt; skipping extraction")
+            self._emit(record, False, reason=PROMPT_ECHO_REASON)
+        elif COMPLETION_MARKER in text:
+            # The LAST marker, not the first: text before it can only be the
+            # model narrating (or quoting) the instruction to emit one.
+            requirement = self._extract_requirement(text.rsplit(COMPLETION_MARKER, 1)[1], record)
             if requirement is not None:
                 self.state["requirement"] = requirement
                 return self._payload(text)
@@ -492,9 +606,9 @@ class TaskAnalysisAgent:
         """
         pending = [source_record]
 
-        def flush(ok: bool) -> None:
+        def flush(ok: bool, reason: str | None = None) -> None:
             if pending:
-                self._emit(pending.pop(), ok)
+                self._emit(pending.pop(), ok, reason=reason)
 
         def repair(repair_prompt: str) -> str:
             flush(False)
@@ -517,6 +631,16 @@ class TaskAnalysisAgent:
             logger.warning("requirement extraction failed after repair", exc_info=True)
             flush(False)
             return None
+
+        # Schema-valid, but is it the employer's requirement or our own template
+        # coming back at us (g15)? A rejection here is treated exactly like a
+        # parse failure: the turn is not a completion and the conversation goes on.
+        rejection = requirement_rejection_reason(requirement)
+        if rejection is not None:
+            logger.warning("rejecting extracted requirement (%s): %s", rejection, requirement)
+            flush(False, reason=rejection)
+            return None
+
         flush(True)
         return requirement
 
@@ -711,9 +835,18 @@ class TaskAnalysisAgent:
         else:
             usage["total_cost_usd"] = round((usage["total_cost_usd"] or 0.0) + call["cost_usd"], 8)
 
-    def _emit(self, record: dict, parsed_ok: bool) -> None:
-        """Hand one finished call to the `on_llm_call` hook (WP3b writes traces)."""
+    def _emit(self, record: dict, parsed_ok: bool, reason: str | None = None) -> None:
+        """Hand one finished call to the `on_llm_call` hook (WP3b writes traces).
+
+        `reason` is set only when there is one (`prompt_echo`,
+        `template_placeholder`, `core_description_too_short`), so an ordinary
+        record keeps exactly the fields it always had. The trace writer
+        (`app/app.py:_v2_trace_writer`) picks the columns it needs by name, so
+        the extra key is a trace-reader's hint, not a schema change.
+        """
         record["parsed_ok"] = bool(parsed_ok)
+        if reason is not None:
+            record["reason"] = reason
         if self.on_llm_call is None:
             return
         try:
