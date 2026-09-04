@@ -19,6 +19,7 @@ import logging
 import pytest
 
 import app.app as app_module
+from tests.conftest import MODULE_LEVEL_STORES
 
 
 # ──────────────────────────────────────────────────────────────────────────────
@@ -105,10 +106,12 @@ class TestModuleStoreIsolation:
         assert "jd_leak_probe_2" not in job_ids
 
 
-@pytest.mark.parametrize("name", [
-    "analysis_sessions", "career_sessions", "pact_sessions",
-    "published_jobs", "user_profile_state",
-])
+@pytest.mark.parametrize("name", MODULE_LEVEL_STORES)
 def test_every_store_the_fixture_names_still_exists(name):
-    """A rename in app/app.py must not silently turn the isolation off."""
+    """A rename in app/app.py must not silently turn the isolation off.
+
+    Parametrised over the fixture's own list (Stage 2 / WP-G) rather than a
+    copy of it: a store that moves to SQLite leaves both lists at once, and a
+    store that is merely RENAMED still fails here.
+    """
     assert hasattr(app_module, name)

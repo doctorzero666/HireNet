@@ -7,7 +7,6 @@ import math
 import hashlib
 import secrets
 import decimal
-import threading
 import time
 from datetime import datetime, timedelta, timezone
 from flask import Flask, Blueprint, request, jsonify, session, render_template, current_app, make_response, send_from_directory
@@ -19,6 +18,12 @@ from app.agents.task_analysis import TaskAnalysisAgent
 from app.services.auth import login_required
 from app.storage.analysis_traces import build_trace, insert_trace
 from app.storage.db import init_db
+from app.storage.pacts import (
+    create_pact,
+    get_pact,
+    transition_pact,
+    update_pact_fields,
+)
 
 main = Blueprint('main', __name__)
 
@@ -27,31 +32,16 @@ analysis_sessions = {}
 career_sessions = {}
 # ─── Authorization mandate (pact) lifecycle store ────────────────────────────
 #
-# ⚠️ DEMO ONLY — DO NOT RUN WITH MULTIPLE WORKERS ⚠️
+# Stage 2 / WP-G: pacts live in SQLite (table `pacts`, DAO
+# `app/storage/pacts.py`), NOT in a module-level dict. That means a pact
+# survives a restart and can be created on one worker and settled on another,
+# and it means the approved → settled / approved → settling claim is a
+# conditional `UPDATE … WHERE status = ?` whose rowcount — not a
+# process-local lock — is what stops two concurrent settles double-billing
+# the creator. See the WP-G notes in app/storage/pacts.py.
 #
-# pact_sessions is an in-memory, per-process dict backing the authorization
-# mandate ("pact") flow: an enterprise approves a spending authorization
-# before the platform settles against it. A persistent, wallet-agnostic
-# backend replaces this dict; the route surface stays the same.
-#
-# Hard deployment constraints (enforced by wsgi.py comments):
-#   - Must run with a SINGLE worker (e.g. `gunicorn --workers 1` / Flask
-#     dev server). Multi-worker splits pacts across processes — create on
-#     worker A, status/settle on worker B → 404.
-#   - Any process restart wipes every pending pact.
-#
-# Concurrency: Flask's threaded dev server (and gunicorn's threaded workers)
-# can call settle on two threads at once. `_pact_lock` serialises the
-# check-and-set transition in pact_settle so the approved → settled flip
-# happens exactly once per pact even under concurrent requests; without it
-# both threads would pass the status check and double-bill the creator.
-#
-# Migration path: Phase 2 moves pact_sessions to SQLite (mirror the
-# agent_runs pattern: persist via current_app.config["DATABASE_PATH"]) and
-# replaces this lock with a row-level DB UPDATE … WHERE status='approved'
-# whose affected-row count drives the same exactly-once guarantee.
-pact_sessions = {}
-_pact_lock = threading.Lock()
+# The other stores below are still in-memory demo state; wsgi.py documents
+# the single-worker constraint they impose.
 
 # Global published jobs — company analysis pushes here; candidate side reads from here
 published_jobs = []
@@ -1882,9 +1872,9 @@ def _royalty_status_response(run: dict):
 #                                                  └──→ rejected
 #
 # The enterprise authorizes a spend up front; the platform only settles against
-# an approved mandate. Demo-only: in-memory store, no wallet integration. The
-# code shape leaves seams for a real one — swap pact_sessions for a persistent
-# store and the settle hook for an on-chain call.
+# an approved mandate. Demo-only in the sense that `approve` is an
+# unauthenticated UI click and there is no wallet-side signature; the store
+# itself is real (Stage 2 / WP-G: table `pacts`, DAO app/storage/pacts.py).
 #
 # Settlement triggers the existing U4 path (record_agent_run) so the same
 # royalty_ledger row a Job Design invocation would write also lands here.
@@ -1990,11 +1980,31 @@ def _pact_is_expired(pact: dict, now: datetime | None = None) -> bool:
 
 
 def _pact_or_404(pact_id: str):
-    """Look up a pact or return a JSON 404 tuple."""
-    pact = pact_sessions.get(pact_id)
+    """Look up a pact or return a JSON 404 tuple.
+
+    Reads the row every time rather than caching: another worker (or another
+    thread) may have moved this pact since the last request, and a stale copy
+    is exactly what the conditional transitions below exist to rule out.
+    """
+    pact = get_pact(current_app.config["DATABASE_PATH"], pact_id)
     if pact is None:
         return None, (jsonify({"error": f"Pact not found: {pact_id}"}), 404)
     return pact, None
+
+
+def _pact_status_conflict(pact_id: str, verb: str):
+    """The 400 a refused status transition returns.
+
+    Re-reads the row so the reported status is the one that actually blocked
+    the transition — with a conditional UPDATE the losing caller never saw it,
+    and reporting the status it read *before* the UPDATE would name a state
+    the pact has already left.
+    """
+    pact = get_pact(current_app.config["DATABASE_PATH"], pact_id)
+    current = pact["status"] if pact else "gone"
+    return jsonify({
+        "error": f"Pact must be {verb}, current: {current}"
+    }), 400
 
 
 @main.route("/api/pact/create", methods=["POST"])
@@ -2151,8 +2161,12 @@ def pact_create():
     }
     # Computed last: the digest covers the fields as finally stored.
     pact["content_hash"] = _pact_content_hash(pact)
-    pact_sessions[pact_id] = pact
-    return jsonify(pact), 201
+    # create_pact returns the row as read back, so this response is byte for
+    # byte what GET /api/pact/status/<id> will return, and any storage
+    # round-trip that changed a value would surface here rather than as a
+    # content_hash mismatch at settle time.
+    stored = create_pact(current_app.config["DATABASE_PATH"], pact)
+    return jsonify(stored), 201
 
 
 @main.route("/api/pact/status/<pact_id>", methods=["GET"])
@@ -2178,14 +2192,21 @@ def pact_approve(pact_id):
     # rejected pact keeps reporting the state-machine error it always has.
     if _pact_is_expired(pact):
         return jsonify({"error": "pact expired"}), 409
-    pact["status"] = "approved"
-    pact["approved_at"] = datetime.now(timezone.utc).isoformat()
-    # Audit trail for who approved and how. Deliberately not called
-    # `user_authorization`: this is a UI click, there is no signature behind
-    # it (see the AP2 vocabulary note at the top of this section).
-    pact["approved_by"] = get_current_identity()["id"]
-    pact["approval_method"] = "ui"
-    return jsonify(pact)
+    # Conditional on `pending`, so two concurrent approvals cannot both write
+    # an approved_by: the loser gets the same 400 a late approval always got.
+    # The audit pair is written in the same statement as the flip — a pact is
+    # never approved without a record of who approved it and how. Deliberately
+    # not called `user_authorization`: this is a UI click, there is no
+    # signature behind it (see the AP2 vocabulary note at the top).
+    moved = transition_pact(
+        current_app.config["DATABASE_PATH"], pact_id, "pending", "approved",
+        approved_at=datetime.now(timezone.utc).isoformat(),
+        approved_by=get_current_identity()["id"],
+        approval_method="ui",
+    )
+    if not moved:
+        return _pact_status_conflict(pact_id, "pending to approve")
+    return jsonify(get_pact(current_app.config["DATABASE_PATH"], pact_id))
 
 
 @main.route("/api/pact/reject/<pact_id>", methods=["POST"])
@@ -2198,8 +2219,11 @@ def pact_reject(pact_id):
         return jsonify({
             "error": f"Pact must be pending to reject, current: {pact['status']}"
         }), 400
-    pact["status"] = "rejected"
-    return jsonify(pact)
+    if not transition_pact(
+        current_app.config["DATABASE_PATH"], pact_id, "pending", "rejected"
+    ):
+        return _pact_status_conflict(pact_id, "pending to reject")
+    return jsonify(get_pact(current_app.config["DATABASE_PATH"], pact_id))
 
 
 # ─── Stage 2 / WP-E: settling by PAYING FOR the invocation (spec S8) ──────────
@@ -2324,13 +2348,12 @@ def _pact_settle_x402(pact: dict, asset: dict | None, asset_id: str,
     # Atomic claim: approved → settling. `settling` is neither terminal nor
     # `settled`; it means "an invocation for this mandate is in flight". A
     # concurrent settle sees it and bounces with the same 400 the legacy path
-    # gives — that is what stops two threads signing two authorizations.
-    with _pact_lock:
-        if pact["status"] != "approved":
-            return jsonify({
-                "error": f"Pact must be approved to settle, current: {pact['status']}"
-            }), 400
-        pact["status"] = "settling"
+    # gives — that is what stops two threads signing two authorizations. The
+    # claim is a single conditional UPDATE, so it holds across processes too.
+    db_path = current_app.config["DATABASE_PATH"]
+    pact_id = pact["pact_id"]
+    if not transition_pact(db_path, pact_id, "approved", "settling"):
+        return _pact_status_conflict(pact_id, "approved to settle")
 
     mcp_fn = current_app.config.get("MCP_CLIENT", call_mcp_tool)
     tool_name = pick_tool_for_task(
@@ -2352,10 +2375,9 @@ def _pact_settle_x402(pact: dict, asset: dict | None, asset_id: str,
         # we never saw a PAYMENT-RESPONSE, so nothing is known to have been paid:
         # release the claim and let the caller retry.
         current_app.logger.exception(
-            "x402 invocation raised for pact %s", pact["pact_id"]
+            "x402 invocation raised for pact %s", pact_id
         )
-        with _pact_lock:
-            pact["status"] = "approved"
+        transition_pact(db_path, pact_id, "settling", "approved")
         return jsonify({
             "error": f"invocation failed: {exc.__class__.__name__}: {exc}"
         }), 502
@@ -2368,8 +2390,7 @@ def _pact_settle_x402(pact: dict, asset: dict | None, asset_id: str,
     # facilitator settled still has to be recorded, because dropping a tx hash
     # is how a real payment becomes unexplained missing USDC.
     if payment.get("settle_success") is not True:
-        with _pact_lock:
-            pact["status"] = "approved"
+        transition_pact(db_path, pact_id, "settling", "approved")
         error_text = result.get("error") or (
             "the SkillAsset endpoint did not ask to be paid (no 402); nothing "
             "was settled on the x402 rail"
@@ -2404,11 +2425,17 @@ def _pact_settle_x402(pact: dict, asset: dict | None, asset_id: str,
             "x402 payment for pact %s settled tx %s for %r atomic USDC units, "
             "which is not a non-negative whole number of cents (%d atomic "
             "units per cent); no agent_run / royalty row was written",
-            pact["pact_id"], tx_hash, raw_atomic, USDC_ATOMIC_PER_CENT,
+            pact_id, tx_hash, raw_atomic, USDC_ATOMIC_PER_CENT,
         )
-        pact["tx_hash"] = tx_hash
-        pact["explorer_url"] = _x402_explorer_url(tx_hash)
-        pact["mcp_result"] = result
+        # The pact stays `settling` (claimed, unfinished) and keeps the hash of
+        # the payment that DID happen, so the operator has something to
+        # reconcile against and a retry cannot sign a second authorization.
+        update_pact_fields(
+            db_path, pact_id,
+            tx_hash=tx_hash,
+            explorer_url=_x402_explorer_url(tx_hash),
+            mcp_result=result,
+        )
         return jsonify({
             "error": (
                 f"paid {raw_atomic!r} atomic USDC units, which is not a "
@@ -2443,26 +2470,52 @@ def _pact_settle_x402(pact: dict, asset: dict | None, asset_id: str,
             "x402 payment for pact %s settled tx %s but the run could not be "
             "recorded; the pact stays 'settling' so no second authorization can "
             "be signed for it",
-            pact["pact_id"], tx_hash,
+            pact_id, tx_hash,
         )
-        pact["tx_hash"] = tx_hash
-        pact["explorer_url"] = _x402_explorer_url(tx_hash)
-        pact["mcp_result"] = result
+        update_pact_fields(
+            db_path, pact_id,
+            tx_hash=tx_hash,
+            explorer_url=_x402_explorer_url(tx_hash),
+            mcp_result=result,
+        )
         return jsonify({
             "error": f"Failed to record: {str(e)}", "tx_hash": tx_hash,
         }), 500
 
-    pact["status"] = "settled"
-    pact["run_id"] = result_row["run_id"]
-    pact["royalty_splits"] = result_row["royalty_splits"]
-    pact["tx_hash"] = tx_hash
-    pact["explorer_url"] = _x402_explorer_url(tx_hash)
+    # settling → settled, with everything the settle produced written in the
+    # same statement: there is no window where the pact reads `settled` but
+    # carries no run_id or tx_hash.
+    #
     # settled_amount is what was actually PAID, in dollar units. Additive:
     # `amount` keeps saying what the pact was created for, which is not the same
     # number whenever the asset's list price differs from the requested amount.
-    pact["settled_amount"] = float(decimal.Decimal(charge_amount_cents) / 100)
-    pact["mcp_result"] = result
-    return jsonify(pact)
+    finished = transition_pact(
+        db_path, pact_id, "settling", "settled",
+        run_id=result_row["run_id"],
+        royalty_splits=result_row["royalty_splits"],
+        tx_hash=tx_hash,
+        explorer_url=_x402_explorer_url(tx_hash),
+        settled_amount=float(decimal.Decimal(charge_amount_cents) / 100),
+        mcp_result=result,
+    )
+    if not finished:
+        # Unreachable while we hold the claim: only this request can move a
+        # pact out of `settling`. If it ever happens something mutated the row
+        # out of band, and the run has already been recorded — say so instead
+        # of returning a body that claims a state the row does not have.
+        current_app.logger.error(
+            "x402 pact %s was recorded as run %s (tx %s) but is no longer "
+            "'settling'; the pact row was changed out of band",
+            pact_id, result_row["run_id"], tx_hash,
+        )
+        return jsonify({
+            "error": (
+                "the run was recorded but the pact could not be marked "
+                "settled (see server log)"
+            ),
+            "tx_hash": tx_hash,
+        }), 500
+    return jsonify(get_pact(db_path, pact_id))
 
 
 @main.route("/api/pact/settle/<pact_id>", methods=["POST"])
@@ -2470,14 +2523,16 @@ def pact_settle(pact_id):
     """Move approved → settled and record one agent_run + royalty_ledger row.
 
     Concurrency: two simultaneous POSTs to this endpoint must not both bill
-    the creator. We use `_pact_lock` to make "verify status == approved AND
-    flip to settled" a single atomic step — the second request finds status
-    == "settled" and bounces with 400 before reaching record_agent_run.
+    the creator. `transition_pact` makes "verify status == approved AND flip
+    to settled" a single conditional UPDATE — the second request gets
+    rowcount 0, re-reads status == "settled" and bounces with 400 before
+    reaching record_agent_run. Being a row-level claim rather than a
+    process-local lock, it holds across workers as well as threads.
 
-    On record_agent_run failure (e.g. currency mismatch), the lock is reused
-    to roll the status back to "approved" so the caller can retry. The
-    expensive DB write itself runs outside the lock so a slow settle doesn't
-    block unrelated pacts.
+    On record_agent_run failure (e.g. currency mismatch), a second conditional
+    transition rolls the status back to "approved" so the caller can retry.
+    The expensive DB write itself runs after the claim, so a slow settle
+    doesn't block unrelated pacts.
 
     Currency / split rule come from the bound asset (pact.asset_id when
     supplied at create time, else the Phase 1 Job Design fallback).
@@ -2562,15 +2617,14 @@ def pact_settle(pact_id):
     if _settlement_provider_name() == X402_PROVIDER_NAME:
         return _pact_settle_x402(pact, asset, asset_id, charge_chain)
 
-    # Atomic claim: under _pact_lock, only one thread sees status=="approved"
-    # and flips it to "settled". Any concurrent thread observes "settled" and
-    # exits with 400 before duplicating the agent_run/royalty rows.
-    with _pact_lock:
-        if pact["status"] != "approved":
-            return jsonify({
-                "error": f"Pact must be approved to settle, current: {pact['status']}"
-            }), 400
-        pact["status"] = "settled"
+    # Atomic claim: one conditional UPDATE, so only one caller sees
+    # status=="approved" and flips it to "settled". Any concurrent caller —
+    # including one in another worker process — gets rowcount 0, observes
+    # "settled" and exits with 400 before duplicating the agent_run/royalty
+    # rows.
+    db_path = current_app.config["DATABASE_PATH"]
+    if not transition_pact(db_path, pact_id, "approved", "settled"):
+        return _pact_status_conflict(pact_id, "approved to settle")
 
     try:
         from app.services.agent_run_recording import record_agent_run
@@ -2586,14 +2640,19 @@ def pact_settle(pact_id):
             success=True,
         )
     except Exception as e:
-        # Roll back the optimistic claim so the caller can retry. The lock
-        # protects the rollback from racing with a fresh settle attempt.
-        with _pact_lock:
-            pact["status"] = "approved"
+        # Roll back the optimistic claim so the caller can retry. Conditional
+        # on `settled` so the rollback can only ever undo OUR claim, never a
+        # state some other caller has since moved the pact into.
+        transition_pact(db_path, pact_id, "settled", "approved")
         return jsonify({"error": f"Failed to record: {str(e)}"}), 500
 
-    pact["run_id"] = result["run_id"]
-    pact["royalty_splits"] = result["royalty_splits"]
+    # Persisted before the invocation below: if the process dies mid-MCP the
+    # settled pact still points at the run that billed it.
+    update_pact_fields(
+        db_path, pact_id,
+        run_id=result["run_id"],
+        royalty_splits=result["royalty_splits"],
+    )
 
     # ── MCP execution (post-billing) ─────────────────────────────────────
     # The royalty/agent_run rows are already committed; what follows is
@@ -2608,15 +2667,21 @@ def pact_settle(pact_id):
             pact.get("agent_name"),
             asset.get("name") if asset else None,
         )
-        pact["mcp_result"] = mcp_fn(
+        mcp_result = mcp_fn(
             asset["endpoint_url"],
             tool_name,
             {"task_id": pact.get("task_id")},
         )
     else:
-        pact["mcp_result"] = None
+        mcp_result = None
 
-    return jsonify(pact)
+    # Written even when None: `mcp_result: null` has always been part of the
+    # settle response for an asset with no endpoint_url. The DAO stores it as
+    # the JSON text 'null', which is how "set to None" stays distinguishable
+    # from "never written" (an unsettled pact has no mcp_result key at all).
+    update_pact_fields(db_path, pact_id, mcp_result=mcp_result)
+
+    return jsonify(get_pact(db_path, pact_id))
 
 
 def create_app(config: dict | None = None):

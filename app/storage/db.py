@@ -145,6 +145,59 @@ def _create_tables(conn: sqlite3.Connection) -> None:
             created_at    TEXT    NOT NULL
         );
 
+        -- Stage 2 / WP-G: the authorization mandate ("pact") store, replacing
+        -- the process-local `pact_sessions` dict in app/app.py. One row per
+        -- mandate; the DAO is app/storage/pacts.py.
+        --
+        -- A NEW table, so there is nothing to migrate: _migrate() has no
+        -- clause for it and existing databases pick it up here (this whole
+        -- script runs on every init_db, and CREATE TABLE IF NOT EXISTS makes
+        -- that idempotent).
+        --
+        -- The status CHECK is the state machine:
+        --   pending → approved → settling → settled   (x402 rail)
+        --   pending → approved → settled              (legacy rail)
+        --   pending → rejected                        (terminal)
+        -- `settling` means an invocation that IS the payment is in flight.
+        -- Every status change goes through a conditional
+        -- `UPDATE … WHERE pact_id = ? AND status = ?`, whose rowcount is what
+        -- makes settling a pact exactly-once across threads and processes
+        -- (the same claim pattern as agent_runs.claim_settlement).
+        --
+        -- Nullable columns fall in two groups (see app/storage/pacts.py):
+        -- the ones a pact carries from creation with a NULL value, and the
+        -- ones written later, where NULL means the key is absent from the
+        -- API response entirely. royalty_splits / mcp_result hold JSON.
+        CREATE TABLE IF NOT EXISTS pacts (
+            pact_id         TEXT    PRIMARY KEY,
+            status          TEXT    NOT NULL CHECK (status IN ('pending', 'approved', 'rejected', 'settling', 'settled')),
+            task_id         TEXT    NOT NULL,
+            agent_name      TEXT    NOT NULL,
+            creator_id      TEXT,
+            asset_id        TEXT,
+            -- Dollar units (floats), matching the pact object; settle converts
+            -- to integer cents via Decimal before anything is billed.
+            amount          REAL    CHECK (amount IS NULL OR amount > 0),
+            currency        TEXT    NOT NULL,
+            created_at      TEXT    NOT NULL,
+            approved_at     TEXT,
+            -- AP2-shaped mandate fields (Stage 2 / WP-A).
+            intent          TEXT,
+            amount_cap      REAL    CHECK (amount_cap IS NULL OR amount_cap > 0),
+            expires_at      TEXT,
+            payee           TEXT,
+            approved_by     TEXT,
+            approval_method TEXT,
+            content_hash    TEXT,
+            -- Written at settle time only.
+            run_id          TEXT,
+            royalty_splits  TEXT,
+            tx_hash         TEXT,
+            explorer_url    TEXT,
+            settled_amount  REAL    CHECK (settled_amount IS NULL OR settled_amount >= 0),
+            mcp_result      TEXT
+        );
+
         CREATE INDEX IF NOT EXISTS idx_audit_log_run_id ON audit_log (run_id);
         CREATE INDEX IF NOT EXISTS idx_analysis_traces_session ON analysis_traces (session_id, step_no);
     """)

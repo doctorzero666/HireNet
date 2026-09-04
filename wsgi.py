@@ -2,11 +2,13 @@ import os
 from app.app import create_app
 
 # ⚠️ Demo deployment constraint:
-# app.app.pact_sessions is an in-memory, per-process dict (see comment there).
+# app.app still keeps analysis_sessions / career_sessions / published_jobs /
+# user_profile_state in in-memory, per-process dicts (see comments there).
 # Run this WSGI app with a SINGLE worker only — e.g. `gunicorn --workers 1` —
-# and avoid restarts during the demo, otherwise pacts created on one worker
-# will 404 on another and any restart wipes pending pacts entirely.
-# Migrate pact_sessions to SQLite in Phase 2 to lift this restriction.
+# and avoid restarts during the demo, otherwise an analysis started on one
+# worker will 404 on another and any restart wipes that state entirely.
+# Pacts no longer impose this: Stage 2 / WP-G moved them to SQLite (table
+# `pacts`), so they survive restarts and are shared across workers.
 app = create_app()
 
 if __name__ == "__main__":

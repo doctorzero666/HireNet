@@ -15,17 +15,21 @@ from app.services.mock_settlement import MockSettlementProvider
 # monotonically over a suite run. That makes test order significant and hides
 # real bugs behind "it passed when I ran the file alone".
 #
-# These dicts/lists are demo-grade by design (`app/app.py:24-66` says so, and
-# Phase 2 moves them to SQLite). Until then the test suite isolates them
-# explicitly: snapshot before, restore after, in place — routes and tests both
-# hold references to these very objects, so rebinding the name would not reach
-# them.
+# These dicts/lists are demo-grade by design (`app/app.py` says so, and they
+# move to SQLite one at a time — Stage 2 / WP-G already did that for
+# `pact_sessions`, which is why it is no longer listed here). Until then the
+# test suite isolates them explicitly: snapshot before, restore after, in
+# place — routes and tests both hold references to these very objects, so
+# rebinding the name would not reach them.
+#
+# A name that no longer exists on the module is skipped rather than raising:
+# retiring a store to SQLite must not take the isolation of the remaining ones
+# down with it.
 # ──────────────────────────────────────────────────────────────────────────────
 
 MODULE_LEVEL_STORES = (
     "analysis_sessions",
     "career_sessions",
-    "pact_sessions",
     "published_jobs",
     "user_profile_state",
 )
@@ -44,7 +48,11 @@ def isolate_module_level_stores():
     """Restore `app.app`'s in-memory demo stores around every test."""
     import app.app as app_module
 
-    saved = {name: _snapshot(getattr(app_module, name)) for name in MODULE_LEVEL_STORES}
+    saved = {
+        name: _snapshot(getattr(app_module, name))
+        for name in MODULE_LEVEL_STORES
+        if hasattr(app_module, name)
+    }
     yield
     for name, value in saved.items():
         store = getattr(app_module, name)

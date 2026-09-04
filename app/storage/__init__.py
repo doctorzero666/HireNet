@@ -8,6 +8,13 @@ from app.storage.agent_runs import (
     confirm_settlement,
     fail_settlement,
 )
+from app.storage.pacts import (
+    create_pact,
+    get_pact,
+    list_pacts,
+    transition_pact,
+    update_pact_fields,
+)
 from app.storage.royalty_ledger import (
     insert_royalty_entries,
     list_all_royalties,
@@ -27,6 +34,11 @@ __all__ = [
     "claim_settlement",
     "confirm_settlement",
     "fail_settlement",
+    "create_pact",
+    "get_pact",
+    "list_pacts",
+    "transition_pact",
+    "update_pact_fields",
     "insert_royalty_entries",
     "list_royalties_by_creator",
     "list_royalties_by_payee",

@@ -16,7 +16,8 @@ from datetime import datetime, timedelta, timezone
 
 import pytest
 
-from app.app import PACT_DEFAULT_TTL_HOURS, _pact_content_hash, pact_sessions
+from app.app import PACT_DEFAULT_TTL_HOURS, _pact_content_hash
+from app.storage.pacts import get_pact, update_pact_fields
 from app.storage.skill_assets import get_skill_asset
 
 
@@ -67,16 +68,36 @@ def _future(hours=1):
     return (datetime.now(timezone.utc) + timedelta(hours=hours)).isoformat()
 
 
-def _expire_in_place(pact_id):
+def _db(client):
+    """The temp SQLite file behind `client` — where pacts live since WP-G."""
+    return client.application.config["DATABASE_PATH"]
+
+
+def _tamper(client, pact_id, **fields):
+    """Mutate a stored pact behind the routes' back (setup only).
+
+    Stage 2 / WP-G moved the pact store from a module-level dict to the
+    `pacts` table, so "reach into the store and change a field" is now a DAO
+    write. Same intent as before: simulate a stored-state mutation that
+    bypassed the create route.
+    """
+    assert update_pact_fields(_db(client), pact_id, **fields)
+
+
+def _expire_in_place(client, pact_id):
     """Backdate a stored pact's TTL *and* re-seal its digest.
 
     Settle checks expiry before integrity, so a naive backdate would still
     return "pact expired" — but the test would then be passing for two
     reasons at once. Re-sealing keeps this test about the TTL alone.
     """
-    stored = pact_sessions[pact_id]
+    stored = get_pact(_db(client), pact_id)
     stored["expires_at"] = _past()
-    stored["content_hash"] = _pact_content_hash(stored)
+    _tamper(
+        client, pact_id,
+        expires_at=stored["expires_at"],
+        content_hash=_pact_content_hash(stored),
+    )
 
 
 # ---------------------------------------------------------------------------
@@ -213,7 +234,7 @@ class TestExpiry:
         pact = _create(client)
         pact_id = pact["pact_id"]
         assert client.post(f"/api/pact/approve/{pact_id}").status_code == 200
-        _expire_in_place(pact_id)
+        _expire_in_place(client, pact_id)
 
         resp = client.post(f"/api/pact/settle/{pact_id}")
         assert resp.status_code == 409
@@ -223,7 +244,7 @@ class TestExpiry:
         pact = _create(client)
         pact_id = pact["pact_id"]
         client.post(f"/api/pact/approve/{pact_id}")
-        _expire_in_place(pact_id)
+        _expire_in_place(client, pact_id)
         client.post(f"/api/pact/settle/{pact_id}")
 
         status = client.get(f"/api/pact/status/{pact_id}").get_json()
@@ -265,7 +286,7 @@ class TestContentHashIntegrity:
         client.post(f"/api/pact/approve/{pact_id}")
 
         # Simulate a stored-state mutation that bypassed the create route.
-        pact_sessions[pact_id]["payee"] = "0x000000000000000000000000000000000000dead"
+        _tamper(client, pact_id, payee="0x000000000000000000000000000000000000dead")
 
         resp = client.post(f"/api/pact/settle/{pact_id}")
         assert resp.status_code == 409
@@ -275,7 +296,7 @@ class TestContentHashIntegrity:
         pact = _create(client, amount=10)
         pact_id = pact["pact_id"]
         client.post(f"/api/pact/approve/{pact_id}")
-        pact_sessions[pact_id]["amount_cap"] = 10_000
+        _tamper(client, pact_id, amount_cap=10_000)
 
         resp = client.post(f"/api/pact/settle/{pact_id}")
         assert resp.status_code == 409
