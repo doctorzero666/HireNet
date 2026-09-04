@@ -27,6 +27,16 @@ def client():
     os.unlink(db_path)
 
 
+@pytest.fixture
+def app_db_path(client):
+    """The temp DB behind the `client` fixture, for tests that read rows back.
+
+    Stage 1 / WP3b: analysis_traces and agent_runs assertions need to open the
+    same database the request just wrote to.
+    """
+    return client.application.config["DATABASE_PATH"]
+
+
 # ──────────────────────────────────────────────────────────────────────────────
 # LLM fakes — shared by the Stage 1 analysis-pipeline test files
 #

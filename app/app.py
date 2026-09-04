@@ -14,7 +14,9 @@ from dotenv import load_dotenv
 
 from app.agents.agents import RequirementAnalysisAgent, decompose_tasks, run_resource_decision, CareerStrategyAgent
 from app.agents.job_design import generate_jd_report
+from app.agents.task_analysis import TaskAnalysisAgent
 from app.services.auth import login_required
+from app.storage.analysis_traces import build_trace, insert_trace
 from app.storage.db import init_db
 
 main = Blueprint('main', __name__)
@@ -131,19 +133,152 @@ def get_current_identity(default_id: str | None = None) -> dict:
     return {"id": fallback_id, "name": "Demo", "role": "enterprise", "avatar": "👤"}
 
 
-def _job_design_recorder():
+def _job_design_recorder(usage: dict | None = None):
     """Build the on_design billing callback for the current app/request.
 
     Thin wrapper over the service-layer recorder so the routes stay thin: reads
     the bootstrapped asset id and resolves the caller from the current Demo
     identity (header/cookie). Real per-user auth lands in Phase 2.
+
+    `usage` (D8) is the v2 pipeline's per-session totals; it only fills the
+    telemetry columns of agent_runs (input_tokens / output_tokens /
+    llm_cost_usd / time_ms). `charge_amount` and the split are untouched by it.
+    Omitted on the v1 path, where nothing measures token usage — those columns
+    stay NULL exactly as they are today.
     """
     from app.services.asset_bootstrap import build_job_design_recorder
     return build_job_design_recorder(
         current_app.config["DATABASE_PATH"],
         current_app.config["JOB_DESIGN_ASSET_ID"],
         get_current_identity()["id"],
+        usage=usage,
     )
+
+
+# ─── TaskAnalysisAgent v2 wiring (D2) ─────────────────────────────────────────
+#
+# `HIRENET_TASK_AGENT` picks which pipeline serves the four analysis routes:
+#   v1 (default, and anything that is not exactly "v2") — RequirementAnalysisAgent
+#       plus the module-level `decompose_tasks` / `run_resource_decision`
+#       bindings imported above. Byte-identical to what shipped; the tests in
+#       tests/test_analyze_routes_v1.py and tests/test_e2e_phase1.py pin it, and
+#       audit §7.4 requires those two names to stay the actual call sites.
+#   v2 — app/agents/task_analysis.TaskAnalysisAgent: one class for the whole
+#       pipeline, every LLM output schema-validated, a turn cap, token
+#       accounting, and one analysis_traces row per step.
+#
+# The flag is read PER REQUEST, not at import: a test (and an operator) has to
+# be able to flip it without reimporting the app.
+
+TASK_AGENT_ENV = "HIRENET_TASK_AGENT"
+
+
+def _task_agent_version() -> str:
+    """Which analysis pipeline serves this request: "v1" (default) or "v2"."""
+    return "v2" if os.getenv(TASK_AGENT_ENV, "").strip().lower() == "v2" else "v1"
+
+
+def _v2_trace_writer(session_id: str, sess: dict):
+    """Return the agent's `on_llm_call` hook: one analysis_traces row per call.
+
+    `step_no` lives in the session dict rather than on the agent, because the
+    agent is rebuilt from its serialised state on every request (D4) — a
+    counter held on the instance would restart at 0 on each turn and the replay
+    would interleave nonsensically.
+
+    Trace writes are best-effort by construction: TaskAnalysisAgent._emit
+    catches whatever this raises and logs it. Losing telemetry must not lose
+    the employer's analysis.
+    """
+    db_path = current_app.config["DATABASE_PATH"]
+
+    def on_llm_call(record: dict) -> None:
+        step_no = sess.get("trace_step", 0)
+        sess["trace_step"] = step_no + 1
+        insert_trace(db_path, build_trace(
+            trace_id=secrets.token_hex(16),
+            session_id=session_id,
+            step_no=step_no,
+            stage=record["stage"],
+            model=record["model"],
+            messages=record.get("messages") or [],
+            response_text=record.get("response_text") or "",
+            parsed_ok=record.get("parsed_ok", False),
+            input_tokens=record.get("input_tokens"),
+            output_tokens=record.get("output_tokens"),
+            time_ms=record.get("time_ms"),
+        ))
+
+    return on_llm_call
+
+
+def _write_decide_trace(session_id: str, sess: dict, decisions: dict) -> None:
+    """Write the synthetic `decide` row that closes out a v2 run.
+
+    `decide` is a pure function (app/agents/decision_policy.py) — no LLM, so no
+    `on_llm_call` fires for it. Without this row a replay stops at the last
+    `evaluate` step and the routing outcome, which is the whole point of the
+    run, is the one thing missing. model="policy" says plainly that no model
+    was involved; parsed_ok is True because a pure function cannot fail to parse.
+    """
+    step_no = sess.get("trace_step", 0)
+    sess["trace_step"] = step_no + 1
+    try:
+        insert_trace(current_app.config["DATABASE_PATH"], build_trace(
+            trace_id=secrets.token_hex(16),
+            session_id=session_id,
+            step_no=step_no,
+            stage="decide",
+            model="policy",
+            messages=[],
+            response_text=json.dumps(decisions, ensure_ascii=False),
+            parsed_ok=True,
+        ))
+    except Exception:
+        current_app.logger.exception("failed to write the decide trace row")
+
+
+def _new_v2_session(session_id: str, initial_input: str, requirement=None) -> dict:
+    """Create the session record for a v2 run.
+
+    Keeps every key the other routes already read off `analysis_sessions`
+    (`initial_input`, `requirement`, `jd_report`, `history`) and replaces the
+    live agent object with `agent_state` — the serialised dict (D4). `agent` is
+    kept as an explicit None so any code that does `sess["agent"]` still finds
+    the key; nothing in the v2 path reads it.
+    """
+    return {
+        "agent": None,
+        "agent_version": "v2",
+        "agent_state": None,
+        "initial_input": initial_input,
+        "history": [initial_input] if initial_input else [],
+        "requirement": requirement,
+        "trace_step": 0,
+    }
+
+
+def _v2_agent(session_id: str, sess: dict) -> TaskAnalysisAgent:
+    """Rebuild the session's agent from its stored state, traces wired up."""
+    hook = _v2_trace_writer(session_id, sess)
+    state = sess.get("agent_state")
+    if state is None:
+        return TaskAnalysisAgent(on_llm_call=hook)
+    return TaskAnalysisAgent.from_state(state, on_llm_call=hook)
+
+
+def _v2_pipeline(session_id: str, sess: dict) -> tuple[list, dict, TaskAnalysisAgent]:
+    """Decompose + route one requirement through TaskAnalysisAgent.
+
+    Returns `(tasks, decisions, agent)`; `decisions` is the wrapper object
+    `{"decisions": [...]}` the frontend and `_build_decision_summary` expect.
+    """
+    agent = _v2_agent(session_id, sess)
+    tasks = agent.decompose()
+    decisions = agent.decide_all()
+    _write_decide_trace(session_id, sess, decisions)
+    sess["agent_state"] = agent.to_state()
+    return tasks, decisions, agent
 
 
 # ─── Requirement Analysis API ─────────────────────────────────────────────────
@@ -157,8 +292,28 @@ def start_analysis():
     if not initial_input:
         return jsonify({"error": "Message is required"}), 400
 
-    # Create new analysis session
     session_id = secrets.token_hex(8)
+
+    if _task_agent_version() == "v2":
+        sess = _new_v2_session(session_id, initial_input)
+        analysis_sessions[session_id] = sess
+        agent = _v2_agent(session_id, sess)
+        result = agent.start(initial_input)
+        # The whole agent goes back into the store as a plain dict (D4): this
+        # route never holds a live agent object across requests.
+        sess["agent_state"] = agent.to_state()
+        sess["requirement"] = result["requirement"]
+        return jsonify({
+            "session_id": session_id,
+            "response": result["response"],
+            "is_complete": result["is_complete"],
+            "requirement": result["requirement"],
+            # Additive key, allowed by §0 of the spec: without it a client has
+            # no way to tell "still clarifying" from "hit the turn cap".
+            "turn_count": result["turn_count"],
+        })
+
+    # Create new analysis session
     agent = RequirementAnalysisAgent()
     response = agent.start(initial_input)
 
@@ -198,6 +353,25 @@ def reply_analysis():
         return jsonify({"error": "Session not found"}), 404
 
     sess = analysis_sessions[session_id]
+
+    # Dispatch on what the SESSION was started with, not on the current flag:
+    # a v1 session holds a live RequirementAnalysisAgent and a v2 session holds
+    # a state dict, so flipping HIRENET_TASK_AGENT mid-conversation must not
+    # change which pipeline continues an already-open session.
+    if sess.get("agent_version") == "v2":
+        agent = _v2_agent(session_id, sess)
+        result = agent.reply(message)
+        sess["agent_state"] = agent.to_state()
+        sess["history"].append(message)
+        sess["requirement"] = result["requirement"]
+        return jsonify({
+            "session_id": session_id,
+            "response": result["response"],
+            "is_complete": result["is_complete"],
+            "requirement": result["requirement"],
+            "turn_count": result["turn_count"],
+        })
+
     agent = sess["agent"]
     response = agent.reply(message)
     sess["history"].append(message)
@@ -243,12 +417,19 @@ def run_decision():
         return jsonify({"error": "Requirement analysis not complete"}), 400
 
     try:
-        # Step 1: Decompose tasks
-        task_data = decompose_tasks(requirement)
-        tasks = task_data.get("tasks", [])
+        if sess.get("agent_version") == "v2":
+            # Steps 1+2 in one object; usage totals (D8) ride along to billing.
+            tasks, decisions, agent = _v2_pipeline(session_id, sess)
+            recorder = _job_design_recorder(usage=agent.usage_summary())
+        else:
+            # Step 1: Decompose tasks
+            task_data = decompose_tasks(requirement)
+            tasks = task_data.get("tasks", [])
 
-        # Step 2: Resource decision for each task
-        decisions = run_resource_decision(tasks)
+            # Step 2: Resource decision for each task
+            decisions = run_resource_decision(tasks)
+
+            recorder = _job_design_recorder()
 
         # Step 3: Generate job designs if needed. Each successful design bills one
         # Job Design SkillAsset invocation to its creator via the U4 path.
@@ -256,7 +437,7 @@ def run_decision():
             decisions,
             requirement,
             original_description=sess.get("initial_input", ""),
-            on_design=_job_design_recorder(),
+            on_design=recorder,
         )
 
         # Step 4: Build summary
@@ -1244,20 +1425,39 @@ def quick_analyze():
         return jsonify({"error": "requirement is required"}), 400
 
     session_id = secrets.token_hex(8)
-    analysis_sessions[session_id] = {
-        "agent": None,
-        "initial_input": original_description,
-        "history": [],
-        "requirement": requirement,
-    }
+    use_v2 = _task_agent_version() == "v2"
+    if use_v2:
+        sess = _new_v2_session(session_id, original_description, requirement=requirement)
+        # /quick skips the conversation entirely: the client already knows the
+        # requirement, so it is seeded straight into the agent state and the
+        # clarification loop never runs. `history` stays empty — there was no
+        # conversation to replay.
+        sess["history"] = []
+        sess["agent_state"] = {
+            "initial_input": original_description,
+            "requirement": requirement,
+        }
+        analysis_sessions[session_id] = sess
+    else:
+        analysis_sessions[session_id] = {
+            "agent": None,
+            "initial_input": original_description,
+            "history": [],
+            "requirement": requirement,
+        }
 
     try:
-        task_data = decompose_tasks(requirement)
-        tasks = task_data.get("tasks", [])
-        decisions = run_resource_decision(tasks)
+        if use_v2:
+            tasks, decisions, agent = _v2_pipeline(session_id, analysis_sessions[session_id])
+            recorder = _job_design_recorder(usage=agent.usage_summary())
+        else:
+            task_data = decompose_tasks(requirement)
+            tasks = task_data.get("tasks", [])
+            decisions = run_resource_decision(tasks)
+            recorder = _job_design_recorder()
         jd_report = generate_jd_report(
             decisions, requirement, original_description=original_description,
-            on_design=_job_design_recorder(),
+            on_design=recorder,
         )
         # store jd_report in session for job listing
         analysis_sessions[session_id]["jd_report"] = jd_report

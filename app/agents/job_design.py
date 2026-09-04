@@ -121,15 +121,40 @@ def generate_jd_report(decisions: dict, requirement: dict, original_description:
 
     job_designs = []
     for task_decision in human_tasks:
-        # Find the original task data
+        # Rebuild the task the JD is written from.
+        #
+        # Stage 1 / D6 (audit risk 5): `estimated_hours`, `requires_judgment`
+        # and `is_recurring` are REAL task fields the decomposition step
+        # produces — but v1's run_resource_decision drops them, so this function
+        # had nothing to read and fabricated all three: every JD was written as
+        # "40 hours, judgment required", and `is_recurring` was guessed from the
+        # requirement's duration string. TaskAnalysisAgent (v2) carries them
+        # onto the decision, so when they are there we use them.
+        #
+        # `key in task_decision` rather than `.get(key, default)`: `False` and
+        # `0` are meaningful values that a truthiness test would silently
+        # replace with the fabricated default. A v1 decision carries none of the
+        # three keys, so v1 output is bit-for-bit what it was.
         task = {
             "id": task_decision["task_id"],
             "name": task_decision["task_name"],
             "type": task_decision["task_type"],
             "description": task_decision.get("task_description", ""),
-            "requires_judgment": True,
-            "is_recurring": requirement.get("duration") == "ongoing",
-            "estimated_hours": 40,  # default
+            "requires_judgment": (
+                task_decision["requires_judgment"]
+                if "requires_judgment" in task_decision
+                else True
+            ),
+            "is_recurring": (
+                task_decision["is_recurring"]
+                if "is_recurring" in task_decision
+                else requirement.get("duration") == "ongoing"
+            ),
+            "estimated_hours": (
+                task_decision["estimated_hours"]
+                if "estimated_hours" in task_decision
+                else 40  # fabricated default, v1 only
+            ),
         }
 
         try:

@@ -105,7 +105,43 @@ def bootstrap_job_design_asset(db_path: str, creator_id: str) -> str:
     return result["skill_id"]
 
 
-def build_job_design_recorder(db_path: str, asset_id: str, caller_id: str):
+def _usage_columns(usage: dict | None) -> dict:
+    """Map a TaskAnalysisAgent `usage_summary()` onto the agent_runs columns.
+
+    Stage 1 / D8. These four columns exist on agent_runs and have been NULL
+    since the table was created (audit risk 9); the v2 pipeline is the first
+    thing in the repo that measures them.
+
+    Two honest caveats, both deliberate:
+
+    * The numbers are the SESSION total (clarify + extract + decompose +
+      evaluate), not this one design's share. There is no per-design split to
+      hand over — `design_job` is a separate LLM call outside the agent, and
+      splitting a session total across N designs would be fabricated precision.
+      So when one run produces two designs, both rows carry the same session
+      total: read these columns per run, never SUM() them across a session.
+    * `llm_cost_usd` is a TEXT column (agent_run.json), so the float is
+      formatted to a fixed 8 decimal places rather than passed through repr.
+
+    Nothing here touches charge_amount, split_rule, or the ledger.
+    """
+    if not usage:
+        return {}
+    cost = usage.get("total_cost_usd")
+    return {
+        "input_tokens": usage.get("total_input_tokens"),
+        "output_tokens": usage.get("total_output_tokens"),
+        "time_ms": usage.get("total_time_ms"),
+        "llm_cost_usd": None if cost is None else f"{cost:.8f}",
+    }
+
+
+def build_job_design_recorder(
+    db_path: str,
+    asset_id: str,
+    caller_id: str,
+    usage: dict | None = None,
+):
     """Return an `on_design(task, job_design)` callback that bills one invocation.
 
     Each call writes one agent_run + one creator royalty_ledger row through the
@@ -116,10 +152,17 @@ def build_job_design_recorder(db_path: str, asset_id: str, caller_id: str):
     returned closure performs the per-invocation write. Billing errors are NOT
     swallowed — they propagate so a recording failure is loud, not a silently
     lost royalty.
+
+    `usage` is the optional D8 telemetry (a TaskAnalysisAgent `usage_summary()`);
+    see `_usage_columns`. Omitting it reproduces the pre-Stage-1 behaviour
+    exactly — the four telemetry columns stay NULL — which is what the v1 path
+    does.
     """
     asset = get_skill_asset(db_path, asset_id)
     if asset is None:
         raise ValueError(f"Unknown asset_id for billing: {asset_id!r}")
+
+    usage_columns = _usage_columns(usage)
 
     def on_design(task: dict, job_design: dict) -> None:
         # TODO(① settlement idempotency — RED LINE before real payments): this bills
@@ -139,6 +182,7 @@ def build_job_design_recorder(db_path: str, asset_id: str, caller_id: str):
             charge_currency=asset["price_currency"],
             charge_chain=asset["price_chain"],
             success=True,
+            **usage_columns,
         )
 
     return on_design
