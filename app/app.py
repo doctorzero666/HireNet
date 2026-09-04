@@ -449,9 +449,12 @@ def run_decision():
         # Step 4: Build summary
         summary = _build_decision_summary(tasks, decisions, jd_report)
 
-        # Publish generated job designs to global pool for candidate matching
-        _publish_jobs(jd_report)
-
+        # NO automatic publication here. Analysing a requirement is not the same
+        # act as posting a job to the public board: publication goes through
+        # `POST /api/jobs/publish`, which stamps `publisher_id` / `company` /
+        # `published_at` and is the employer's explicit consent. The JD is in
+        # the response and in `sess["jd_report"]`; the client publishes the ones
+        # the employer chooses, by `job_id`.
         return jsonify({
             "requirement": requirement,
             "tasks": tasks,
@@ -516,14 +519,10 @@ def _build_decision_summary(tasks, decisions, jd_report) -> dict:
     }
 
 
-def _publish_jobs(jd_report: dict):
-    """Push newly generated job designs into the global published_jobs pool."""
-    designs = jd_report.get("job_designs", [])
-    existing_ids = {j.get("job_id") for j in published_jobs}
-    for job in designs:
-        if job.get("job_id") and job["job_id"] not in existing_ids:
-            published_jobs.append(job)
-            existing_ids.add(job["job_id"])
+# `_publish_jobs` used to live here: it pushed every generated JD straight into
+# `published_jobs` from /decide and /quick. Removed — publication is
+# `POST /api/jobs/publish` and nothing else, so a JD reaches the public board
+# only when someone decided to put it there.
 
 
 # ─── Candidate Side ───────────────────────────────────────────────────────────
@@ -1473,9 +1472,7 @@ def quick_analyze():
         # store jd_report in session for job listing
         analysis_sessions[session_id]["jd_report"] = jd_report
         summary = _build_decision_summary(tasks, decisions, jd_report)
-        # Publish generated job designs to global pool for candidate matching
-        _publish_jobs(jd_report)
-
+        # Same rule as /decide: no automatic publication. See the comment there.
         return jsonify({
             "session_id": session_id,
             "requirement": requirement,

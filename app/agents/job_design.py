@@ -97,10 +97,10 @@ def design_job(requirement: dict, task: dict, original_description: str = "") ->
     job_design = parse_llm_json(raw)
     job_design["task_id"] = task.get("id")
     job_design["task_name"] = task.get("name")
-    # Stage 1 / D11a (audit risk 8): `_publish_jobs` (app.py) filters on job_id
-    # and nothing ever set one, so every JD the analysis flow produced was
-    # dropped on the floor and `_publish_jobs` was dead code. task_id is not a
-    # substitute: two analysis sessions both decompose to "t1", and the
+    # Stage 1 / D11a (audit risk 8): nothing used to set a job_id, so a JD the
+    # analysis flow produced could not be addressed afterwards — `POST
+    # /api/jobs/publish` and the candidate side both key on job_id. task_id is
+    # not a substitute: two analysis sessions both decompose to "t1", and the
     # candidate side dedupes on job_id — reusing task_id would make the second
     # employer's JD silently vanish behind the first one's.
     job_design["job_id"] = f"jd_{uuid.uuid4().hex[:12]}"

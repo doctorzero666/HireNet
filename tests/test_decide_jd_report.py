@@ -1,16 +1,24 @@
 """
-Stage 1 / WP3b — D11a: JDs from the conversational flow reach GET /api/jobs.
+Stage 1 / WP3b — D11a: JDs from the conversational flow reach GET /api/jobs,
+and WP5 — analysing is not publishing.
 
-Two halves of one bug (audit risk 8), fixed at the route/agent level so both
-the v1 and v2 pipelines get it:
+The D11a half (audit risk 8), fixed at the route/agent level so both pipelines
+get it:
 
   * `POST /api/analyze/decide` never wrote `sess["jd_report"]`, while
     `/api/analyze/quick` always did — so `GET /api/jobs`, which reads exactly
     that key off every analysis session, could only ever show JDs produced by
     the demo shortcut, never by a real employer conversation;
-  * `_publish_jobs` filters on `job.get("job_id")` and `design_job` never set
-    one, so the global publish pool was unreachable from the analysis flow —
-    dead code guarding a hole.
+  * `design_job` never stamped a `job_id`, so a generated JD could not be
+    addressed afterwards by the one route that publishes it.
+
+The WP5 half, from the merge review of that commit: reviving publication turned
+`/decide` and `/quick` into an *automatic, unauthenticated* push to the global
+`published_jobs` board, bypassing `POST /api/jobs/publish` — the route that
+stamps `publisher_id` / `company` / `published_at` and represents the
+employer's decision to post. The automatic call is gone from both routes; these
+tests pin the new contract in both directions (the JD is analysed and stored,
+the board is untouched until someone publishes).
 
 These tests drive the REAL `design_job` against the scripted fake client
 (rather than stubbing it, as the other analysis test files do) because the
@@ -188,18 +196,72 @@ class TestDecidePersistsJdReport:
         listed = [j.get("job_id") for j in jobs if j.get("job_id") in job_ids]
         assert sorted(listed) == sorted(job_ids)
 
-    def test_published_pool_is_no_longer_bypassed(self, client, fake_llm, decide_stubs):
-        """`_publish_jobs` was dead: it filtered on a job_id nothing produced."""
+    def test_decide_does_not_publish_to_the_global_board(self, client, fake_llm, decide_stubs):
+        """WP5: analysing a requirement is not consenting to post the job.
+
+        `/decide` used to push every generated JD straight into
+        `published_jobs` — an unauthenticated publication with no
+        `publisher_id`, no `company`, no `published_at`, and no way to take it
+        back. The board must be exactly as it was.
+        """
+        before = list(app_module.published_jobs)
         session_id = start_completed_session(client, fake_llm)
         fake_llm.queue(jd_json())
+
         body = client.post(
             "/api/analyze/decide", json={"session_id": session_id}
         ).get_json()
-        job_id = body["jd_report"]["job_designs"][0]["job_id"]
-        assert job_id in {j.get("job_id") for j in app_module.published_jobs}
+
+        assert body["jd_report"]["job_designs"][0]["job_id"], "the JD is still produced"
+        assert app_module.published_jobs == before
+
+    def test_the_generated_jd_can_then_be_published_explicitly(
+        self, client, fake_llm, decide_stubs
+    ):
+        """The stamped `job_id` is what makes the explicit route usable."""
+        session_id = start_completed_session(client, fake_llm)
+        fake_llm.queue(jd_json("客户成功专员"))
+        design = client.post(
+            "/api/analyze/decide", json={"session_id": session_id}
+        ).get_json()["jd_report"]["job_designs"][0]
+        job_id = design["job_id"]
+
+        resp = client.post("/api/jobs/publish", json={
+            "job_id": job_id,
+            "jd": "客户成功专员：处理升级投诉",
+            "job_title": design["job_title"],
+            "required_skills": design["required_skills"],
+            "core_responsibilities": design["core_responsibilities"],
+            "work_type": design["work_type"],
+            "salary_range": design["salary_range"],
+        })
+        assert resp.status_code == 200, resp.get_data(as_text=True)
+
+        published = [j for j in app_module.published_jobs if j.get("job_id") == job_id]
+        assert len(published) == 1
+        assert published[0]["publisher_id"], "the explicit route stamps who published it"
+        assert published[0]["company"]
+        assert published[0]["published_at"]
+
+        jobs = client.get("/api/jobs").get_json()["jobs"]
+        assert [j.get("job_id") for j in jobs].count(job_id) == 1, "listed once, not twice"
+
+    def test_republishing_the_same_job_id_is_rejected(self, client, fake_llm, decide_stubs):
+        """Publication is idempotent-by-refusal, and /decide no longer pre-claims the id."""
+        session_id = start_completed_session(client, fake_llm)
+        fake_llm.queue(jd_json())
+        job_id = client.post(
+            "/api/analyze/decide", json={"session_id": session_id}
+        ).get_json()["jd_report"]["job_designs"][0]["job_id"]
+
+        first = client.post("/api/jobs/publish", json={"job_id": job_id, "jd": "岗位描述"})
+        second = client.post("/api/jobs/publish", json={"job_id": job_id, "jd": "岗位描述"})
+
+        assert first.status_code == 200
+        assert second.status_code == 409
 
     def test_a_job_is_listed_once_not_twice(self, client, fake_llm, decide_stubs):
-        """It reaches /api/jobs through the session AND the pool; dedupe holds."""
+        """It reaches /api/jobs through the session; no duplicate from the board."""
         session_id = start_completed_session(client, fake_llm)
         fake_llm.queue(jd_json())
         body = client.post(
@@ -249,3 +311,69 @@ class TestDecidePersistsJdReportOnV2:
         job_id = body["jd_report"]["job_designs"][0]["job_id"]
         jobs = client.get("/api/jobs").get_json()["jobs"]
         assert [j.get("job_id") for j in jobs].count(job_id) == 1
+
+
+# ──────────────────────────────────────────────────────────────────────────────
+# /quick: same rule (WP5). The auto-publish there predates D11a — removing it
+# is a deliberate behaviour change, not a restoration.
+# ──────────────────────────────────────────────────────────────────────────────
+
+class TestQuickDoesNotPublishEither:
+    def test_quick_stores_the_report_but_leaves_the_board_alone(
+        self, client, fake_llm, decide_stubs
+    ):
+        before = list(app_module.published_jobs)
+        fake_llm.queue(jd_json())
+
+        body = client.post("/api/analyze/quick", json={
+            "requirement": REQUIREMENT,
+            "original_description": "搭建智能客服系统",
+        }).get_json()
+
+        session_id = body["session_id"]
+        assert body["jd_report"]["job_count"] == 1
+        assert app_module.analysis_sessions[session_id]["jd_report"] == body["jd_report"]
+        assert app_module.published_jobs == before
+
+
+# ──────────────────────────────────────────────────────────────────────────────
+# The negative the merge review asked for: a failed report is not a report
+# ──────────────────────────────────────────────────────────────────────────────
+
+class TestFailedJdReportIsNotStored:
+    def test_decide_does_not_write_jd_report_when_the_design_step_raises(
+        self, client, fake_llm, decide_stubs, monkeypatch
+    ):
+        def _boom(*args, **kwargs):
+            raise RuntimeError("job design service is down")
+
+        monkeypatch.setattr(app_module, "generate_jd_report", _boom)
+        session_id = start_completed_session(client, fake_llm)
+
+        resp = client.post("/api/analyze/decide", json={"session_id": session_id})
+
+        assert resp.status_code == 500
+        assert resp.get_json() == {"error": "analysis failed"}
+        assert "jd_report" not in app_module.analysis_sessions[session_id], (
+            "a half-finished run must not leave a report behind for GET /api/jobs"
+        )
+        assert app_module.published_jobs == []
+
+    def test_a_previous_successful_report_is_not_clobbered_by_a_later_failure(
+        self, client, fake_llm, decide_stubs, monkeypatch
+    ):
+        session_id = start_completed_session(client, fake_llm)
+        fake_llm.queue(jd_json())
+        good = client.post(
+            "/api/analyze/decide", json={"session_id": session_id}
+        ).get_json()["jd_report"]
+
+        def _boom(*args, **kwargs):
+            raise RuntimeError("job design service is down")
+
+        monkeypatch.setattr(app_module, "generate_jd_report", _boom)
+        assert client.post(
+            "/api/analyze/decide", json={"session_id": session_id}
+        ).status_code == 500
+
+        assert app_module.analysis_sessions[session_id]["jd_report"] == good
