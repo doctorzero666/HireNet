@@ -17,6 +17,11 @@ from app.agents.pricing import (
 
 
 @pytest.fixture(autouse=True)
+def _guard_no_real_llm(no_real_llm_client):
+    """No test in this module may construct the real OpenAI client."""
+
+
+@pytest.fixture(autouse=True)
 def _no_ambient_override(monkeypatch):
     """A price override in the developer's real env must not steer these tests."""
     monkeypatch.delenv(PRICE_OVERRIDE_ENV, raising=False)
