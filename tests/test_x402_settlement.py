@@ -590,3 +590,597 @@ class TestWpDMigration:
         init_db(app)
         init_db(app)
         assert len(list_royalties_by_run(pre_wp_d_db, "old-run")) == 1
+
+
+# ===========================================================================
+# Part 2 — X402SettlementProvider
+#
+# Every receipt below is hand-built to the shape web3 6.x actually returns:
+# `topics` are HexBytes(32) and `data` is HexBytes (see
+# web3._utils.method_formatters.LOG_ENTRY_FORMATTERS), `address` is a checksum
+# string, `status` is an int. FakeEth records every call so a test can prove
+# the provider asked the chain exactly once.
+# ===========================================================================
+
+import requests  # noqa: E402
+from hexbytes import HexBytes  # noqa: E402
+from web3 import Web3  # noqa: E402
+from web3.exceptions import TransactionNotFound, Web3Exception  # noqa: E402
+
+from app.services.settlement import (  # noqa: E402
+    SettlementProvider,
+    SettlementStatus,
+    get_provider,
+)
+from app.services.x402_settlement import (  # noqa: E402
+    DEFAULT_EXPLORER_TX_URL,
+    DEFAULT_RPC_URL,
+    ERC20_TRANSFER_TOPIC0,
+    X402SettlementProvider,
+    explorer_url,
+)
+
+AMOUNT_ATOMIC = 100 * USDC_ATOMIC_PER_CENT   # $1.00 == 100 cents == 1_000_000
+OTHER_TOKEN = "0x1234567890123456789012345678901234567890"
+
+
+def _topic_address(address: str) -> HexBytes:
+    """An address as an indexed event topic: left-padded to 32 bytes."""
+    return HexBytes(bytes(12) + bytes.fromhex(address[2:]))
+
+
+def _transfer_log(*, to=CREATOR_WALLET, value=AMOUNT_ATOMIC,
+                  token=DEFAULT_USDC_ADDRESS, sender=PAYER, topic0=None):
+    """One ERC-20 Transfer log, shaped like web3 6.x hands it back."""
+    return {
+        "address": Web3.to_checksum_address(token),
+        "topics": [
+            HexBytes(topic0 if topic0 is not None else ERC20_TRANSFER_TOPIC0),
+            _topic_address(sender),
+            _topic_address(to),
+        ],
+        "data": HexBytes(value.to_bytes(32, "big")),
+        "logIndex": 0,
+    }
+
+
+def _receipt(*, status=1, logs=None):
+    return {
+        "transactionHash": HexBytes(TX_HASH),
+        "status": status,
+        "blockNumber": 1234,
+        "logs": [] if logs is None else logs,
+    }
+
+
+class FakeEth:
+    """`w3.eth` stand-in: scripted receipt or scripted exception."""
+
+    def __init__(self, *, receipt=None, raises=None):
+        self._receipt = receipt
+        self._raises = raises
+        self.receipt_calls = []
+
+    def get_transaction_receipt(self, tx_hash):
+        self.receipt_calls.append(tx_hash)
+        if self._raises is not None:
+            raise self._raises
+        return self._receipt
+
+
+class FakeWeb3:
+    def __init__(self, **kwargs):
+        self.eth = FakeEth(**kwargs)
+
+
+def _provider(*, receipt=None, raises=None, expected=(CREATOR_WALLET, AMOUNT_ATOMIC),
+              usdc=DEFAULT_USDC_ADDRESS, network=DEFAULT_NETWORK):
+    w3 = FakeWeb3(receipt=receipt, raises=raises)
+    return X402SettlementProvider(
+        rpc_url=DEFAULT_RPC_URL,
+        usdc_address=usdc,
+        network=network,
+        w3=w3,
+        expected_lookup=lambda tx: expected,
+    ), w3
+
+
+# ---------------------------------------------------------------------------
+# Part 2a — construction
+# ---------------------------------------------------------------------------
+
+class TestConstruction:
+
+    def test_is_a_settlement_provider(self):
+        provider, _ = _provider()
+        assert isinstance(provider, SettlementProvider)
+        assert provider.name == "x402"
+
+    def test_network_is_parsed_to_a_chain_id(self):
+        provider, _ = _provider()
+        assert provider.chain_id == 84532
+
+    def test_unknown_network_is_refused(self):
+        with pytest.raises(ValueError, match="not a supported network"):
+            X402SettlementProvider(
+                rpc_url=DEFAULT_RPC_URL,
+                usdc_address=DEFAULT_USDC_ADDRESS,
+                network="solana:devnet",
+                w3=FakeWeb3(),
+            )
+
+    def test_bad_usdc_address_is_refused(self):
+        with pytest.raises(ValueError, match="not a valid EVM address"):
+            X402SettlementProvider(
+                rpc_url=DEFAULT_RPC_URL,
+                usdc_address="not-an-address",
+                network=DEFAULT_NETWORK,
+                w3=FakeWeb3(),
+            )
+
+    @pytest.mark.parametrize("field,value", [
+        ("rpc_url", ""), ("usdc_address", ""), ("network", ""),
+    ])
+    def test_empty_required_field_is_refused(self, field, value):
+        kwargs = {
+            "rpc_url": DEFAULT_RPC_URL,
+            "usdc_address": DEFAULT_USDC_ADDRESS,
+            "network": DEFAULT_NETWORK,
+            "w3": FakeWeb3(),
+        }
+        kwargs[field] = value
+        with pytest.raises(ValueError):
+            X402SettlementProvider(**kwargs)
+
+    def test_constructing_does_not_build_a_real_http_provider(self):
+        """The autouse guard makes Web3.HTTPProvider explode; this must not."""
+        X402SettlementProvider(
+            rpc_url=DEFAULT_RPC_URL,
+            usdc_address=DEFAULT_USDC_ADDRESS,
+            network=DEFAULT_NETWORK,
+        )
+
+
+# ---------------------------------------------------------------------------
+# Part 2b — the factory
+# ---------------------------------------------------------------------------
+
+class TestFactory:
+
+    def test_defaults_come_from_the_gate(self):
+        provider = get_provider("x402")
+        assert isinstance(provider, X402SettlementProvider)
+        assert provider.rpc_url == DEFAULT_RPC_URL
+        assert provider.usdc_address == Web3.to_checksum_address(DEFAULT_USDC_ADDRESS)
+        assert provider.network == DEFAULT_NETWORK
+
+    def test_env_overrides_are_honoured(self, monkeypatch):
+        monkeypatch.setenv("X402_RPC_URL", "https://rpc.example/base")
+        monkeypatch.setenv("X402_USDC_ADDRESS", OTHER_TOKEN)
+        monkeypatch.setenv("X402_NETWORK", "eip155:8453")
+        provider = get_provider("x402")
+        assert provider.rpc_url == "https://rpc.example/base"
+        assert provider.usdc_address == Web3.to_checksum_address(OTHER_TOKEN)
+        assert provider.chain_id == 8453
+
+    def test_bad_env_network_raises_from_the_factory(self, monkeypatch):
+        monkeypatch.setenv("X402_NETWORK", "bitcoin")
+        with pytest.raises(ValueError, match="not a supported network"):
+            get_provider("x402")
+
+    def test_unknown_provider_name_still_refused(self):
+        with pytest.raises(ValueError, match="Unknown settlement provider"):
+            get_provider("x402-typo")
+
+    def test_factory_does_not_build_a_real_http_provider(self):
+        """Guarded by the autouse fixture — get_provider must stay inert."""
+        get_provider("x402")
+
+
+# ---------------------------------------------------------------------------
+# Part 2c — settle() refuses
+# ---------------------------------------------------------------------------
+
+class TestSettleRefuses:
+
+    def test_returns_a_failure_with_the_reason(self):
+        provider, _ = _provider()
+        result = provider.settle("zhang_ai", 100, "USD", "base-sepolia")
+        assert result.success is False
+        assert "settled by the payer at invocation time" in result.error
+        assert result.tx_hash is None
+
+    def test_settle_touches_no_rpc(self):
+        provider, w3 = _provider()
+        provider.settle("zhang_ai", 100, "USD", None)
+        assert w3.eth.receipt_calls == []
+
+
+# ---------------------------------------------------------------------------
+# Part 2d — check_status branches
+# ---------------------------------------------------------------------------
+
+class TestCheckStatus:
+
+    def test_no_receipt_is_settling(self):
+        provider, _ = _provider(raises=TransactionNotFound("not mined"))
+        assert provider.check_status(TX_HASH) == SettlementStatus.SETTLING
+
+    def test_none_receipt_is_settling(self):
+        provider, _ = _provider(receipt=None)
+        assert provider.check_status(TX_HASH) == SettlementStatus.SETTLING
+
+    def test_reverted_receipt_is_failed(self):
+        provider, _ = _provider(receipt=_receipt(status=0))
+        assert provider.check_status(TX_HASH) == SettlementStatus.FAILED
+
+    def test_missing_status_field_is_settling(self):
+        """Pre-Byzantium receipt: cannot tell success from failure, so don't."""
+        provider, _ = _provider(receipt={"logs": [], "blockNumber": 1})
+        assert provider.check_status(TX_HASH) == SettlementStatus.SETTLING
+
+    def test_matching_transfer_is_settled(self):
+        provider, _ = _provider(receipt=_receipt(logs=[_transfer_log()]))
+        assert provider.check_status(TX_HASH) == SettlementStatus.SETTLED
+
+    def test_payee_comparison_is_case_insensitive(self):
+        """EIP-55 checksum vs the lower-case bytes decoded out of a topic."""
+        provider, _ = _provider(
+            receipt=_receipt(logs=[_transfer_log(to=CREATOR_WALLET.lower())]),
+            expected=(CREATOR_WALLET, AMOUNT_ATOMIC),
+        )
+        assert provider.check_status(TX_HASH) == SettlementStatus.SETTLED
+
+    def test_matching_transfer_among_other_logs_is_settled(self):
+        provider, _ = _provider(receipt=_receipt(logs=[
+            _transfer_log(token=OTHER_TOKEN),                  # wrong token
+            {"address": DEFAULT_USDC_ADDRESS, "topics": [], "data": HexBytes(b"")},
+            _transfer_log(to=PAYER),                           # wrong payee
+            _transfer_log(),                                   # the real one
+        ]))
+        assert provider.check_status(TX_HASH) == SettlementStatus.SETTLED
+
+    def test_transfer_to_the_wrong_payee_is_failed(self):
+        provider, _ = _provider(receipt=_receipt(logs=[_transfer_log(to=PAYER)]))
+        assert provider.check_status(TX_HASH) == SettlementStatus.FAILED
+
+    def test_transfer_of_the_wrong_amount_is_failed(self):
+        provider, _ = _provider(
+            receipt=_receipt(logs=[_transfer_log(value=AMOUNT_ATOMIC - 1)])
+        )
+        assert provider.check_status(TX_HASH) == SettlementStatus.FAILED
+
+    def test_transfer_from_another_token_contract_is_failed(self):
+        """Right payee, right amount, wrong token: not our payment."""
+        provider, _ = _provider(
+            receipt=_receipt(logs=[_transfer_log(token=OTHER_TOKEN)])
+        )
+        assert provider.check_status(TX_HASH) == SettlementStatus.FAILED
+
+    def test_non_transfer_event_from_usdc_is_failed(self):
+        """A USDC log with a different topic0 (e.g. Approval) proves nothing."""
+        provider, _ = _provider(receipt=_receipt(logs=[
+            _transfer_log(topic0=bytes.fromhex("11" * 32))
+        ]))
+        assert provider.check_status(TX_HASH) == SettlementStatus.FAILED
+
+    def test_successful_receipt_with_no_logs_is_failed(self):
+        provider, _ = _provider(receipt=_receipt(logs=[]))
+        assert provider.check_status(TX_HASH) == SettlementStatus.FAILED
+
+    def test_short_data_blob_is_not_decoded(self):
+        """A 16-byte data field is refused rather than zero-extended."""
+        log = _transfer_log()
+        log["data"] = HexBytes(AMOUNT_ATOMIC.to_bytes(16, "big"))
+        provider, _ = _provider(receipt=_receipt(logs=[log]))
+        assert provider.check_status(TX_HASH) == SettlementStatus.FAILED
+
+    def test_hex_string_topics_and_data_also_decode(self):
+        """Receipts replayed from raw JSON-RPC carry strings, not HexBytes.
+
+        (`bytes(...)` first: this hexbytes version's `.hex()` already returns a
+        0x-prefixed string, so `"0x" + t.hex()` would double the prefix.)
+        """
+        log = _transfer_log()
+        log["topics"] = ["0x" + bytes(t).hex() for t in log["topics"]]
+        log["data"] = "0x" + bytes(log["data"]).hex()
+        provider, _ = _provider(receipt=_receipt(logs=[log]))
+        assert provider.check_status(TX_HASH) == SettlementStatus.SETTLED
+
+    def test_unresolvable_expectation_is_settling_not_settled(self):
+        """A good receipt we cannot tie to an expected payment proves nothing."""
+        provider, _ = _provider(receipt=_receipt(logs=[_transfer_log()]),
+                                expected=None)
+        assert provider.check_status(TX_HASH) == SettlementStatus.SETTLING
+
+    def test_raising_expected_lookup_is_settling(self):
+        w3 = FakeWeb3(receipt=_receipt(logs=[_transfer_log()]))
+
+        def _boom(tx):
+            raise RuntimeError("db gone")
+
+        provider = X402SettlementProvider(
+            rpc_url=DEFAULT_RPC_URL, usdc_address=DEFAULT_USDC_ADDRESS,
+            network=DEFAULT_NETWORK, w3=w3, expected_lookup=_boom,
+        )
+        assert provider.check_status(TX_HASH) == SettlementStatus.SETTLING
+
+    @pytest.mark.parametrize("exc", [
+        requests.exceptions.ConnectionError("rpc down"),
+        requests.exceptions.Timeout("slow"),
+        Web3Exception("bad rpc"),
+        ConnectionError("refused"),
+        RuntimeError("something else entirely"),
+    ])
+    def test_rpc_errors_degrade_to_settling(self, exc):
+        """Transient outage must never poison an in-flight run."""
+        provider, _ = _provider(raises=exc)
+        assert provider.check_status(TX_HASH) == SettlementStatus.SETTLING
+
+    def test_tx_hash_is_normalised_before_the_rpc_call(self):
+        provider, w3 = _provider(receipt=_receipt(logs=[_transfer_log()]))
+        provider.check_status(TX_HASH[2:])          # no 0x prefix
+        assert w3.eth.receipt_calls == [TX_HASH]
+
+
+# ---------------------------------------------------------------------------
+# Part 2e — the default expectation lookup (reads what WP-D commit 1 wrote)
+# ---------------------------------------------------------------------------
+
+class TestDefaultExpectedLookup:
+
+    def _provider_for(self, db_path):
+        return X402SettlementProvider(
+            rpc_url=DEFAULT_RPC_URL,
+            usdc_address=DEFAULT_USDC_ADDRESS,
+            network=DEFAULT_NETWORK,
+            w3=FakeWeb3(receipt=_receipt(logs=[_transfer_log()])),
+            db_path=db_path,
+        )
+
+    def test_reads_payee_and_amount_off_the_recorded_run(self, db_path):
+        asset_id = _register_asset(db_path)
+        _record(db_path, asset_id, presettled=_payment())
+        provider = self._provider_for(db_path)
+        assert provider._expected_lookup(TX_HASH) == (CREATOR_WALLET, AMOUNT_ATOMIC)
+
+    def test_end_to_end_settles_that_run(self, db_path):
+        asset_id = _register_asset(db_path)
+        _record(db_path, asset_id, presettled=_payment())
+        provider = self._provider_for(db_path)
+        assert provider.check_status(TX_HASH) == SettlementStatus.SETTLED
+
+    def test_unknown_tx_hash_has_no_expectation(self, db_path):
+        provider = self._provider_for(db_path)
+        assert provider._expected_lookup("0x" + "cd" * 32) is None
+
+    def test_a_ledger_only_run_is_not_matched(self, db_path):
+        """settlement_method is part of the lookup key, not just tx_hash."""
+        asset_id = _register_asset(db_path)
+        _record(db_path, asset_id)
+        provider = self._provider_for(db_path)
+        assert provider._expected_lookup(TX_HASH) is None
+
+    def test_no_db_path_and_no_app_context_returns_none(self):
+        provider = X402SettlementProvider(
+            rpc_url=DEFAULT_RPC_URL, usdc_address=DEFAULT_USDC_ADDRESS,
+            network=DEFAULT_NETWORK, w3=FakeWeb3(),
+        )
+        assert provider._expected_lookup(TX_HASH) is None
+
+
+# ---------------------------------------------------------------------------
+# Part 2f — explorer_url
+# ---------------------------------------------------------------------------
+
+class TestExplorerUrl:
+
+    def test_default_template(self):
+        assert explorer_url(TX_HASH) == f"https://sepolia.basescan.org/tx/{TX_HASH}"
+        assert "{tx_hash}" in DEFAULT_EXPLORER_TX_URL
+
+    def test_env_override(self, monkeypatch):
+        monkeypatch.setenv("X402_EXPLORER_TX_URL", "https://x.test/t/{tx_hash}?x=1")
+        assert explorer_url(TX_HASH) == f"https://x.test/t/{TX_HASH}?x=1"
+
+    def test_template_without_placeholder_appends(self, monkeypatch):
+        monkeypatch.setenv("X402_EXPLORER_TX_URL", "https://x.test/tx/")
+        assert explorer_url(TX_HASH) == f"https://x.test/tx/{TX_HASH}"
+
+    def test_bare_hash_is_normalised(self):
+        assert explorer_url(TX_HASH[2:]).endswith(TX_HASH)
+
+    def test_provider_method_matches_the_module_function(self):
+        provider, _ = _provider()
+        assert provider.explorer_url(TX_HASH) == explorer_url(TX_HASH)
+
+
+# ---------------------------------------------------------------------------
+# Part 2g — GET /api/royalty/status/<run_id> drives the state machine for a
+# pre-settled run. This is the ONLY path that turns "a facilitator said so"
+# into "settled", so each branch is asserted on the DB, not just the body.
+# ---------------------------------------------------------------------------
+
+from app.app import create_app  # noqa: E402
+from app.services.mock_settlement import MockSettlementProvider  # noqa: E402
+
+
+def _x402_client(*, receipt=None, raises=None, provider=None):
+    """A Flask client whose settlement provider is x402 over a fake w3.
+
+    expected_lookup is left at its DEFAULT so the route exercises the real
+    "read agent_runs.settlement_meta via the app's DATABASE_PATH" path.
+    """
+    fd, path = tempfile.mkstemp(suffix=".db")
+    os.close(fd)
+    if provider is None:
+        provider = X402SettlementProvider(
+            rpc_url=DEFAULT_RPC_URL,
+            usdc_address=DEFAULT_USDC_ADDRESS,
+            network=DEFAULT_NETWORK,
+            w3=FakeWeb3(receipt=receipt, raises=raises),
+        )
+    app = create_app(config={
+        "TESTING": True,
+        "DATABASE_PATH": path,
+        "SETTLEMENT_PROVIDER": provider,
+    })
+    return app, path
+
+
+def _seed_presettled_run(path):
+    asset_id = _register_asset(path)
+    return _record(path, asset_id, presettled=_payment())["run_id"]
+
+
+def _ledger_status(path, run_id):
+    return {r["party"]: r["status"] for r in list_royalties_by_run(path, run_id)}
+
+
+class TestStatusPollForPresettledRuns:
+
+    def test_good_receipt_flips_the_run_to_settled(self):
+        app, path = _x402_client(receipt=_receipt(logs=[_transfer_log()]))
+        try:
+            run_id = _seed_presettled_run(path)
+            with app.test_client() as c:
+                body = c.get(f"/api/royalty/status/{run_id}").get_json()
+            assert body["settlement_status"] == "settled"
+            assert body["settlement_method"] == "x402"
+            assert body["tx_hash"] == TX_HASH
+            assert get_agent_run(path, run_id)["settlement_status"] == "settled"
+        finally:
+            os.unlink(path)
+
+    def test_settled_run_settles_only_the_creator_row(self):
+        """The platform / tax receivables must NOT be marked paid by a chain
+        transfer that never touched them."""
+        app, path = _x402_client(receipt=_receipt(logs=[_transfer_log()]))
+        try:
+            run_id = _seed_presettled_run(path)
+            with app.test_client() as c:
+                c.get(f"/api/royalty/status/{run_id}")
+            assert _ledger_status(path, run_id) == {
+                "creator": "settled",
+                "platform": "accrued",
+                "tax": "accrued",
+            }
+        finally:
+            os.unlink(path)
+
+    def test_no_receipt_leaves_the_run_settling(self):
+        app, path = _x402_client(raises=TransactionNotFound("not mined"))
+        try:
+            run_id = _seed_presettled_run(path)
+            with app.test_client() as c:
+                body = c.get(f"/api/royalty/status/{run_id}").get_json()
+            assert body["settlement_status"] == "settling"
+            assert _ledger_status(path, run_id)["creator"] == "settling"
+        finally:
+            os.unlink(path)
+
+    def test_reverted_receipt_fails_the_run(self):
+        app, path = _x402_client(receipt=_receipt(status=0))
+        try:
+            run_id = _seed_presettled_run(path)
+            with app.test_client() as c:
+                body = c.get(f"/api/royalty/status/{run_id}").get_json()
+            assert body["settlement_status"] == "failed"
+            assert get_agent_run(path, run_id)["settlement_status"] == "failed"
+        finally:
+            os.unlink(path)
+
+    def test_failed_run_returns_the_creator_share_to_accrued(self):
+        """The money did not move, so the creator is still owed it."""
+        app, path = _x402_client(receipt=_receipt(status=0))
+        try:
+            run_id = _seed_presettled_run(path)
+            with app.test_client() as c:
+                c.get(f"/api/royalty/status/{run_id}")
+            assert _ledger_status(path, run_id) == {
+                "creator": "accrued",
+                "platform": "accrued",
+                "tax": "accrued",
+            }
+        finally:
+            os.unlink(path)
+
+    def test_wrong_payee_on_chain_fails_the_run(self):
+        app, path = _x402_client(receipt=_receipt(logs=[_transfer_log(to=PAYER)]))
+        try:
+            run_id = _seed_presettled_run(path)
+            with app.test_client() as c:
+                body = c.get(f"/api/royalty/status/{run_id}").get_json()
+            assert body["settlement_status"] == "failed"
+        finally:
+            os.unlink(path)
+
+    def test_response_carries_an_explorer_url_for_x402_runs(self):
+        app, path = _x402_client(raises=TransactionNotFound("not mined"))
+        try:
+            run_id = _seed_presettled_run(path)
+            with app.test_client() as c:
+                body = c.get(f"/api/royalty/status/{run_id}").get_json()
+            assert body["explorer_url"] == explorer_url(TX_HASH)
+        finally:
+            os.unlink(path)
+
+    def test_no_explorer_url_for_a_ledger_only_run(self):
+        """Additive key: existing consumers see the body they always saw."""
+        app, path = _x402_client(raises=TransactionNotFound("not mined"))
+        try:
+            asset_id = _register_asset(path)
+            run_id = _record(path, asset_id)["run_id"]
+            with app.test_client() as c:
+                body = c.get(f"/api/royalty/status/{run_id}").get_json()
+            assert "explorer_url" not in body
+            assert body["settlement_status"] == "accrued"
+        finally:
+            os.unlink(path)
+
+    def test_a_mock_provider_must_not_advance_a_pre_settled_run(self):
+        """MockSettlementProvider.check_status returns SETTLED for any string.
+
+        Without the WP-D guard in the route this would mark a creator paid on
+        the word of a mock — TIER-1 rule 3. The run must stay settling.
+        """
+        app, path = _x402_client(provider=MockSettlementProvider())
+        try:
+            run_id = _seed_presettled_run(path)
+            with app.test_client() as c:
+                body = c.get(f"/api/royalty/status/{run_id}").get_json()
+            assert body["settlement_status"] == "settling"
+            assert body["explorer_url"] == explorer_url(TX_HASH)
+            assert get_agent_run(path, run_id)["settlement_status"] == "settling"
+            assert _ledger_status(path, run_id)["creator"] == "settling"
+        finally:
+            os.unlink(path)
+
+    def test_polling_a_settled_run_is_a_no_op(self):
+        app, path = _x402_client(receipt=_receipt(logs=[_transfer_log()]))
+        try:
+            run_id = _seed_presettled_run(path)
+            with app.test_client() as c:
+                c.get(f"/api/royalty/status/{run_id}")
+                body = c.get(f"/api/royalty/status/{run_id}").get_json()
+            assert body["settlement_status"] == "settled"
+            assert _ledger_status(path, run_id)["platform"] == "accrued"
+        finally:
+            os.unlink(path)
+
+    def test_settle_route_refuses_a_pre_settled_run(self):
+        """POST /api/royalty/settle on a run the caller already paid: 409.
+
+        The run is in 'settling' from birth, so the existing conflict branch
+        catches it before the provider is ever consulted — which is the right
+        answer, since X402SettlementProvider.settle() would refuse anyway.
+        """
+        app, path = _x402_client(raises=TransactionNotFound("not mined"))
+        try:
+            run_id = _seed_presettled_run(path)
+            with app.test_client() as c:
+                resp = c.post("/api/royalty/settle", json={"run_id": run_id})
+            assert resp.status_code == 409
+            assert resp.get_json()["settlement_status"] == "settling"
+        finally:
+            os.unlink(path)

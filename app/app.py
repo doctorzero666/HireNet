@@ -1812,6 +1812,21 @@ def royalty_status(run_id):
     if run["settlement_status"] == "settling" and run.get("tx_hash"):
         provider = current_app.config["SETTLEMENT_PROVIDER"]
         provider_name = getattr(provider, "name", provider.__class__.__name__)
+        # Stage 2 / WP-D guard. An x402 run is born 'settling' at record time
+        # (the caller already paid), so unlike every other rail its rows reach
+        # this branch without the platform ever having called settle(). If the
+        # configured provider is NOT x402 it has no idea what that tx hash
+        # means — MockSettlementProvider.check_status returns SETTLED for any
+        # string — and advancing on its word would mark a creator paid on the
+        # strength of a mock. Leave the row alone and say why.
+        if run.get("settlement_method") == "x402" and provider_name != "x402":
+            current_app.logger.warning(
+                "run %s was pre-settled via x402 but the configured settlement "
+                "provider is %r; not advancing. Set HIRENET_SETTLEMENT_PROVIDER=x402 "
+                "to confirm this run on-chain.",
+                run_id, provider_name,
+            )
+            return _royalty_status_response(run)
         try:
             chain_status = provider.check_status(run["tx_hash"])
         except Exception:
@@ -1830,7 +1845,18 @@ def royalty_status(run_id):
             run = get_agent_run(db_path, run_id)
         # else SETTLING → no change; row remains as-is.
 
-    return jsonify({
+    return _royalty_status_response(run)
+
+
+def _royalty_status_response(run: dict):
+    """The GET /api/royalty/status/<run_id> body.
+
+    Extracted in Stage 2 / WP-D so the new "pre-settled run, wrong provider"
+    early return above renders the identical body. Keys are unchanged; the
+    only addition is `explorer_url`, present ONLY for x402 runs that have a
+    tx hash, so no existing consumer sees a new key.
+    """
+    body = {
         "run_id": run["run_id"],
         "settlement_status": run["settlement_status"],
         "settlement_method": run.get("settlement_method"),
@@ -1838,7 +1864,16 @@ def royalty_status(run_id):
         "charge_amount": run["charge_amount"],
         "charge_currency": run["charge_currency"],
         "charge_chain": run.get("charge_chain"),
-    })
+    }
+    if run.get("settlement_method") == "x402" and run.get("tx_hash"):
+        # Module-level helper, not provider.explorer_url: the link is a
+        # property of the tx hash and the configured explorer, and must render
+        # even when the app is running some other provider (see the guard
+        # above, which is exactly that situation).
+        from app.services.x402_settlement import explorer_url
+
+        body["explorer_url"] = explorer_url(run["tx_hash"])
+    return jsonify(body)
 
 
 # ─── Task D: authorization mandate (pact) lifecycle (demo) ───────────────────

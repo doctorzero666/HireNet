@@ -122,7 +122,12 @@ def get_provider(name: str) -> SettlementProvider:
 
     Supported names: "mock" (default for tests), "anvil" (local-chain demo
     via Foundry's Anvil node), "sepolia" (public Ethereum testnet via HTTP
-    RPC).
+    RPC), "x402" (Stage 2 / WP-D — Base Sepolia USDC, pre-settled by the
+    caller at invocation time; see app/services/x402_settlement.py).
+
+    Note that "x402" is the odd one out: it never pays anything. Its settle()
+    always refuses, because for that rail the money moved before the run row
+    existed; all it does is confirm the payment on-chain via check_status.
     """
     if name == "mock":
         from app.services.mock_settlement import MockSettlementProvider
@@ -147,5 +152,20 @@ def get_provider(name: str) -> SettlementProvider:
             from_key=os.getenv("SEPOLIA_PRIVATE_KEY", ""),
             from_address=os.getenv("SEPOLIA_FROM_ADDRESS", ""),
             default_to_address=default_to,
+        )
+    if name == "x402":
+        import os
+        # Defaults are imported from the gate, not re-typed, so the network and
+        # the USDC contract this provider verifies against can never drift from
+        # the ones the 402 quote advertises and the payer signs.
+        from app.services.x402_gate import DEFAULT_NETWORK, DEFAULT_USDC_ADDRESS
+        from app.services.x402_settlement import (
+            DEFAULT_RPC_URL,
+            X402SettlementProvider,
+        )
+        return X402SettlementProvider(
+            rpc_url=os.getenv("X402_RPC_URL", DEFAULT_RPC_URL),
+            usdc_address=os.getenv("X402_USDC_ADDRESS", DEFAULT_USDC_ADDRESS),
+            network=os.getenv("X402_NETWORK", DEFAULT_NETWORK),
         )
     raise ValueError(f"Unknown settlement provider: {name!r}")
