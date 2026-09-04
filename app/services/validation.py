@@ -66,6 +66,38 @@ def validate(data: dict, schema_name: str) -> None:
     jsonschema.validate(instance=data, schema=schema)
 
 
+# ─── Named validators for the task-analysis pipeline ──────────────────────────
+#
+# Thin wrappers over `validate()` so the agents layer never has to remember the
+# schema file name (and so a rename shows up as one edit here, not a grep across
+# app/agents/). They raise jsonschema.ValidationError like `validate` does; no
+# new error type, no second validation path.
+
+
+def validate_requirement(obj: dict) -> None:
+    """Validate a structured requirement (app/schemas/requirement.json)."""
+    validate(obj, "requirement")
+
+
+def validate_task(obj: dict) -> None:
+    """Validate one decomposed task unit (app/schemas/task.json)."""
+    validate(obj, "task")
+
+
+def validate_task_decision(obj: dict) -> None:
+    """Validate one runtime task-routing decision (app/schemas/task_decision.json).
+
+    This is the object inside the `{"decisions": [...]}` wrapper the analysis
+    routes return — NOT the four-dimensional settlement `resource_decision`.
+    """
+    validate(obj, "task_decision")
+
+
+def validate_analysis_trace(obj: dict) -> None:
+    """Validate one analysis trajectory row (app/schemas/analysis_trace.json)."""
+    validate(obj, "analysis_trace")
+
+
 def validate_split_rule(split_rule: dict) -> None:
     """Enforce the accounting invariant: creator + platform + tax must sum to exactly 10000 basis points.
 

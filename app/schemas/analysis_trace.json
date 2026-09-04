@@ -1,0 +1,78 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://hirenet.local/schemas/analysis_trace.json",
+  "title": "AnalysisTrace",
+  "description": "任务分析流水线里一次 LLM 调用的轨迹记录，一行一步，用于事后回放与成本核算。对应 SQLite 表 analysis_traces。",
+  "type": "object",
+  "required": [
+    "trace_id",
+    "session_id",
+    "step_no",
+    "stage",
+    "model",
+    "prompt_json",
+    "response_text",
+    "parsed_ok",
+    "created_at"
+  ],
+  "properties": {
+    "trace_id": {
+      "type": "string",
+      "minLength": 1,
+      "description": "这一步的唯一 id。"
+    },
+    "session_id": {
+      "type": "string",
+      "minLength": 1,
+      "description": "所属分析会话，回放时按它聚合。"
+    },
+    "step_no": {
+      "type": "integer",
+      "minimum": 0,
+      "description": "会话内的步序，从 0 开始单调递增。"
+    },
+    "stage": {
+      "type": "string",
+      "enum": ["clarify", "extract", "decompose", "evaluate", "decide", "jd"],
+      "description": "流水线阶段：clarify=多轮澄清、extract=抽取结构化需求、decompose=任务拆解、evaluate=单个资源评估、decide=阈值决策、jd=岗位设计。decide 是纯函数、不调 LLM，但仍记一行以便回放完整链路。"
+    },
+    "model": {
+      "type": "string",
+      "minLength": 1,
+      "description": "实际使用的模型 id（例如 glm-4-plus），不是环境变量名。"
+    },
+    "prompt_json": {
+      "type": "string",
+      "description": "发出去的 messages 数组的 JSON 序列化结果。存字符串而不是对象，是为了让这一行原样落进 SQLite 的一列。"
+    },
+    "response_text": {
+      "type": "string",
+      "description": "模型返回的原始文本，未做任何清洗。解析失败时这里就是排查现场。"
+    },
+    "parsed_ok": {
+      "type": "boolean",
+      "description": "本步的输出是否通过了 schema 校验。false 不代表整次运行失败（可能被 repair-retry 或 fallback 兜住了），但它是评估解析健壮性的直接指标。"
+    },
+    "input_tokens": {
+      "type": ["integer", "null"],
+      "minimum": 0,
+      "description": "取自 resp.usage.prompt_tokens。provider 没返回 usage 时写 null，不要补 0——0 和「不知道」是两回事。"
+    },
+    "output_tokens": {
+      "type": ["integer", "null"],
+      "minimum": 0,
+      "description": "取自 resp.usage.completion_tokens。缺失时同上写 null。"
+    },
+    "time_ms": {
+      "type": ["integer", "null"],
+      "minimum": 0,
+      "description": "本次调用的墙钟耗时（毫秒）。"
+    },
+    "created_at": {
+      "type": "string",
+      "minLength": 1,
+      "description": "ISO 8601 UTC 时间戳。"
+    }
+  },
+  "additionalProperties": false
+}

@@ -1,0 +1,101 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://hirenet.local/schemas/task_decision.json",
+  "title": "TaskDecision",
+  "description": "单个任务的执行方决策：一个任务 × 若干候选资源的评估 × 最终推荐（Agent / Human / Hybrid）。这是 /api/analyze/decide 与 /quick 返回的 decisions.decisions[] 里的元素，封装在 {\"decisions\": [...]} 包装对象中。注意：与 resource_decision.json 是两个不同的对象——那个描述的是「执行方 × 支付方式 × 资产 × 结算时机」的四维结算决策，本文件描述的是运行时的任务路由结果。",
+  "type": "object",
+  "required": [
+    "task_id",
+    "task_name",
+    "task_type",
+    "task_description",
+    "evaluations",
+    "recommendation"
+  ],
+  "properties": {
+    "task_id": {
+      "type": "string",
+      "minLength": 1,
+      "description": "对应 Task.id，计费与前端卡片都按它对齐。"
+    },
+    "task_name": {
+      "type": "string",
+      "minLength": 1,
+      "description": "对应 Task.name。"
+    },
+    "task_type": {
+      "type": "string",
+      "description": "对应 Task.type。Stage 1 里任务类型枚举是 advisory 的：只校验并记录 warning，不拒绝。仓库里同时存在 technical|creative|analytical|strategic|operational（task.json 的枚举）、'general'（match 路由）和 'engineering'（旧测试）三套词表，强制枚举会打断这些调用方。"
+    },
+    "task_description": {
+      "type": "string",
+      "description": "对应 Task.description，原样带过来。JD 生成阶段读的就是这个字段；如果不带，岗位描述就是在空描述上生成的。"
+    },
+    "estimated_hours": {
+      "type": "number",
+      "minimum": 0,
+      "description": "对应 Task.estimated_hours。可选：模型不给就不写，不要伪造默认值。"
+    },
+    "requires_judgment": {
+      "type": "boolean",
+      "description": "对应 Task.requires_judgment。可选。"
+    },
+    "is_recurring": {
+      "type": "boolean",
+      "description": "对应 Task.is_recurring。可选。它来自需求的 duration 字段，而 duration 是枚举 one-time | ongoing | unknown（见 requirement.json）——'ongoing' 才是 true。自由文本的工期（例如 '3个月'）不属于该枚举，遇到时按 unknown 处理并记 warning，不要靠字符串比较去猜。"
+    },
+    "evaluations": {
+      "type": "array",
+      "description": "每个候选资源的评估结果，按 confidence 降序。可以为空数组（没有任何候选资源被评估）；此时 recommendation 仍然必须给出，见下。",
+      "items": {
+        "type": "object",
+        "required": ["resource_id", "resource_name", "resource_type"],
+        "properties": {
+          "can_complete": { "type": "boolean" },
+          "confidence": {
+            "type": "number",
+            "minimum": 0,
+            "maximum": 1,
+            "description": "0–1 的数字，不是字符串。阈值判断直接拿它比较，字符串会在比较处抛 TypeError。"
+          },
+          "reason": { "type": "string" },
+          "estimated_time": { "type": "string" },
+          "strengths": { "type": "array", "items": { "type": "string" } },
+          "resource_id": { "type": "string", "minLength": 1 },
+          "resource_name": { "type": "string", "minLength": 1 },
+          "resource_type": { "type": "string", "enum": ["agent", "human"] }
+        },
+        "additionalProperties": true
+      }
+    },
+    "recommendation": {
+      "type": "object",
+      "description": "最终推荐，必填且不允许为 null。旧实现在 evaluations 为空时把它留成 None，而三个消费点写的是 .get('recommendation', {})——默认值只在 key 缺失时生效，值为 None 时会 AttributeError 直接 500。评估为空时应显式给出 {\"decision\": \"human\", ...}，而不是 null。",
+      "required": ["decision", "reason", "cost_hint"],
+      "properties": {
+        "decision": {
+          "type": "string",
+          "enum": ["agent", "human", "hybrid"],
+          "description": "小写，这是运行时词表。resource_decision.json 里的 executor_type 用的是首字母大写的 Agent|Human|Hybrid，两者不通用；前端三个卡片组件比较的是小写值。"
+        },
+        "resource": {
+          "type": "object",
+          "description": "置信度最高的那条 evaluation，原样引用。可选：没有任何候选资源时不写这个字段（而不是写 null）。",
+          "additionalProperties": true
+        },
+        "reason": {
+          "type": "string",
+          "minLength": 1,
+          "description": "给人看的中文说明，前端三个卡片组件逐字渲染。"
+        },
+        "cost_hint": {
+          "type": "string",
+          "minLength": 1,
+          "description": "成本提示。边界约定：预算/薪资未知时用类目词 'unknown'（对齐 requirement.budget_hint 的枚举 low|medium|high|unknown），不要写自由文本（历史实现写过 '需要评估薪资' / '混合成本' / '未知'，同一个槽位在 Agent 卡片里被当成调用成本、在招聘卡片里被当成预估薪资渲染，无法机器消费）。金额只有在确实已知时才写，且必须带币种。"
+        }
+      },
+      "additionalProperties": false
+    }
+  },
+  "additionalProperties": false
+}
