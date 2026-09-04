@@ -4,9 +4,10 @@ When Resource Decision Engine decides human hiring is needed,
 this agent generates a clean, realistic JD with a "water score"
 """
 import os
-import json
 import uuid
 from openai import OpenAI
+
+from app.services.validation import parse_llm_json
 
 
 def get_llm_client():
@@ -85,9 +86,15 @@ def design_job(requirement: dict, task: dict, original_description: str = "") ->
         temperature=0.3,
     )
 
+    # CLAUDE.md TIER-1 rule 1: no bare `json.loads` on model output. The old
+    # `raw.replace("```json", "").replace("```", "")` mangled any JD whose text
+    # happened to contain a backtick fence and then handed the result to
+    # `json.loads`; `parse_llm_json` strips the fence properly and finds the
+    # object even when the model wraps it in a sentence. A failure still raises
+    # (JSONDecodeError / ValueError) and is still caught one frame up in
+    # `generate_jd_report`, which skips this design — behaviour unchanged.
     raw = resp.choices[0].message.content.strip()
-    raw = raw.replace("```json", "").replace("```", "").strip()
-    job_design = json.loads(raw)
+    job_design = parse_llm_json(raw)
     job_design["task_id"] = task.get("id")
     job_design["task_name"] = task.get("name")
     # Stage 1 / D11a (audit risk 8): `_publish_jobs` (app.py) filters on job_id

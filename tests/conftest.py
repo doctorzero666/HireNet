@@ -1,3 +1,4 @@
+import copy
 import os
 import tempfile
 
@@ -5,6 +6,55 @@ import pytest
 
 from app.app import create_app
 from app.services.mock_settlement import MockSettlementProvider
+
+
+# ──────────────────────────────────────────────────────────────────────────────
+# Module-level stores (`app/app.py`) do not belong to the app object, so
+# `create_app()` per test does NOT reset them: whatever a test pushes into
+# `published_jobs` is still there for the next one, and `GET /api/jobs` grows
+# monotonically over a suite run. That makes test order significant and hides
+# real bugs behind "it passed when I ran the file alone".
+#
+# These dicts/lists are demo-grade by design (`app/app.py:24-66` says so, and
+# Phase 2 moves them to SQLite). Until then the test suite isolates them
+# explicitly: snapshot before, restore after, in place — routes and tests both
+# hold references to these very objects, so rebinding the name would not reach
+# them.
+# ──────────────────────────────────────────────────────────────────────────────
+
+MODULE_LEVEL_STORES = (
+    "analysis_sessions",
+    "career_sessions",
+    "pact_sessions",
+    "published_jobs",
+    "user_profile_state",
+)
+
+
+def _snapshot(value):
+    """Deep copy where possible; a live LLM client is not always copyable."""
+    try:
+        return copy.deepcopy(value)
+    except Exception:  # pragma: no cover - defensive
+        return copy.copy(value)
+
+
+@pytest.fixture(autouse=True)
+def isolate_module_level_stores():
+    """Restore `app.app`'s in-memory demo stores around every test."""
+    import app.app as app_module
+
+    saved = {name: _snapshot(getattr(app_module, name)) for name in MODULE_LEVEL_STORES}
+    yield
+    for name, value in saved.items():
+        store = getattr(app_module, name)
+        if isinstance(store, dict):
+            store.clear()
+            store.update(value)
+        elif isinstance(store, list):
+            store[:] = value
+        else:  # pragma: no cover - defensive
+            setattr(app_module, name, value)
 
 
 @pytest.fixture

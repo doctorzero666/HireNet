@@ -114,16 +114,6 @@ export async function applyToJob({ candidate_id, job_design }) {
   }
 }
 
-export async function matchCandidatesForJob(jobId) {
-  const res = await fetch(`${API_BASE}/match-candidates`, {
-    method: 'POST',
-    headers: buildHeaders(),
-    body: JSON.stringify({ job_id: jobId }),
-  })
-  if (!res.ok) throw new Error(`API error: ${res.status}`)
-  return res.json()
-}
-
 /* ── Demo identity ── */
 
 export async function fetchIdentities() {

@@ -143,23 +143,6 @@ def decompose_tasks(requirement: dict) -> dict:
 
 # ─── Resource Decision Engine ─────────────────────────────────────────────────
 
-RESOURCE_DECISION_ACTION_CONTROL = """Output only a valid JSON object, no explanation, no markdown.
-Structure:
-{
-  "can_complete": boolean,
-  "confidence": number between 0 and 1,
-  "reason": "one sentence explanation in Chinese",
-  "estimated_time": "time estimate string",
-  "strengths": ["strength1", "strength2"]
-}
-
-Rules:
-- Set can_complete=true if this resource's capabilities clearly match the task requirements
-- Set confidence based on how well the match is (0.9+ = excellent, 0.7-0.9 = good, 0.5-0.7 = possible, <0.5 = unlikely)
-- If insufficient information to judge, set can_complete=false with confidence=0.3
-- strengths should list 1-3 specific relevant capabilities"""
-
-
 def evaluate_resource_for_task(resource: dict, task: dict) -> dict:
     """Evaluate if a resource (agent or candidate) can complete a given task."""
     return _llm_evaluate_resource(resource, task)
@@ -205,7 +188,9 @@ def _llm_evaluate_resource(resource: dict, task: dict) -> dict:
     try:
         result = json.loads(raw)
     except json.JSONDecodeError:
-        # Find the first complete JSON object
+        # Find the first complete JSON object. NOTE: this counter does not track
+        # string literals, so a `{` or `}` inside a JSON string breaks it —
+        # `app/services/validation.py:parse_llm_json` is the string-aware version.
         brace_count = 0
         start = raw.find('{')
         end = -1

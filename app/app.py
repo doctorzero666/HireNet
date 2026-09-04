@@ -871,8 +871,13 @@ def career_generate():
         strategy = agent.force_generate_strategy()
         career_sessions[session_id]["strategy"] = strategy
         return jsonify({"success": True, "strategy": strategy})
-    except Exception as e:
-        return jsonify({"error": str(e)}), 500
+    except Exception:
+        # Same rule as the analysis routes (D11b): the exception goes to the
+        # log, never to the client. `str(e)` here leaked whatever the LLM SDK
+        # put in the message — request ids, urls, and on a bad day the API key
+        # in a request repr.
+        current_app.logger.exception("career strategy generation failed")
+        return jsonify({"error": "career strategy generation failed"}), 500
 
 
 @main.route("/api/tracker/task-complete", methods=["POST"])
