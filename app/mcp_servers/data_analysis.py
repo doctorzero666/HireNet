@@ -2,8 +2,15 @@
 
 Standalone Flask app on :5003. Three tools for demo.
 """
+import os
+
 from flask import Flask, jsonify, request
 from flask_cors import CORS
+
+# The endpoint_url this server is registered under in `skill_assets`
+# (app/services/demo_bootstrap.py: DEMO_DATA_ANALYST). The x402 gate uses it to
+# find which SkillAsset — and therefore which creator wallet — gets paid.
+ASSET_ENDPOINT_URL = os.getenv("HIRENET_MCP_ENDPOINT_URL", "http://localhost:5003")
 
 _TOOLS = [
     {
@@ -117,13 +124,39 @@ def create_app() -> Flask:
             "total": len(items),
         }), 200
 
+    _install_x402_gate(app)
     return app
 
+
+def _install_x402_gate(app: Flask) -> bool:
+    """Put `POST /mcp/tools/call` behind x402 when HIRENET_X402_GATE=1.
+
+    Off by default, so the existing demo and test suite see this server exactly
+    as before. The env check is repeated here (install_x402_gate checks it
+    again, authoritatively) only so the `x402` import is not paid for — and
+    cannot fail — on the default path.
+    """
+    if os.getenv("HIRENET_X402_GATE") != "1":
+        return False
+    from app.services.x402_gate import install_x402_gate
+
+    return install_x402_gate(
+        app,
+        # Every tool this server serves belongs to the SkillAsset registered at
+        # ASSET_ENDPOINT_URL; the creator's wallet is read from that row.
+        tool_endpoints={name: ASSET_ENDPOINT_URL for name in _DATA},
+    )
+
+
+if __name__ == "__main__":
+    # Run as a script sys.path[0] is THIS directory, so `import app.services...`
+    # would fail once the gate is on. Put the repo root first, before create_app().
+    import sys
+    sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..")))
 
 app = create_app()
 
 if __name__ == "__main__":
-    import os
     port = int(os.getenv("MCP_PORT", 5003))
     print(f"[MCP] data_analysis running on http://localhost:{port}")
     app.run(debug=False, host="0.0.0.0", port=port, threaded=True)

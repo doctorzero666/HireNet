@@ -63,3 +63,6 @@ ARCHITECTURE.md
 hire_net_*.md
 hirenet_rpg_*.md
 docs/HireNet*.html
+
+# Stage 2 worktree venv (x402 deps)
+.venv-stage2/

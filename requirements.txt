@@ -10,3 +10,8 @@ PyJWT>=2.8
 cryptography>=42.0
 web3>=6.0,<7
 eth-account>=0.10
+# x402 resource-server side ONLY (Stage 2 / WP-B). NOT x402[evm]: that extra
+# needs web3>=7 + eth-account>=0.13 and cannot coexist with the web3<7 pin
+# above. [flask,httpx] adds no chain deps — verification and on-chain
+# settlement happen on the remote facilitator, over HTTP.
+x402[flask,httpx]>=2.22,<3
