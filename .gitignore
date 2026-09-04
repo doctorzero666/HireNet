@@ -57,9 +57,9 @@ frontend/island-styles.css
 # 钱包私钥
 cobo-keys/
 
-# 旧文档和模板（本地保留，不传GitHub）
+# 旧文档（本地保留，不传GitHub）。app/templates/*.html 曾经也在这里，
+# 但 app/routes/earnings.py 真的在渲染它们——新克隆会缺文件，见 tests/test_creator_earnings.py
 ARCHITECTURE.md
 hire_net_*.md
 hirenet_rpg_*.md
-app/templates/*.html
 docs/HireNet*.html

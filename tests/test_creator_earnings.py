@@ -222,6 +222,22 @@ class TestSummarize:
 # ---------------------------------------------------------------------------
 
 class TestEarningsRoute:
+    def test_the_jinja_template_is_in_the_repo_and_renders(self, client):
+        """回归：`app/templates/*.html` 曾经被 .gitignore 忽略（Stage 1 / WP5）。
+
+        五个模板只存在于作者本机，而这条路由真的在渲染其中一个，所以新克隆一跑
+        测试就有四个用例报 TemplateNotFound。这里断言的是"渲染得出来"——正是
+        新克隆做不到的那件事，而不是文件存在。
+        """
+        resp = client.get("/creator/earnings")
+
+        assert resp.status_code == 200
+        assert resp.mimetype == "text/html"
+        body = resp.get_data(as_text=True)
+        assert "<!DOCTYPE html>" in body
+        assert "创作者收益" in body, "渲染出来的应该是模板本身，不是错误页"
+        assert "{{" not in body, "模板变量应该已经被求值"
+
     def test_default_creator_falls_back_to_phase1_stub(self, client):
         # 不带 creator_id —— 路由应使用 PHASE1_CREATOR_ID 配置值
         stub_id = client.application.config["PHASE1_CREATOR_ID"]
