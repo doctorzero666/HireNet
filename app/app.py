@@ -2202,6 +2202,269 @@ def pact_reject(pact_id):
     return jsonify(pact)
 
 
+# ─── Stage 2 / WP-E: settling by PAYING FOR the invocation (spec S8) ──────────
+#
+# When the app's configured settlement provider is the x402 one, settle does NOT
+# write an accrued ledger row and then invoke the tool. It invokes the SkillAsset
+# THROUGH the x402 paywall — that invocation IS the payment (our payer signs an
+# EIP-3009 USDC authorization, the facilitator broadcasts it) — and only then
+# records the run, pre-settled, with the transaction hash the facilitator
+# returned.
+#
+# Why the order has to flip:
+#   * legacy rails (mock / anvil / sepolia): the platform pays AFTER the fact,
+#     so the ledger row is the instruction to pay and must exist first.
+#   * x402: the money moves before we get a result back, so a row written first
+#     would assert a payment that has not happened, and a refused payment would
+#     leave the creator "billed" for something nobody paid for.
+#
+# Failure posture — the part worth reading twice:
+#   * nothing was paid  → nothing is recorded, the pact goes back to `approved`,
+#     the caller may retry.
+#   * something WAS paid but we could not record it → the pact stays `settling`,
+#     a state settle() refuses to act on, so a retry cannot sign a SECOND
+#     authorization against the same mandate. The tx hash is stashed on the pact
+#     and logged; turning it into a ledger row is then a manual operator step.
+#
+# There is deliberately NO path that writes an accrued row when the payment did
+# not happen — that would silently switch rails in the middle of a settle.
+
+# The x402 settlement provider's `name` (app/services/x402_settlement.py).
+X402_PROVIDER_NAME = "x402"
+
+# mcp_client folds x402 payer exceptions into
+# `{"status": "error", "error": "<ExceptionClassName>: <message>"}` and keeps the
+# class name on purpose (see app/services/mcp_client.py). That name is the only
+# thing that survives the seam, so it is the documented way to tell "the quote
+# was above the ceiling, nothing was signed" apart from every other failure.
+_SPEND_CAP_ERROR_MARKER = "SpendCapExceeded"
+
+
+def _settlement_provider_name() -> str:
+    """The configured provider's name ('mock' / 'anvil' / 'sepolia' / 'x402').
+
+    Read off the provider INSTANCE, never by re-reading
+    HIRENET_SETTLEMENT_PROVIDER here: create_app resolves that env var once, and
+    tests inject a pre-built provider through config["SETTLEMENT_PROVIDER"], so
+    re-reading the env could disagree with the object the app actually holds.
+    Same accessor as /api/royalty/settle and the royalty status poll.
+    """
+    provider = current_app.config.get("SETTLEMENT_PROVIDER")
+    if provider is None:
+        return ""
+    return getattr(provider, "name", provider.__class__.__name__)
+
+
+def _x402_explorer_url(tx_hash: str | None) -> str | None:
+    """Block-explorer link for a settled x402 tx; None when there is no hash.
+
+    Prefers the configured provider's own helper so the link comes from the
+    same object that will later confirm the tx on-chain; falls back to the
+    module-level helper (identical output) if the provider does not expose one.
+    """
+    if not tx_hash:
+        return None
+    provider = current_app.config.get("SETTLEMENT_PROVIDER")
+    helper = getattr(provider, "explorer_url", None)
+    if callable(helper):
+        return helper(tx_hash)
+    from app.services.x402_settlement import explorer_url
+
+    return explorer_url(tx_hash)
+
+
+def _pact_settle_x402(pact: dict, asset: dict | None, asset_id: str,
+                      charge_chain: str | None):
+    """Settle a pact on the x402 rail: pay, then record. See the block above.
+
+    Called by `pact_settle` only, and only after the shared prologue has run the
+    mandate checks (expiry, integrity, amount <= cap) and resolved the asset,
+    its currency and its price_chain. Returns whatever the route returns.
+    """
+    from app.services.agent_run_recording import USDC_ATOMIC_PER_CENT, record_agent_run
+    from app.services.mcp_client import call_mcp_tool, pick_tool_for_task
+    from app.services.x402_gate import usd_to_atomic
+    from app.services.x402_payer import max_amount_per_payment
+
+    # The invocation IS the payment, so an asset with nowhere to invoke cannot
+    # settle on this rail at all. Refused before the pact is claimed, so there
+    # is nothing to undo and the pact stays `approved`.
+    endpoint_url = (asset or {}).get("endpoint_url")
+    if not endpoint_url:
+        return jsonify({
+            "error": (
+                f"asset {asset_id} has no endpoint_url; an x402 settlement pays "
+                "by invoking the SkillAsset and there is nothing to invoke"
+            )
+        }), 502
+
+    # The ceiling handed to the payer, in USDC atomic units. TWO ceilings apply
+    # and we take the tighter of them:
+    #   * the mandate's own amount_cap — what the enterprise actually authorized;
+    #   * X402_MAX_AMOUNT_PER_PAYMENT — the operator's wallet-level brake.
+    # A mandate may lower the brake, never raise it. Both are enforced at the
+    # signing point (x402_payer.enforce_spend_cap), so a quote above the ceiling
+    # is refused before anything is signed.
+    cap_dollars = pact.get("amount_cap")
+    if cap_dollars is None:
+        cap_dollars = pact.get("amount")
+    try:
+        cap_atomic = usd_to_atomic(cap_dollars)
+    except (TypeError, ValueError):
+        return jsonify({"error": "amount_cap must be a valid number"}), 400
+    try:
+        cap_atomic = min(cap_atomic, max_amount_per_payment())
+    except ValueError as exc:
+        # Malformed X402_MAX_AMOUNT_PER_PAYMENT. A loud 500 rather than quietly
+        # signing under the mandate's cap alone: the operator's brake is not
+        # something to guess at.
+        current_app.logger.error("x402 payer is misconfigured: %s", exc)
+        return jsonify({"error": f"x402 payer is misconfigured: {exc}"}), 500
+
+    # Atomic claim: approved → settling. `settling` is neither terminal nor
+    # `settled`; it means "an invocation for this mandate is in flight". A
+    # concurrent settle sees it and bounces with the same 400 the legacy path
+    # gives — that is what stops two threads signing two authorizations.
+    with _pact_lock:
+        if pact["status"] != "approved":
+            return jsonify({
+                "error": f"Pact must be approved to settle, current: {pact['status']}"
+            }), 400
+        pact["status"] = "settling"
+
+    mcp_fn = current_app.config.get("MCP_CLIENT", call_mcp_tool)
+    tool_name = pick_tool_for_task(
+        pact.get("task_id"),
+        pact.get("agent_name"),
+        (asset or {}).get("name"),
+    )
+    try:
+        result = mcp_fn(
+            endpoint_url,
+            tool_name,
+            {"task_id": pact.get("task_id")},
+            # Only this rail passes max_amount; the legacy call keeps its
+            # 3-argument shape so existing injected fakes are untouched.
+            max_amount=cap_atomic,
+        )
+    except Exception as exc:  # noqa: BLE001 - MCP_CLIENT is an injection seam
+        # call_mcp_tool never raises, but an injected client might. A raise means
+        # we never saw a PAYMENT-RESPONSE, so nothing is known to have been paid:
+        # release the claim and let the caller retry.
+        current_app.logger.exception(
+            "x402 invocation raised for pact %s", pact["pact_id"]
+        )
+        with _pact_lock:
+            pact["status"] = "approved"
+        return jsonify({
+            "error": f"invocation failed: {exc.__class__.__name__}: {exc}"
+        }), 502
+
+    result = result or {}
+    payment = result.get("payment") or {}
+
+    # `settle_success is True` is the only thing that means money moved. Note
+    # this is checked BEFORE result["status"]: a tool that failed AFTER the
+    # facilitator settled still has to be recorded, because dropping a tx hash
+    # is how a real payment becomes unexplained missing USDC.
+    if payment.get("settle_success") is not True:
+        with _pact_lock:
+            pact["status"] = "approved"
+        error_text = result.get("error") or (
+            "the SkillAsset endpoint did not ask to be paid (no 402); nothing "
+            "was settled on the x402 rail"
+        )
+        if _SPEND_CAP_ERROR_MARKER in error_text:
+            # The quoted price was over the mandate's ceiling; nothing signed.
+            return jsonify({"error": "amount exceeds cap"}), 409
+        # 502: the failure is upstream of us — the resource server, the payer's
+        # signing step, or the facilitator. Nothing was recorded and the mandate
+        # is still approved, so the caller can fix the cause and retry.
+        return jsonify({"error": error_text}), 502
+
+    tx_hash = payment.get("tx_hash")
+
+    # ── From here on the creator HAS been paid ───────────────────────────────
+    # Every remaining failure keeps the pact at `settling` (never back to
+    # `approved`) so a retry cannot sign a second authorization for a mandate
+    # that has already been paid.
+    raw_atomic = payment.get("amount_atomic")
+    try:
+        amount_atomic = int(str(raw_atomic).strip())
+    except (TypeError, ValueError):
+        amount_atomic = None
+    if (amount_atomic is None or amount_atomic < 0
+            or amount_atomic % USDC_ATOMIC_PER_CENT != 0):
+        # The gate only ever quotes `price_amount * 10_000`, so a quote that is
+        # not a non-negative whole number of cents is a gate/payer bug, not a
+        # user error.
+        # Refuse to invent a rounded charge_amount; the payment stays visible on
+        # the pact and in the log so it can be reconciled by hand.
+        current_app.logger.error(
+            "x402 payment for pact %s settled tx %s for %r atomic USDC units, "
+            "which is not a non-negative whole number of cents (%d atomic "
+            "units per cent); no agent_run / royalty row was written",
+            pact["pact_id"], tx_hash, raw_atomic, USDC_ATOMIC_PER_CENT,
+        )
+        pact["tx_hash"] = tx_hash
+        pact["explorer_url"] = _x402_explorer_url(tx_hash)
+        pact["mcp_result"] = result
+        return jsonify({
+            "error": (
+                f"paid {raw_atomic!r} atomic USDC units, which is not a "
+                "non-negative whole number of cents; the run was NOT recorded "
+                "(see server log)"
+            ),
+            "tx_hash": tx_hash,
+        }), 500
+
+    # atomic units → cents. record_agent_run re-asserts this same invariant
+    # against `presettled` and refuses the write if the two ever disagree.
+    charge_amount_cents = amount_atomic // USDC_ATOMIC_PER_CENT
+
+    try:
+        result_row = record_agent_run(
+            current_app.config["DATABASE_PATH"],
+            agent_name=pact["agent_name"],
+            caller_id=get_current_identity()["id"],
+            task_id=pact["task_id"],
+            asset_id=asset_id,
+            charge_amount=charge_amount_cents,  # atomic USDC units → cents
+            charge_currency=pact["currency"],
+            charge_chain=charge_chain,
+            success=True,
+            # WP-D: writes the run + creator split as settlement_method="x402",
+            # settlement_status="settling" (paid, chain confirmation pending),
+            # and the platform / tax shares as "x402-fee-receivable".
+            presettled=payment,
+        )
+    except Exception as e:
+        current_app.logger.exception(
+            "x402 payment for pact %s settled tx %s but the run could not be "
+            "recorded; the pact stays 'settling' so no second authorization can "
+            "be signed for it",
+            pact["pact_id"], tx_hash,
+        )
+        pact["tx_hash"] = tx_hash
+        pact["explorer_url"] = _x402_explorer_url(tx_hash)
+        pact["mcp_result"] = result
+        return jsonify({
+            "error": f"Failed to record: {str(e)}", "tx_hash": tx_hash,
+        }), 500
+
+    pact["status"] = "settled"
+    pact["run_id"] = result_row["run_id"]
+    pact["royalty_splits"] = result_row["royalty_splits"]
+    pact["tx_hash"] = tx_hash
+    pact["explorer_url"] = _x402_explorer_url(tx_hash)
+    # settled_amount is what was actually PAID, in dollar units. Additive:
+    # `amount` keeps saying what the pact was created for, which is not the same
+    # number whenever the asset's list price differs from the requested amount.
+    pact["settled_amount"] = float(decimal.Decimal(charge_amount_cents) / 100)
+    pact["mcp_result"] = result
+    return jsonify(pact)
+
+
 @main.route("/api/pact/settle/<pact_id>", methods=["POST"])
 def pact_settle(pact_id):
     """Move approved → settled and record one agent_run + royalty_ledger row.
@@ -2220,6 +2483,12 @@ def pact_settle(pact_id):
     supplied at create time, else the Phase 1 Job Design fallback).
     charge_amount is converted from dollar units (pact.amount) to integer
     basis points via Decimal — record_agent_run rejects floats / negatives.
+
+    Two rails (Stage 2 / WP-E). Everything above the "Rail selection" comment
+    below is shared; then:
+      * provider is x402 → `_pact_settle_x402` pays for the invocation and
+        records the run afterwards, pre-settled with a real tx hash;
+      * any other provider → the legacy post-hoc path below, unchanged.
     """
     pact, err = _pact_or_404(pact_id)
     if err:
@@ -2284,6 +2553,15 @@ def pact_settle(pact_id):
     except (ValueError, TypeError, decimal.InvalidOperation):
         return jsonify({"error": "amount must be a valid number"}), 400
 
+    # ── Rail selection (Stage 2 / WP-E) ──────────────────────────────────────
+    # The x402 provider settles by PAYING FOR the invocation, which inverts the
+    # order of everything below — see the section comment above
+    # `_pact_settle_x402`. Every other provider keeps the legacy post-hoc path
+    # unchanged. Everything up to here (mandate checks, asset + currency
+    # resolution, the amount validation just above) is shared by both rails.
+    if _settlement_provider_name() == X402_PROVIDER_NAME:
+        return _pact_settle_x402(pact, asset, asset_id, charge_chain)
+
     # Atomic claim: under _pact_lock, only one thread sees status=="approved"
     # and flips it to "settled". Any concurrent thread observes "settled" and
     # exits with 400 before duplicating the agent_run/royalty rows.
@@ -2302,7 +2580,7 @@ def pact_settle(pact_id):
             caller_id=get_current_identity()["id"],
             task_id=pact["task_id"],
             asset_id=asset_id,
-            charge_amount=charge_amount_cents,  # dollars → basis points
+            charge_amount=charge_amount_cents,  # dollars → cents
             charge_currency=pact["currency"],
             charge_chain=charge_chain,
             success=True,

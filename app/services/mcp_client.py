@@ -12,7 +12,9 @@ Two responsibilities:
 Designed to be injectable: pact_settle reads
 `current_app.config.get("MCP_CLIENT", call_mcp_tool)`, so tests pass a fake
 without touching the network. Mirrors the SETTLEMENT_PROVIDER pattern in
-app/services/mock_settlement.py.
+app/services/mock_settlement.py. Note the two call shapes: the legacy settle
+path calls the injected client with three positional arguments, while the WP-E
+x402 path also passes `max_amount=` — a fake used on that path must accept it.
 
 ────────────────────────────────────────────────────────────────────────────
 Stage 2 / WP-C: paying for the invocation (x402)
@@ -35,10 +37,12 @@ every result and None whenever no payment happened. Callers checked:
 `frontend/src/services/api.js` + `ExecutionPage.jsx` (pass the object through),
 `tests/test_mcp_integration.py` (asserts individual keys, no dict equality).
 
-`call_mcp_tool` still NEVER raises: `app/app.py` calls it after the royalty
-rows are committed and relies on that. Payment failures are therefore folded
-into the same `{"status": "error", ...}` dict, with the exception class name
-kept in the message so "PaymentFailed" / "SpendCapExceeded" stay visible.
+`call_mcp_tool` still NEVER raises: on the legacy settle path `app/app.py`
+calls it after the royalty rows are committed and relies on that; on the WP-E
+x402 path it calls it BEFORE any ledger write and reads the folded error to
+decide that nothing may be recorded. Payment failures are therefore folded into
+the same `{"status": "error", ...}` dict, with the exception class name kept in
+the message so "PaymentFailed" / "SpendCapExceeded" stay visible.
 """
 from __future__ import annotations
 
@@ -140,6 +144,7 @@ def call_mcp_tool(
     timeout: float = 5.0,
     *,
     session: Any = None,
+    max_amount: int | None = None,
 ) -> dict[str, Any]:
     """POST to the MCP server, return a small summary safe to put on a pact.
 
@@ -162,9 +167,19 @@ def call_mcp_tool(
     `session` is a TEST SEAM: any object with `.request(method, url, json=,
     headers=, **kwargs)`. Defaults to the `requests` module, i.e. real HTTP.
 
-    Never raises. pact_settle already committed royalty rows before we get
-    here; bubbling exceptions up would either roll those back (wrong) or
-    surface as a 500 with the user blocked at "settling" forever (worse).
+    `max_amount` is a per-invocation spend ceiling in USDC atomic units, applied
+    at the signing point instead of the `X402_MAX_AMOUNT_PER_PAYMENT` default.
+    None (every pre-WP-E caller) keeps that env-configured default. Stage 2 /
+    WP-E: pact settle passes the mandate's own amount_cap here — already reduced
+    to the tighter of the mandate cap and the operator's brake — so a quote
+    above what the enterprise authorized is refused before anything is signed.
+
+    Never raises. On the legacy settle path pact_settle has already committed
+    royalty rows before we get here; bubbling exceptions up would either roll
+    those back (wrong) or surface as a 500 with the user blocked at "settling"
+    forever (worse). On the WP-E x402 path nothing is committed yet, and the
+    folded `{"status": "error", ...}` is what tells the route to record nothing
+    and leave the mandate approved.
     """
     if not endpoint_url:
         return _mcp_error(tool_name, endpoint_url, "endpoint_url is empty")
@@ -200,6 +215,8 @@ def call_mcp_tool(
                 target,
                 json=payload,
                 private_key=private_key,
+                # None → x402_payer falls back to X402_MAX_AMOUNT_PER_PAYMENT.
+                max_amount=max_amount,
                 timeout=timeout,
                 allow_redirects=False,
             )
