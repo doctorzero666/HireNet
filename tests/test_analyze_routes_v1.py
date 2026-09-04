@@ -8,18 +8,16 @@ refactor has a safety net. Before this file the conversational path
 existing e2e file drives `/quick` and stubs out the two functions the
 refactor is about to rewrite (audit §10).
 
-Read this as a contract, not as an endorsement. Two assertions below pin
-behaviour that is arguably wrong and is deliberately NOT fixed here:
+Read this as a contract, not as an endorsement. Some assertions below pin
+behaviour that is arguably wrong:
 
   * a malformed JSON body after the `[REQUIREMENT_COMPLETE]` marker is
     swallowed into `is_complete: False` (app/app.py:178-179, :210-211), so
     the conversation silently continues while the user sees the raw broken
     text in `response`;
-  * a pipeline failure returns `{"error": str(e)}`, leaking the exception
-    text to the client (app/app.py:277, :1267).
-
-The second one is fixed in a later commit in this work package; when that
-lands, the tests here get *stronger* assertions, not different ones.
+  * a pipeline failure used to return `{"error": str(e)}`, leaking the
+    exception text to the client — that one IS fixed in this work package,
+    and the tests below now assert the generic body instead.
 
 No test in this file may touch the network — see the autouse guard below.
 """
@@ -462,6 +460,22 @@ class TestAnalyzeDecide:
         assert body is not None, "the error body must stay JSON, not Flask's HTML page"
         assert "error" in body
 
+    def test_500_body_is_generic_and_does_not_leak_the_exception(
+        self, client, fake_llm, monkeypatch, caplog
+    ):
+        """The exception is logged server-side, never echoed to the client."""
+        session_id, _ = start_session(client, fake_llm, response_text=COMPLETE_RESPONSE)
+        monkeypatch.setattr(
+            app_module, "decompose_tasks", CountingStub(raises=RuntimeError(BOOM))
+        )
+        with caplog.at_level("ERROR"):
+            resp = client.post("/api/analyze/decide", json={"session_id": session_id})
+        assert resp.get_json() == {"error": "analysis failed"}
+        assert BOOM not in resp.get_data(as_text=True)
+        assert "open.bigmodel.cn" not in resp.get_data(as_text=True)
+        # ...but it is still recoverable from the server log.
+        assert BOOM in caplog.text
+
 
 # ──────────────────────────────────────────────────────────────────────────────
 # POST /api/analyze/quick
@@ -531,6 +545,19 @@ class TestAnalyzeQuick:
         body = resp.get_json()
         assert body is not None, "the error body must stay JSON, not Flask's HTML page"
         assert "error" in body
+
+    def test_500_body_is_generic_and_does_not_leak_the_exception(
+        self, client, monkeypatch, caplog
+    ):
+        monkeypatch.setattr(
+            app_module, "decompose_tasks", CountingStub(raises=RuntimeError(BOOM))
+        )
+        with caplog.at_level("ERROR"):
+            resp = client.post("/api/analyze/quick", json={"requirement": QUICK_REQUIREMENT})
+        assert resp.get_json() == {"error": "analysis failed"}
+        assert BOOM not in resp.get_data(as_text=True)
+        assert "open.bigmodel.cn" not in resp.get_data(as_text=True)
+        assert BOOM in caplog.text
 
 
 # ──────────────────────────────────────────────────────────────────────────────

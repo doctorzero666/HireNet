@@ -273,9 +273,13 @@ def run_decision():
             "summary": summary,
         })
 
-    except Exception as e:
+    except Exception:
+        # Log the exception server-side; do NOT put str(e) in the response.
+        # These failures come out of the OpenAI SDK, so the message can carry
+        # the API base URL, request ids, or a chunk of the prompt. The client
+        # only needs the `{"error": ...}` shape the SPA already renders.
         current_app.logger.exception("run_decision failed")
-        return jsonify({"error": str(e)}), 500
+        return jsonify({"error": "analysis failed"}), 500
 
 
 def _build_decision_summary(tasks, decisions, jd_report) -> dict:
@@ -1269,9 +1273,10 @@ def quick_analyze():
             "jd_report": jd_report,
             "summary": summary,
         })
-    except Exception as e:
+    except Exception:
+        # Same reasoning as run_decision: log it, return a generic body.
         current_app.logger.exception("quick_analyze failed")
-        return jsonify({"error": str(e)}), 500
+        return jsonify({"error": "analysis failed"}), 500
 
 
 # ─── Phase 2 / U1: royalty inspection + settlement ────────────────────────────
