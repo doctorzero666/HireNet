@@ -6,7 +6,7 @@ royalty path stays the same shape whether we settle through:
   - the Mock provider (this Phase, U1) — no real chain, returns fake tx_hash;
   - the Anvil provider (demo) — local Foundry node, real tx_hash, 0-ETH
     metadata tx so the receipt is verifiable via `cast receipt`;
-  - Cobo Agentic Wallet (U2, stub) — testnet/mainnet via Cobo SDK;
+  - the Sepolia provider — public Ethereum testnet via HTTP RPC;
   - x402 or other rails (later) — same ABC, different impl.
 
 The state machine the rest of the system relies on is:
@@ -54,10 +54,11 @@ class SettlementResult:
 
     `next_status` tells the route layer what agent_run state to transition
     to after a successful submission. Mock returns SETTLED (synchronous —
-    no on-chain wait). Cobo returns SETTLING because the transfer has only
-    been accepted, not yet confirmed on-chain; the run advances to SETTLED
-    when a later check_status() observes a terminal Cobo state. Ignored
-    when success=False (the route flips the run to FAILED).
+    no on-chain wait). An asynchronous on-chain provider returns SETTLING
+    because the transfer has only been accepted, not yet confirmed on-chain;
+    the run advances to SETTLED when a later check_status() observes a
+    terminal state. Ignored when success=False (the route flips the run to
+    FAILED).
     """
     success: bool
     tx_hash: str | None = None
@@ -68,8 +69,8 @@ class SettlementResult:
 class SettlementProvider(ABC):
     """Abstract contract every settlement backend must implement.
 
-    Intentionally small: U1 needs only "submit" + "poll". Real rails (Cobo /
-    x402) bring richer affordances (cancel, replace, fee estimation) — those
+    Intentionally small: U1 needs only "submit" + "poll". Real rails (on-chain
+    / x402) bring richer affordances (cancel, replace, fee estimation) — those
     land in Phase 4 alongside the second provider implementation, not now.
     """
 
@@ -84,8 +85,9 @@ class SettlementProvider(ABC):
         """Submit a payment to the underlying rail.
 
         Args:
-            payee_id: opaque identifier of the recipient. For the Mock + Cobo
-                providers this is the creator's id; multi-payee splits are a
+            payee_id: opaque identifier of the recipient. For the Mock and
+                on-chain providers this is the creator's id; multi-payee
+                splits are a
                 ledger-layer concern, not the provider's.
             amount: integer basis-point amount (1 cent = 1 for USD-like
                 currencies). Matches royalty_ledger.amount / charge_amount.
@@ -120,7 +122,7 @@ def get_provider(name: str) -> SettlementProvider:
 
     Supported names: "mock" (default for tests), "anvil" (local-chain demo
     via Foundry's Anvil node), "sepolia" (public Ethereum testnet via HTTP
-    RPC), "cobo" (WaaS 2.0 stub, kept for future use).
+    RPC).
     """
     if name == "mock":
         from app.services.mock_settlement import MockSettlementProvider
@@ -145,15 +147,5 @@ def get_provider(name: str) -> SettlementProvider:
             from_key=os.getenv("SEPOLIA_PRIVATE_KEY", ""),
             from_address=os.getenv("SEPOLIA_FROM_ADDRESS", ""),
             default_to_address=default_to,
-        )
-    if name == "cobo":
-        import os
-        from app.services.cobo_settlement import CoboSettlementProvider
-        return CoboSettlementProvider(
-            api_key=os.getenv("COBO_API_KEY", ""),
-            api_secret=os.getenv("COBO_API_SECRET", ""),
-            base_url=os.getenv("COBO_BASE_URL", "https://api.cobo.com"),
-            wallet_id=os.getenv("COBO_WALLET_ID", ""),
-            from_address=os.getenv("COBO_FROM_ADDRESS") or None,
         )
     raise ValueError(f"Unknown settlement provider: {name!r}")

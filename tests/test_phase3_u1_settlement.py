@@ -215,28 +215,6 @@ class TestProviderFactory:
         provider = get_provider("mock")
         assert isinstance(provider, MockSettlementProvider)
 
-    def test_cobo_requires_credentials(self, monkeypatch):
-        # U2: cobo is implemented now, but it reads env at construction. With
-        # all four required vars unset (or blank), the constructor must raise
-        # a loud ValueError naming the first missing field — never silently
-        # succeed.
-        for var in ("COBO_API_KEY", "COBO_API_SECRET", "COBO_WALLET_ID"):
-            monkeypatch.delenv(var, raising=False)
-        with pytest.raises(ValueError, match="COBO_API_KEY is required"):
-            get_provider("cobo")
-
-    def test_cobo_constructs_with_valid_env(self, monkeypatch):
-        # When the four required env vars are populated with a syntactically
-        # valid Ed25519 secret, the factory returns a wired CoboSettlementProvider.
-        from app.services.cobo_settlement import CoboSettlementProvider
-        monkeypatch.setenv("COBO_API_KEY", "key-1")
-        monkeypatch.setenv("COBO_API_SECRET", "11" * 32)  # 64 hex chars
-        monkeypatch.setenv("COBO_BASE_URL", "https://api.cobo.com")
-        monkeypatch.setenv("COBO_WALLET_ID", "wallet-1")
-        provider = get_provider("cobo")
-        assert isinstance(provider, CoboSettlementProvider)
-        assert provider.name == "cobo"
-
     def test_unknown_provider_raises(self):
         with pytest.raises(ValueError, match="Unknown settlement provider"):
             get_provider("nonsense")

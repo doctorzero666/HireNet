@@ -15,8 +15,7 @@ Concrete stubs you must remove before any real-money deployment:
 
   - `value=0`. The integer `amount` (in cents) is written into `tx.data`
     as a label only. Moving real funds needs an ERC-20 transfer with the
-    correct token decimal scaling (USDC=6, not 0). See cobo_settlement.py
-    `_SUPPORTED_TOKENS` for the same warning pattern.
+    correct token decimal scaling (USDC=6, not 0).
 
 What this provider IS good for: proving the SettlementProvider abstraction
 works against a real chain (real signatures, real nonces, real receipts),
