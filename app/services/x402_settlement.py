@@ -106,14 +106,27 @@ def explorer_url(tx_hash: str) -> str:
     this one.
     """
     template = os.getenv(EXPLORER_TX_URL_ENV, DEFAULT_EXPLORER_TX_URL)
-    normalized = _normalize_tx_hash(tx_hash)
+    normalized = normalize_tx_hash(tx_hash)
     if "{tx_hash}" in template:
         return template.replace("{tx_hash}", normalized)
     return f"{template.rstrip('/')}/{normalized}"
 
 
-def _normalize_tx_hash(tx_hash: str) -> str:
-    return tx_hash if tx_hash.startswith("0x") else f"0x{tx_hash}"
+def normalize_tx_hash(tx_hash: str) -> str:
+    """A transaction hash in the ONE form this system stores and compares.
+
+    Lowercase, `0x`-prefixed. Public and used by three call sites on purpose
+    (review F4): `check_status` looks a run up with
+    `WHERE tx_hash = ?`, so if the recorder stores the facilitator's string
+    verbatim and a facilitator ever answers `ABC…` or `abc…` without the
+    prefix, the lookup misses, `expected` is None and the run is stuck in
+    SETTLING forever. Normalising at BOTH ends — once when the run is recorded
+    (agent_run_recording) and once on the way into the lookup here — is what
+    makes the two agree. A hex hash is case-insensitive, so lowercasing loses
+    nothing; it is not a checksummed address.
+    """
+    text = tx_hash.strip().lower()
+    return text if text.startswith("0x") else f"0x{text}"
 
 
 def _chain_id_for(network: str) -> int:
@@ -283,7 +296,7 @@ class X402SettlementProvider(SettlementProvider):
         promotes (a matching Transfer) or condemns (a reverted receipt, or a
         successful receipt with no matching Transfer).
         """
-        normalized = _normalize_tx_hash(tx_hash)
+        normalized = normalize_tx_hash(tx_hash)
 
         try:
             receipt = self.w3.eth.get_transaction_receipt(normalized)

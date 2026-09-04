@@ -2476,7 +2476,18 @@ def _pact_settle_x402(pact: dict, asset: dict | None, asset_id: str,
         # is still approved, so the caller can fix the cause and retry.
         return jsonify({"error": error_text}), 502
 
-    tx_hash = payment.get("tx_hash")
+    # Stage 2 / WP-R (review F4): the pact must carry the SAME string the run
+    # row and the ledger rows carry, or the pact's tx_hash and the one
+    # check_status can find diverge. record_agent_run normalises `presettled`
+    # the same way, through the same helper.
+    from app.services.x402_settlement import normalize_tx_hash
+
+    raw_tx_hash = payment.get("tx_hash")
+    tx_hash = (
+        normalize_tx_hash(raw_tx_hash)
+        if isinstance(raw_tx_hash, str) and raw_tx_hash.strip()
+        else raw_tx_hash
+    )
 
     # ── From here on the creator HAS been paid ───────────────────────────────
     # Every remaining failure keeps the pact at `settling` (never back to

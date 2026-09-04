@@ -648,3 +648,22 @@ def test_a_pre_signing_refusal_still_returns_the_pact_to_approved(boot, monkeypa
     assert "PaymentRequiredError" in resp.get_json()["error"]
     assert h.pact(pact_id)["status"] == "approved"
     assert "payment_pending" not in h.pact(pact_id)
+
+
+def test_the_pact_and_the_run_carry_the_same_normalised_hash(boot, monkeypatch):
+    """Stage 2 / WP-R (review F4). A facilitator that answers without the `0x`
+    prefix must not leave the pact and the run pointing at different strings —
+    `check_status` finds a run by exact tx_hash match."""
+    probe = _McpProbe(payment=_payment(tx_hash=TX_HASH.removeprefix("0x").upper()))
+    h = boot(provider=_x402_provider(), mcp_client=probe)
+    probe.db_path = h.db_path
+
+    body = h.settle(h.create_and_approve(amount=1.0)).get_json()
+
+    assert body["tx_hash"] == TX_HASH
+    assert body["explorer_url"].endswith(TX_HASH)
+    run = get_agent_run(h.db_path, body["run_id"])
+    assert run["tx_hash"] == TX_HASH
+    assert run["settlement_meta"]["tx_hash"] == TX_HASH
+    rows = {r["party"]: r for r in list_royalties_by_run(h.db_path, body["run_id"])}
+    assert rows["creator"]["tx_hash"] == TX_HASH

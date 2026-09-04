@@ -1348,3 +1348,121 @@ class TestConfirmSettlementNeverPaysAReceivable:
         assert _ledger_status(db_path, run_id) == {
             "creator": "settled", "platform": "settled", "tax": "settled",
         }
+
+
+# ---------------------------------------------------------------------------
+# Part 2i — Stage 2 / WP-R (review F3 + F4).
+#
+# F4: the recorder stored the facilitator's `transaction` string verbatim while
+# check_status looked it up 0x-normalised, so an un-prefixed hash was
+# unfindable — `expected` came back None and the run sat in SETTLING forever.
+# F3: confirming an x402 run must leave the ledger's settlement_method/tx_hash
+# saying x402 + that hash, not a rail that did not pay it.
+# ---------------------------------------------------------------------------
+
+# What a facilitator that does not prefix (and shouts) would return. Same hash
+# as TX_HASH, in the shape that used to be unfindable.
+UGLY_TX_HASH = ("ab" * 32).upper()
+
+
+class TestTxHashIsNormalisedAtRecordTime:
+
+    def test_the_recorded_hash_is_lowercase_and_prefixed(self, db_path):
+        asset_id = _register_asset(db_path)
+        result = _record(db_path, asset_id,
+                         presettled=_payment(tx_hash=UGLY_TX_HASH))
+
+        run = get_agent_run(db_path, result["run_id"])
+        assert run["tx_hash"] == TX_HASH
+        assert run["settlement_meta"]["tx_hash"] == TX_HASH
+
+    def test_the_creator_ledger_row_carries_the_same_normalised_hash(self, db_path):
+        asset_id = _register_asset(db_path)
+        result = _record(db_path, asset_id,
+                         presettled=_payment(tx_hash=UGLY_TX_HASH))
+
+        rows = _ledger_rows(db_path, result["run_id"])
+        assert rows["creator"]["tx_hash"] == TX_HASH
+
+    def test_normalize_tx_hash_is_idempotent(self):
+        from app.services.x402_settlement import normalize_tx_hash
+
+        assert normalize_tx_hash(UGLY_TX_HASH) == TX_HASH
+        assert normalize_tx_hash(TX_HASH) == TX_HASH
+        assert normalize_tx_hash(normalize_tx_hash(UGLY_TX_HASH)) == TX_HASH
+
+    def test_an_unprefixed_hash_still_polls_through_to_settled(self):
+        """End to end: record un-prefixed, poll, and the provider's own
+        `WHERE tx_hash = ?` lookup finds the run and confirms it."""
+        app, path = _x402_client(receipt=_receipt(logs=[_transfer_log()]))
+        try:
+            asset_id = _register_asset(path)
+            run_id = _record(
+                path, asset_id, presettled=_payment(tx_hash=UGLY_TX_HASH)
+            )["run_id"]
+
+            with app.test_client() as c:
+                body = c.get(f"/api/royalty/status/{run_id}").get_json()
+
+            assert body["settlement_status"] == "settled"
+            assert body["tx_hash"] == TX_HASH
+            assert body["explorer_url"] == explorer_url(TX_HASH)
+            assert _ledger_status(path, run_id) == {
+                "creator": "settled", "platform": "accrued", "tax": "accrued",
+            }
+        finally:
+            os.unlink(path)
+
+
+class TestConfirmKeepsTheX402MethodAndHash:
+    """Review F3: a settled creator row must not end up asserting that some
+    other rail paid it."""
+
+    def test_the_creator_row_keeps_x402_and_its_tx_hash(self):
+        app, path = _x402_client(receipt=_receipt(logs=[_transfer_log()]))
+        try:
+            run_id = _seed_presettled_run(path)
+            with app.test_client() as c:
+                c.get(f"/api/royalty/status/{run_id}")
+
+            creator = _ledger_rows(path, run_id)["creator"]
+            assert creator["status"] == "settled"
+            assert creator["settlement_method"] == X402_METHOD
+            assert creator["tx_hash"] == TX_HASH
+        finally:
+            os.unlink(path)
+
+    def test_the_receivable_rows_keep_their_method_and_no_hash(self):
+        app, path = _x402_client(receipt=_receipt(logs=[_transfer_log()]))
+        try:
+            run_id = _seed_presettled_run(path)
+            with app.test_client() as c:
+                c.get(f"/api/royalty/status/{run_id}")
+
+            rows = _ledger_rows(path, run_id)
+            for party in ("platform", "tax"):
+                assert rows[party]["status"] == "accrued"
+                assert rows[party]["settlement_method"] == X402_FEE_RECEIVABLE_METHOD
+                assert rows[party]["tx_hash"] is None
+        finally:
+            os.unlink(path)
+
+    def test_a_legacy_run_confirms_exactly_as_before(self, db_path):
+        """The other rail is untouched: no settlement_method/tx_hash on its
+        ledger rows, because confirm_settlement only ever wrote `status`."""
+        from app.storage.agent_runs import claim_settlement, confirm_settlement
+
+        asset_id = _register_asset(db_path)
+        run_id = _record(db_path, asset_id)["run_id"]
+        assert claim_settlement(db_path, run_id) is True
+        assert confirm_settlement(
+            db_path, run_id, tx_hash="mock-abc123", method="mock"
+        ) == 3
+
+        run = get_agent_run(db_path, run_id)
+        assert run["settlement_method"] == "mock"
+        assert run["tx_hash"] == "mock-abc123"
+        for row in _ledger_rows(db_path, run_id).values():
+            assert row["status"] == "settled"
+            assert row["settlement_method"] is None
+            assert row["tx_hash"] is None

@@ -120,6 +120,13 @@ def _validate_presettled(
       3. asset — must be the configured USDC contract. A different token may
          have different decimals, which would silently break check 4;
       4. units — amount_atomic == charge_amount * USDC_ATOMIC_PER_CENT, exactly.
+
+    The returned `tx_hash` is NORMALISED (lowercase, `0x`-prefixed) — Stage 2 /
+    WP-R, review F4. X402SettlementProvider.check_status looks the run up with
+    `WHERE tx_hash = ?` against its own normalised form, so storing a
+    facilitator's string verbatim would make a hash it returned unprefixed (or
+    upper-case) unfindable: `expected` comes back None and the run is stuck in
+    SETTLING forever. Every other field is stored exactly as given.
     """
     if not isinstance(presettled, dict):
         raise TypeError(
@@ -180,9 +187,13 @@ def _validate_presettled(
             "entry the on-chain payment does not back."
         )
 
+    # One definition of the canonical form, imported lazily so this module (and
+    # every legacy caller of record_agent_run) keeps its web3-free import path.
+    from app.services.x402_settlement import normalize_tx_hash
+
     return {
         "method": X402_METHOD,
-        "tx_hash": tx_hash,
+        "tx_hash": normalize_tx_hash(tx_hash),
         "network": network,
         "payer": payer,
         "payee": payee,
