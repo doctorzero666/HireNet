@@ -7,7 +7,7 @@ Demo bootstrap：在 create_app 时预填一份"数据分析助手"SkillAsset（
   - 复用既有 U4 / 状态机路径（record_agent_run + claim_settlement + confirm_settlement），
     不绕过任何 split 校验、不重写 ledger 逻辑。
   - 预设 tx_hash / settlement_method 均带 "demo-preset" 前缀，明显可辨，绝不冒充
-    anvil / cobo / mock 任何真实结算凭证 (CLAUDE.md §3)。
+    anvil / sepolia / mock 任何真实结算凭证 (CLAUDE.md §3)。
   - 仅在 create_app 的 `not TESTING` 分支调用 — 532 个测试都通过 conftest 的
     `TESTING=True` 路径跳过本模块，不会被预设数据污染。
 """

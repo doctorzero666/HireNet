@@ -187,9 +187,9 @@ def confirm_settlement(
 
     Args:
         tx_hash: provider's transaction identifier (e.g. "mock-abc123" for the
-            Mock provider, on-chain tx hash for Cobo). Persisted on
-            agent_runs.tx_hash.
-        method: provider name ("mock", "cobo", …). Persisted on
+            Mock provider, an on-chain tx hash for a chain provider).
+            Persisted on agent_runs.tx_hash.
+        method: provider name ("mock", "sepolia", …). Persisted on
             agent_runs.settlement_method so the audit trail records which
             rail completed each settlement.
 
@@ -248,7 +248,7 @@ def record_settlement_submission(
 ) -> bool:
     """Persist tx_hash + settlement_method while keeping status='settling'.
 
-    Used for asynchronous providers (Cobo) where settle() success only means
+    Used for asynchronous on-chain providers where settle() success only means
     "submitted to the rail", not "on-chain confirmed". The row needs a
     tx_hash for a later check_status() poll to find it, but we MUST NOT flip
     to 'settled' yet — that would short-circuit the polling loop and tell

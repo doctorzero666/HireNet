@@ -25,7 +25,7 @@ export MCP_PORT="${MCP_PORT:-5002}"
 export ANVIL_PORT="${ANVIL_PORT:-8545}"
 
 # Only boot anvil when the backend is configured to use it. Other providers
-# (mock / cobo) don't need a local chain, and an unconditional `anvil`
+# (mock / sepolia) don't need a local chain, and an unconditional `anvil`
 # launch would noisily fail on hosts that don't have Foundry installed.
 if [ "${HIRENET_SETTLEMENT_PROVIDER:-mock}" = "anvil" ]; then
     if ! command -v anvil >/dev/null 2>&1; then

@@ -18,7 +18,7 @@ Two responsibilities:
 The "on-chain" framing matches the spec language ("链上金额 == 账本金额")
 even though for the Mock provider no chain is involved: the agent_runs
 charge_amount is what the provider was told to transfer, and that is the
-'chain side' of the accounting. Real on-chain providers (Cobo / Anvil /
+'chain side' of the accounting. Real on-chain providers (Anvil /
 Sepolia) record the same charge_amount on agent_runs and rely on the
 provider's own status check to confirm the chain settled it — the
 reconcile here is the ledger-vs-rail invariant, not the rail-vs-chain

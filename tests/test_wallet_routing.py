@@ -11,7 +11,7 @@ captures every ``settle`` kwarg, so the assertions are pure interface checks:
     ``to_address=None`` so the provider falls back to its env default /
     self.from_address.
   - When the provider is NOT sepolia (mock here), the route MUST NOT pass
-    ``to_address`` at all — that's the "don't touch mock/anvil/cobo
+    ``to_address`` at all — that's the "don't touch the mock/anvil
     signatures" guarantee.
 """
 import os
@@ -141,7 +141,7 @@ def test_sepolia_provider_receives_none_when_asset_has_no_wallet():
 
 
 def test_non_sepolia_provider_does_not_receive_to_address():
-    """Mock/anvil/cobo providers MUST NOT see the to_address kwarg — the
+    """Mock/anvil providers MUST NOT see the to_address kwarg — the
     route's sniff is what protects their unchanged signatures. If this
     test ever fails, mock.settle() will TypeError on the new kwarg.
     """

@@ -4,8 +4,8 @@ Phase 3 / U1 — In-memory mock settlement provider.
 The Mock provider never touches a real chain. `settle` returns a synthetic
 `mock-<hex>` tx_hash and reports success; `check_status` always reports
 SETTLED. The point is to exercise the `accrued → settling → settled` state
-machine end-to-end so the U2 swap to Cobo is a pure provider replacement,
-not a route/DAO rewrite.
+machine end-to-end so swapping in an asynchronous on-chain provider is a
+pure provider replacement, not a route/DAO rewrite.
 
 Do NOT use this in any environment where real money should move — the route
 layer trusts the provider's success signal and flips the ledger to settled.

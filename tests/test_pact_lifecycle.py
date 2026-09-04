@@ -1,5 +1,5 @@
 """
-Task D: Cobo Pact lifecycle tests.
+Task D: authorization mandate (pact) lifecycle tests.
 
 Covers:
 - create → pending
@@ -425,7 +425,7 @@ class TestPactCreateValidation:
 class TestPactAssetId:
     """A pact can be bound to any registered SkillAsset. Settle then bills
     that asset's creator instead of falling back to the Phase 1 Job Design
-    creator — which is what makes the Cobo lifecycle reusable beyond the
+    creator — which is what makes the pact lifecycle reusable beyond the
     one bootstrapped asset."""
 
     def test_pact_create_persists_asset_id(self, client):

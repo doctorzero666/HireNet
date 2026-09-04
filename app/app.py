@@ -22,13 +22,14 @@ main = Blueprint('main', __name__)
 # In-memory session store for demo (use Redis in production)
 analysis_sessions = {}
 career_sessions = {}
-# ─── Cobo Pact lifecycle store ───────────────────────────────────────────────
+# ─── Authorization mandate (pact) lifecycle store ────────────────────────────
 #
 # ⚠️ DEMO ONLY — DO NOT RUN WITH MULTIPLE WORKERS ⚠️
 #
-# pact_sessions is an in-memory, per-process dict mocking the Cobo Agentic
-# Wallet pact flow. The real Cobo SDK integration replaces this dict; the
-# route surface stays the same.
+# pact_sessions is an in-memory, per-process dict backing the authorization
+# mandate ("pact") flow: an enterprise approves a spending authorization
+# before the platform settles against it. A persistent, wallet-agnostic
+# backend replaces this dict; the route surface stays the same.
 #
 # Hard deployment constraints (enforced by wsgi.py comments):
 #   - Must run with a SINGLE worker (e.g. `gunicorn --workers 1` / Flask
@@ -414,7 +415,7 @@ def get_candidate_profile(candidate_id):
             "experience": [],
             "preferences": [],
             "bio": "",
-            "capability_summary": "暂无详细信息（Second Me token 未配置）",
+            "capability_summary": "暂无详细信息",
         }})
 
 
@@ -1095,7 +1096,7 @@ MCP_TOOLS = [
     },
     {
         "name": "hirenet_match_candidates",
-        "description": "根据岗位需求，从 A2A 网络中匹配最合适的候选人或 Agent",
+        "description": "根据岗位需求，从人才与 Agent 网络中匹配最合适的候选人或 Agent",
         "inputSchema": {
             "type": "object",
             "properties": {
@@ -1425,8 +1426,8 @@ def royalty_settle():
     # Sepolia-only: look up the billed Agent's on-chain wallet so the ETH
     # transfer lands on a real recipient instead of self.from_address (the
     # pre-wallet-integration self-transfer demo). We sniff provider.name to
-    # avoid wiring a new kwarg through mock/anvil/cobo — they don't move
-    # real funds, so a recipient address is irrelevant to them and adding
+    # avoid wiring a new kwarg through the mock/anvil providers — they don't
+    # move real funds, so a recipient address is irrelevant to them and adding
     # a no-op kwarg would just churn their signatures.
     if provider_name == "sepolia":
         asset_ids = run.get("asset_ids") or []
@@ -1464,11 +1465,11 @@ def royalty_settle():
         }), 502
 
     # Branch on the provider's reported next state. Synchronous providers
-    # (Mock) report SETTLED → flip agent_runs + ledger rows now. Async ones
-    # (Cobo) report SETTLING → persist tx_hash but leave the row at
-    # 'settling' so a later check_status() can advance it to SETTLED only
-    # after the chain actually confirms. Without this branch a transfer
-    # that Cobo merely *accepted* would be misreported as paid.
+    # (Mock) report SETTLED → flip agent_runs + ledger rows now. An
+    # asynchronous on-chain provider reports SETTLING → persist tx_hash but
+    # leave the row at 'settling' so a later check_status() can advance it to
+    # SETTLED only after the chain actually confirms. Without this branch a
+    # transfer the provider merely *accepted* would be misreported as paid.
     if result.next_status == SettlementStatus.SETTLED:
         # Sync confirm: agent_runs + ledger rows flip in a single transaction
         # so the creator/platform/tax invariant cannot be partially applied.
@@ -1496,8 +1497,8 @@ def royalty_settle():
         # available the moment send_raw_transaction returns. Block briefly
         # here so the demo flow returns 'settled' rather than parking the
         # run in 'settling' and forcing the UI to poll /royalty/status.
-        # Cobo (genuinely async — chain confirmation in minutes) is left
-        # alone, exactly as before.
+        # A genuinely async provider (chain confirmation in minutes) is
+        # left alone, exactly as before.
         if provider_name == "anvil":
             for _ in range(10):
                 try:
@@ -1561,10 +1562,11 @@ def royalty_status(run_id):
 
     Phase 3 / U2 added opportunistic polling: when the row is in 'settling'
     and carries a tx_hash, we call provider.check_status(tx_hash) and
-    advance the state machine if the chain has reached a terminal Cobo
-    state. This is the only path that flips settling → settled for async
-    providers; without it, a Cobo-submitted transfer would stay 'settling'
-    forever even after on-chain confirmation. Mock provider rows are never
+    advance the state machine if the chain has reached a terminal state.
+    This is the only path that flips settling → settled for async
+    providers; without it, a transfer submitted to an asynchronous on-chain
+    provider would stay 'settling' forever even after on-chain
+    confirmation. Mock provider rows are never
     in 'settling' (settle() returns SETTLED synchronously) so this branch
     is a no-op for them.
 
@@ -1619,14 +1621,15 @@ def royalty_status(run_id):
     })
 
 
-# ─── Task D: Cobo Pact lifecycle (demo) ──────────────────────────────────────
+# ─── Task D: authorization mandate (pact) lifecycle (demo) ───────────────────
 #
-# Mocks the Cobo Agentic Wallet pact flow:  create → pending → approved → settled
-#                                                       └──→ rejected
+# Wallet-agnostic authorization flow:  create → pending → approved → settled
+#                                                  └──→ rejected
 #
-# Demo-only: in-memory store, no real Cobo SDK. Code shape leaves seams for the
-# real integration — replacing pact_sessions with a Cobo client + swapping the
-# settle hook for an on-chain call is the future migration path.
+# The enterprise authorizes a spend up front; the platform only settles against
+# an approved mandate. Demo-only: in-memory store, no wallet integration. The
+# code shape leaves seams for a real one — swap pact_sessions for a persistent
+# store and the settle hook for an on-chain call.
 #
 # Settlement triggers the existing U4 path (record_agent_run) so the same
 # royalty_ledger row a Job Design invocation would write also lands here.
@@ -1744,7 +1747,7 @@ def pact_status(pact_id):
 
 @main.route("/api/pact/approve/<pact_id>", methods=["POST"])
 def pact_approve(pact_id):
-    """Move a pending pact to approved (simulates Cobo App approval)."""
+    """Move a pending pact to approved (simulates wallet-side approval)."""
     pact, err = _pact_or_404(pact_id)
     if err:
         return err
@@ -1995,7 +1998,7 @@ def create_app(config: dict | None = None):
     # that override so a failing-mock fixture can drive the failed/retry path
     # without monkeypatching at module scope. Default is `mock` so a bare
     # `python wsgi.py` boots without external dependencies; opt into anvil /
-    # cobo by setting HIRENET_SETTLEMENT_PROVIDER explicitly in .env.
+    # sepolia by setting HIRENET_SETTLEMENT_PROVIDER explicitly in .env.
     if "SETTLEMENT_PROVIDER" not in app.config:
         from app.services.settlement import get_provider
         provider_name = os.getenv("HIRENET_SETTLEMENT_PROVIDER", "mock")

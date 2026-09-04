@@ -2,7 +2,7 @@
 HireNet Core Agents
 - Requirement Analysis Agent  (multi-turn clarification via LLM)
 - Task Decomposition Agent    (break requirement into tasks)
-- Resource Decision Engine    (agent vs human decision via Second Me /act)
+- Resource Decision Engine    (agent vs human decision via the ResourceDecision engine)
 """
 import os
 import json

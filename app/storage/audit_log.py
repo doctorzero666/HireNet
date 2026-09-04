@@ -4,7 +4,7 @@ Phase 3 / U3 — audit_log DAO.
 Every state transition on agent_runs.settlement_status emits one row here:
 claim (accrued|failed → settling), submit (tx_hash recorded while still
 settling, async providers), confirm (settling → settled), fail
-(settling → failed). The point is a forensic trail: a Cobo tx that
+(settling → failed). The point is a forensic trail: an on-chain tx that
 silently dropped, a chain rollback, a stale check_status race, the U3
 reconciliation discrepancy — all become "join audit_log on run_id" queries
 instead of "guess from request logs".

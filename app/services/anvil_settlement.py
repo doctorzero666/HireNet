@@ -21,7 +21,7 @@ What this provider IS good for: proving the SettlementProvider abstraction
 works against a real chain (real signatures, real nonces, real receipts),
 without testnet credentials or rate limits.
 
-Same SettlementProvider contract as mock + cobo, so swap is a single env
+Same SettlementProvider contract as mock + sepolia, so swap is a single env
 var: `HIRENET_SETTLEMENT_PROVIDER=anvil`.
 """
 from typing import Callable, Optional
@@ -54,8 +54,9 @@ class AnvilSettlementProvider(SettlementProvider):
     """Submit a 0-ETH metadata tx to a local Anvil node.
 
     Constructor reads no env vars — the factory in `app.services.settlement`
-    does that and passes values in. This mirrors `CoboSettlementProvider`
-    and lets tests build a provider with stubbed `w3_factory` cleanly.
+    does that and passes values in. This mirrors the other on-chain
+    providers and lets tests build a provider with stubbed `w3_factory`
+    cleanly.
     """
 
     name = "anvil"
@@ -174,8 +175,8 @@ class AnvilSettlementProvider(SettlementProvider):
     def check_status(self, tx_hash: str) -> SettlementStatus:
         """Read the receipt and translate to SettlementStatus.
 
-        Degrades to SETTLING (not FAILED) on transport / RPC errors — same
-        posture as `CoboSettlementProvider.check_status`: a transient outage
+        Degrades to SETTLING (not FAILED) on transport / RPC errors — the
+        standard posture for an asynchronous on-chain provider: a transient outage
         shouldn't poison an in-flight run, and the route layer can keep
         polling. Only an explicit `receipt.status == 0` flips to FAILED.
         """

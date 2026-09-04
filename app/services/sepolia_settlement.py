@@ -13,12 +13,12 @@ Why a non-zero `value` here when Anvil uses 0?
   Etherscan shows the value move. The amount is hard-coded at 0.0001 ETH so
   one faucet drip funds ~5000 demos.
 
-Same SettlementProvider contract as mock / anvil / cobo, so swap is a single
+Same SettlementProvider contract as mock / anvil, so swap is a single
 env var: `HIRENET_SETTLEMENT_PROVIDER=sepolia`.
 
 ⚠️ Testnet ONLY. The royalty `amount` (in cents) is still written into
 `tx.data` as a label; the ETH `value` is a fixed demo constant, not the
-ledger amount. Production rails (Cobo / x402) move real funds and translate
+ledger amount. Production rails (e.g. x402) move real funds and translate
 ledger amount → token amount with the correct decimals.
 
 Sender-address note: `SEPOLIA_FROM_ADDRESS` is validated to match the address

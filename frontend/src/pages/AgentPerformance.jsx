@@ -202,9 +202,9 @@ export default function AgentPerformance() {
           }}>
             <PixelButton
               variant="gold"
-              onClick={() => alert('💸 提现请求已发送到 Cobo 钱包')}
+              onClick={() => alert('💸 提现请求已发送到钱包')}
             >
-              💸 提现到 Cobo 钱包
+              💸 提现到钱包
             </PixelButton>
           </div>
         </div>

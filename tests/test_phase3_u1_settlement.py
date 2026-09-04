@@ -66,7 +66,7 @@ class RaisingProvider(SettlementProvider):
 
 
 class AsyncProvider(SettlementProvider):
-    """Models Cobo's posture: settle() submits and returns SETTLING.
+    """Models an async on-chain provider: settle() submits, returns SETTLING.
 
     `check_status` is driven by `chain_state` — the test sets it to mimic
     on-chain progression. Defaults to SETTLING so the row stays pending
@@ -138,8 +138,8 @@ def raising_client():
 
 @pytest.fixture
 def async_client():
-    """Flask test client wired to an AsyncProvider (Cobo-shaped: settle →
-    SETTLING; check_status drives the eventual advance)."""
+    """Flask test client wired to an AsyncProvider (async-chain-shaped:
+    settle → SETTLING; check_status drives the eventual advance)."""
     fd, path = tempfile.mkstemp(suffix=".db")
     os.close(fd)
     app = create_app(config={
@@ -442,11 +442,11 @@ class TestRoyaltyStatusRoute:
 # ---------------------------------------------------------------------------
 
 class TestAsyncSettleLeavesSettling:
-    """Cobo-shaped flow: settle() success ≠ on-chain confirmed.
+    """Async on-chain flow: settle() success ≠ on-chain confirmed.
 
     Locks in the contract the route must keep with async rails so that a
-    transfer Cobo only *accepted* never gets billed as paid in the ledger
-    until check_status() observes a terminal on-chain state.
+    transfer the provider only *accepted* never gets billed as paid in the
+    ledger until check_status() observes a terminal on-chain state.
     """
 
     def test_settle_returns_settling_not_settled(self, async_client):
@@ -477,7 +477,7 @@ class TestAsyncSettleLeavesSettling:
         assert len(ledger) == 3
         assert all(r["status"] == "accrued" for r in ledger), (
             "ledger MUST stay accrued until chain confirms — otherwise an "
-            "unconfirmed Cobo transfer would already show as paid out"
+            "unconfirmed on-chain transfer would already show as paid out"
         )
 
     def test_duplicate_settle_during_settling_is_409(self, async_client):
@@ -499,7 +499,7 @@ class TestAsyncStatusAdvancesOnConfirm:
         run_id = _seed_run_via_client(async_client)
         async_client.post("/api/royalty/settle", json={"run_id": run_id})
 
-        # Simulate the chain reaching a terminal Cobo state.
+        # Simulate the chain reaching a terminal on-chain state.
         provider = async_client.application.config["SETTLEMENT_PROVIDER"]
         provider.chain_state = SettlementStatus.SETTLED
 
@@ -586,13 +586,13 @@ class TestRecordSettlementSubmissionDAO:
         claim_settlement(db_path, run_id)
 
         assert record_settlement_submission(
-            db_path, run_id, tx_hash="cobo-pending-1", method="cobo",
+            db_path, run_id, tx_hash="async-pending-1", method="async_chain",
         ) is True
 
         run = get_agent_run(db_path, run_id)
         assert run["settlement_status"] == "settling"  # NOT settled
-        assert run["tx_hash"] == "cobo-pending-1"
-        assert run["settlement_method"] == "cobo"
+        assert run["tx_hash"] == "async-pending-1"
+        assert run["settlement_method"] == "async_chain"
 
         # Ledger rows must remain accrued — only confirm_settlement flips them.
         ledger = list_royalties_by_run(db_path, run_id)

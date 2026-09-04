@@ -277,7 +277,7 @@ export default function PactConfirmationModal({ agent, task, onConfirm, onReject
           </code>
         </div>
 
-        {/* Cobo 确认区 */}
+        {/* 钱包确认区 */}
         <div
           style={{
             border: '1px dashed rgb(220, 206, 180)',
@@ -295,10 +295,10 @@ export default function PactConfirmationModal({ agent, task, onConfirm, onReject
               fontSize: 13.5,
             }}
           >
-            📱 请在 Cobo App 确认
+            📱 请在钱包中确认授权
           </div>
 
-          {/* App 截图占位 */}
+          {/* 钱包确认示意占位 */}
           <div
             style={{
               height: 80,
@@ -314,7 +314,7 @@ export default function PactConfirmationModal({ agent, task, onConfirm, onReject
               marginBottom: 12,
             }}
           >
-            [Cobo App 截图示意]
+            [钱包确认界面示意]
           </div>
 
           <ol
@@ -327,7 +327,7 @@ export default function PactConfirmationModal({ agent, task, onConfirm, onReject
               lineHeight: 1.8,
             }}
           >
-            <li>打开 Cobo Agentic Wallet App</li>
+            <li>打开你的钱包应用</li>
             <li>查看 Pact 详情</li>
             <li>确认签名</li>
           </ol>
