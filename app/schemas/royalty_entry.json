@@ -1,7 +1,7 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
   "title": "RoyaltyEntry",
-  "description": "RoyaltyLedger 中的单条分成记录，字段集与 royalty_ledger 表一一对应。Phase 2 / U2: 每个 run 在 ledger 里有三行（creator/platform/tax），用 payee_id + party 区分；creator_id 保留为向后兼容（party='creator' 时 == payee_id）。",
+  "description": "RoyaltyLedger 中的单条分成记录，字段集与 royalty_ledger 表一一对应。Phase 2 / U2: 每个 run 在 ledger 里有三行（creator/platform/tax），用 payee_id + party 区分；creator_id 保留为向后兼容（party='creator' 时 == payee_id）。Stage 2 / WP-D: status 增加 'settling'（x402 预结算路径下 creator 那一行的在途状态），并增加三个可空列 settlement_method / tx_hash / note；WP-D 之前写入的行这三列都是 null。",
   "type": "object",
   "required": ["id", "run_id", "creator_id", "payee_id", "party", "asset_id", "amount", "currency", "status", "created_at"],
   "additionalProperties": false,
@@ -15,7 +15,10 @@
     "amount":     { "type": "integer", "minimum": 0 },
     "currency":   { "type": "string",  "minLength": 1 },
     "chain":      { "type": ["string", "null"] },
-    "status":     { "type": "string",  "enum": ["accrued", "settled"] },
+    "status":     { "type": "string",  "enum": ["accrued", "settling", "settled"] },
+    "settlement_method": { "type": ["string", "null"] },
+    "tx_hash":           { "type": ["string", "null"] },
+    "note":              { "type": ["string", "null"] },
     "created_at": { "type": "string",  "minLength": 1 }
   }
 }

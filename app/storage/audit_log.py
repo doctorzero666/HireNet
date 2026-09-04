@@ -27,8 +27,8 @@ _VALID_EVENTS = ("claim", "submit", "confirm", "fail")
 _INSERT_AUDIT_EVENT_SQL = """
     INSERT INTO audit_log
         (id, run_id, event_ordinal, event, status_from, status_to,
-         method, tx_hash, error, created_at)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+         method, tx_hash, network, error, created_at)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
 """
 
 # SELECT next ordinal for a run. Both insert paths run this inside the same
@@ -49,9 +49,13 @@ def _build_audit_event_row(
     status_to: str,
     method: str | None = None,
     tx_hash: str | None = None,
+    network: str | None = None,
     error: str | None = None,
 ) -> tuple[str, tuple]:
     """Assemble the SQL parameter tuple. Pure — opens no connection.
+
+    Stage 2 / WP-D: `network` is the CAIP-2 chain the tx_hash lives on
+    (e.g. "eip155:84532"). Optional and NULL for every non-x402 caller.
 
     Raises ValueError if event is not one of claim/submit/confirm/fail so a
     typo at a call site fails fast at the service boundary instead of the
@@ -77,6 +81,7 @@ def _build_audit_event_row(
         status_to,
         method,
         tx_hash,
+        network,
         error,
         created_at,
     )
@@ -92,6 +97,7 @@ def _insert_audit_event_conn(
     status_to: str,
     method: str | None = None,
     tx_hash: str | None = None,
+    network: str | None = None,
     error: str | None = None,
 ) -> str:
     """Insert via an already-open connection so the caller can keep the
@@ -109,7 +115,7 @@ def _insert_audit_event_conn(
         run_id, event,
         event_ordinal=next_ord,
         status_from=status_from, status_to=status_to,
-        method=method, tx_hash=tx_hash, error=error,
+        method=method, tx_hash=tx_hash, network=network, error=error,
     )
     conn.execute(_INSERT_AUDIT_EVENT_SQL, params)
     return entry_id
@@ -124,6 +130,7 @@ def insert_audit_event(
     status_to: str,
     method: str | None = None,
     tx_hash: str | None = None,
+    network: str | None = None,
     error: str | None = None,
 ) -> str:
     """Standalone insert — for callers that aren't already in a transaction.
@@ -145,7 +152,8 @@ def insert_audit_event(
                     run_id, event,
                     event_ordinal=next_ord,
                     status_from=status_from, status_to=status_to,
-                    method=method, tx_hash=tx_hash, error=error,
+                    method=method, tx_hash=tx_hash, network=network,
+                    error=error,
                 )
                 conn.execute(_INSERT_AUDIT_EVENT_SQL, params)
                 conn.execute("COMMIT")
@@ -170,7 +178,7 @@ def list_audit_events_by_run(db_path: str, run_id: str) -> list[dict]:
     with closing(_open(db_path)) as conn:
         rows = conn.execute(
             "SELECT id, run_id, event_ordinal, event, status_from, status_to, "
-            "method, tx_hash, error, created_at "
+            "method, tx_hash, network, error, created_at "
             "FROM audit_log WHERE run_id = ? "
             "ORDER BY event_ordinal ASC",
             (run_id,),

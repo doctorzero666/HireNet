@@ -7,11 +7,16 @@ from app.storage.db import _open, _require_nonneg_int
 _INSERT_ROYALTY_ENTRY_SQL = """
     INSERT INTO royalty_ledger
         (id, run_id, creator_id, payee_id, party, asset_id,
-         amount, currency, chain, status, created_at)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+         amount, currency, chain, status,
+         settlement_method, tx_hash, note, created_at)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
 """
 
 _VALID_PARTIES = ("creator", "platform", "tax")
+
+# Mirrors the DB CHECK on royalty_ledger.status. 'settling' arrived with
+# Stage 2 / WP-D (x402 pre-settled runs) — see app/storage/db.py.
+_VALID_STATUSES = ("accrued", "settling", "settled")
 
 
 def _build_royalty_entry_row(entry: dict) -> tuple[str, tuple]:
@@ -23,6 +28,11 @@ def _build_royalty_entry_row(entry: dict) -> tuple[str, tuple]:
     Phase 2 / U2: every entry must carry party + payee_id. party is one of
     'creator' / 'platform' / 'tax'; the DB CHECK enforces this too, but raising
     here gives a cleaner Python error before the SQL layer.
+
+    Stage 2 / WP-D: three optional, nullable fields — settlement_method,
+    tx_hash, note. Omitting them (every pre-WP-D caller does) writes NULL,
+    which is exactly what the migration backfilled onto historical rows, so
+    old and new writers produce identical rows for the non-x402 path.
     """
     entry_id = str(uuid.uuid4())
     created_at = datetime.now(timezone.utc).isoformat()
@@ -31,6 +41,11 @@ def _build_royalty_entry_row(entry: dict) -> tuple[str, tuple]:
     if party not in _VALID_PARTIES:
         raise ValueError(
             f"party must be one of {_VALID_PARTIES}, got {party!r}"
+        )
+    status = entry["status"]
+    if status not in _VALID_STATUSES:
+        raise ValueError(
+            f"status must be one of {_VALID_STATUSES}, got {status!r}"
         )
     params = (
         entry_id,
@@ -42,7 +57,10 @@ def _build_royalty_entry_row(entry: dict) -> tuple[str, tuple]:
         amount,
         entry["currency"],
         entry.get("chain"),
-        entry["status"],
+        status,
+        entry.get("settlement_method"),
+        entry.get("tx_hash"),
+        entry.get("note"),
         created_at,
     )
     return entry_id, params

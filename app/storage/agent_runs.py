@@ -11,9 +11,16 @@ _INSERT_AGENT_RUN_SQL = """
         (run_id, agent_name, caller_id, task_id, input_tokens, output_tokens,
          llm_cost_usd, time_ms, success, asset_ids, royalty_splits,
          charge_amount, charge_currency, charge_chain, payment_method,
-         settlement_status, created_at)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+         settlement_status, settlement_method, tx_hash, settlement_meta,
+         created_at)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
 """
+
+# Column default in the DDL. Spelled out here because Stage 2 / WP-D made the
+# INSERT list settlement_method explicitly (the x402 pre-settled path needs to
+# write 'x402' at insert time) — every other caller omits the key and must land
+# on exactly the value the DDL default used to supply.
+_DEFAULT_SETTLEMENT_METHOD = "ledger_only"
 
 
 def _build_agent_run_row(run: dict) -> tuple[str, tuple]:
@@ -21,10 +28,15 @@ def _build_agent_run_row(run: dict) -> tuple[str, tuple]:
 
     Returns (run_id, params). Pure: opens no connection, performs no I/O — so a
     batch caller can reuse it inside its own transaction (see record_agent_run).
+
+    Stage 2 / WP-D: settlement_method / tx_hash / settlement_meta are now part
+    of the INSERT. All three are optional in `run`; omitting them reproduces
+    the pre-WP-D row byte-for-byte ('ledger_only', NULL, NULL).
     """
     run_id = str(uuid.uuid4())
     created_at = datetime.now(timezone.utc).isoformat()
     charge_amount = _require_nonneg_int(run["charge_amount"], "charge_amount")
+    settlement_meta = run.get("settlement_meta")
     params = (
         run_id,
         run["agent_name"],
@@ -42,9 +54,34 @@ def _build_agent_run_row(run: dict) -> tuple[str, tuple]:
         run.get("charge_chain"),
         run["payment_method"],
         run["settlement_status"],
+        run.get("settlement_method") or _DEFAULT_SETTLEMENT_METHOD,
+        run.get("tx_hash"),
+        json.dumps(settlement_meta) if settlement_meta is not None else None,
         created_at,
     )
     return run_id, params
+
+
+def _decode_agent_run_row(row) -> dict:
+    """sqlite3.Row -> the dict shape every reader here returns.
+
+    settlement_meta is stored as a JSON blob; a NULL (every pre-WP-D row) or an
+    unparseable value decodes to None rather than raising, so one corrupted
+    blob can never take down a listing.
+    """
+    item = dict(row)
+    item["asset_ids"] = json.loads(item["asset_ids"])
+    item["royalty_splits"] = json.loads(item["royalty_splits"])
+    item["success"] = bool(item["success"])
+    raw_meta = item.get("settlement_meta")
+    if raw_meta is None:
+        item["settlement_meta"] = None
+    else:
+        try:
+            item["settlement_meta"] = json.loads(raw_meta)
+        except (TypeError, ValueError):
+            item["settlement_meta"] = None
+    return item
 
 
 def insert_agent_run(db_path: str, run: dict) -> str:
@@ -62,11 +99,7 @@ def get_agent_run(db_path: str, run_id: str) -> dict | None:
         ).fetchone()
     if row is None:
         return None
-    result = dict(row)
-    result["asset_ids"] = json.loads(result["asset_ids"])
-    result["royalty_splits"] = json.loads(result["royalty_splits"])
-    result["success"] = bool(result["success"])
-    return result
+    return _decode_agent_run_row(row)
 
 
 def list_agent_runs_by_caller(db_path: str, caller_id: str) -> list[dict]:
@@ -75,14 +108,7 @@ def list_agent_runs_by_caller(db_path: str, caller_id: str) -> list[dict]:
             "SELECT * FROM agent_runs WHERE caller_id = ? ORDER BY created_at DESC",
             (caller_id,),
         ).fetchall()
-    results = []
-    for row in rows:
-        item = dict(row)
-        item["asset_ids"] = json.loads(item["asset_ids"])
-        item["royalty_splits"] = json.loads(item["royalty_splits"])
-        item["success"] = bool(item["success"])
-        results.append(item)
-    return results
+    return [_decode_agent_run_row(row) for row in rows]
 
 
 def count_runs_by_asset(db_path: str) -> dict[str, int]:
@@ -208,11 +234,26 @@ def confirm_settlement(
             )
             if run_cur.rowcount == 0:
                 return 0
+            # Stage 2 / WP-D: an x402 pre-settled run has its CREATOR row in
+            # 'settling' (the payer moved that share on-chain at invocation
+            # time) and its platform / tax rows in 'accrued' — those are
+            # receivables from the creator that no chain tx ever moved, so
+            # confirming the chain must NOT mark them paid. Rule: if this run
+            # has any in-flight ('settling') rows, only those settle. No writer
+            # before WP-D ever produced a 'settling' ledger row, so the first
+            # UPDATE is a guaranteed rowcount=0 no-op for every legacy run and
+            # the 'accrued' branch below is reached exactly as before.
             ledger_cur = conn.execute(
                 "UPDATE royalty_ledger SET status = 'settled' "
-                "WHERE run_id = ? AND status = 'accrued'",
+                "WHERE run_id = ? AND status = 'settling'",
                 (run_id,),
             )
+            if ledger_cur.rowcount == 0:
+                ledger_cur = conn.execute(
+                    "UPDATE royalty_ledger SET status = 'settled' "
+                    "WHERE run_id = ? AND status = 'accrued'",
+                    (run_id,),
+                )
             # Phase 1 wrote exactly 1 ledger row (creator only); Phase 2 / U2
             # rebuilt this to 3 rows (creator + platform + tax) for new runs,
             # but pre-U2 rows migrated via _migrate keep their single-row
@@ -284,7 +325,7 @@ def record_settlement_submission(
 
 
 def fail_settlement(db_path: str, run_id: str, error_msg: str | None = None) -> bool:
-    """Flip settling → failed. ledger rows untouched (stay accrued).
+    """Flip settling → failed. Accrued ledger rows untouched (stay accrued).
 
     Returns True iff a row was actually flipped (rowcount=1). False means
     the run was not in 'settling' — a race we should treat as "someone else
@@ -295,6 +336,13 @@ def fail_settlement(db_path: str, run_id: str, error_msg: str | None = None) -> 
     logs. The agent_runs row itself still has no error column — failure
     reason lives with the audit event, not the run, so retries don't
     pile up successive error strings on a single row.
+
+    Stage 2 / WP-D: any ledger row this run left in 'settling' (only the
+    creator row of an x402 pre-settled run can be) is walked BACK to
+    'accrued' in the same transaction. The chain says the money did not
+    move, so the creator's share is still owed — leaving it at 'settling'
+    would strand it in a state nothing ever advances. No pre-WP-D run has
+    a 'settling' ledger row, so this is a rowcount=0 no-op for them.
     """
     with closing(_open(db_path)) as conn:
         with conn:
@@ -305,6 +353,11 @@ def fail_settlement(db_path: str, run_id: str, error_msg: str | None = None) -> 
             )
             if cur.rowcount != 1:
                 return False
+            conn.execute(
+                "UPDATE royalty_ledger SET status = 'accrued' "
+                "WHERE run_id = ? AND status = 'settling'",
+                (run_id,),
+            )
             _insert_audit_event_conn(
                 conn, run_id, "fail",
                 status_from="settling",

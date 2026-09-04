@@ -29,6 +29,7 @@
     "settlement_status": { "type": "string",  "enum": ["accrued", "settling", "settled", "failed"] },
     "settlement_method": { "type": "string",  "minLength": 1 },
     "tx_hash":           { "type": ["string", "null"] },
+    "settlement_meta":   { "type": ["object", "null"] },
     "created_at":        { "type": "string",  "minLength": 1 }
   }
 }

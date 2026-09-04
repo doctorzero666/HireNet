@@ -62,6 +62,13 @@ def _create_tables(conn: sqlite3.Connection) -> None:
             settlement_status TEXT    NOT NULL CHECK (settlement_status IN ('accrued', 'settling', 'settled', 'failed')),
             settlement_method TEXT    NOT NULL DEFAULT 'ledger_only',
             tx_hash           TEXT,
+            -- Stage 2 / WP-D: opaque JSON blob describing a pay-at-invocation
+            -- rail's own view of the payment (x402: network / payer / payee /
+            -- amount_atomic / asset). Nullable — every run recorded before
+            -- WP-D and every ledger-only run leaves it NULL. It exists so the
+            -- x402 settlement provider can look up what the chain is EXPECTED
+            -- to show for this tx_hash without a second table.
+            settlement_meta   TEXT,
             created_at        TEXT    NOT NULL
         );
 
@@ -75,7 +82,21 @@ def _create_tables(conn: sqlite3.Connection) -> None:
             amount     INTEGER NOT NULL CHECK (amount >= 0),
             currency   TEXT    NOT NULL,
             chain      TEXT,
-            status     TEXT    NOT NULL CHECK (status IN ('accrued', 'settled')),
+            -- Stage 2 / WP-D widened this from ('accrued','settled'). 'settling'
+            -- is only ever written by the x402 pre-settled path: the payer moved
+            -- the money at invocation time, so the creator's share is in flight
+            -- on-chain but not yet confirmed. Every pre-WP-D writer still writes
+            -- only 'accrued' / 'settled'.
+            status     TEXT    NOT NULL CHECK (status IN ('accrued', 'settling', 'settled')),
+            -- Stage 2 / WP-D, all nullable (NULL on every pre-WP-D row):
+            --   settlement_method — which rail moved (or owes) this share;
+            --   tx_hash           — the rail's tx id for this share, if any;
+            --   note              — free text; used to record that the platform
+            --                       fee is a RECEIVABLE from the creator because
+            --                       x402 `exact` pays exactly one payee.
+            settlement_method TEXT,
+            tx_hash           TEXT,
+            note              TEXT,
             created_at TEXT    NOT NULL
         );
 
@@ -96,6 +117,10 @@ def _create_tables(conn: sqlite3.Connection) -> None:
             status_to     TEXT    NOT NULL,
             method        TEXT,
             tx_hash       TEXT,
+            -- Stage 2 / WP-D: CAIP-2 network the tx_hash lives on (e.g.
+            -- "eip155:84532"). Nullable; only the x402 pre-settled event
+            -- fills it in today.
+            network       TEXT,
             error         TEXT,
             created_at    TEXT    NOT NULL
         );
@@ -144,6 +169,14 @@ def _migrate(conn: sqlite3.Connection) -> None:
     settlement_method (DEFAULT 'ledger_only') and tx_hash (nullable) columns
     in the same rebuild so existing rows naturally land on safe defaults.
 
+    Stage 2 / WP-D: five additive, nullable changes for the x402 pre-settled
+    path. agent_runs gains settlement_meta (JSON blob, NULL for every existing
+    run); audit_log gains network; royalty_ledger gains settlement_method,
+    tx_hash and note AND has its status CHECK widened to allow 'settling' —
+    which, as with agent_runs above, means a table rebuild. Every pre-existing
+    row carries over unchanged with NULL in the new columns; no existing status
+    value is rewritten.
+
     Crash-safety: every ALTER + backfill UPDATE runs inside a single explicit
     transaction. Python's sqlite3 module auto-commits before DDL by default,
     which would otherwise leave the DB in a half-migrated state if a later
@@ -164,15 +197,34 @@ def _migrate(conn: sqlite3.Connection) -> None:
         row[1] for row in conn.execute("PRAGMA table_info(audit_log)").fetchall()
     }
 
+    # Stage 2 / WP-D: agent_runs.settlement_meta, audit_log.network and the
+    # three royalty_ledger columns (+ the widened status CHECK) are all
+    # additive and nullable. `rebuild_agent_runs` / `rebuild_ledger` decide
+    # between "the Phase 3 table rebuild already covers this" and "plain
+    # ALTER on an already-modern table".
+    rebuild_agent_runs = (
+        "settlement_method" not in agent_run_cols
+        or "tx_hash" not in agent_run_cols
+    )
+    # The ledger status CHECK cannot be ALTERed in SQLite, so gaining any of
+    # the WP-D columns triggers a full table rebuild with the wider CHECK.
+    rebuild_ledger = (
+        "settlement_method" not in ledger_cols
+        or "tx_hash" not in ledger_cols
+        or "note" not in ledger_cols
+    )
+
     pending = (
         "type" not in skill_cols
         or "endpoint_url" not in skill_cols
         or "wallet_address" not in skill_cols
         or "payee_id" not in ledger_cols
         or "party" not in ledger_cols
-        or "settlement_method" not in agent_run_cols
-        or "tx_hash" not in agent_run_cols
         or "event_ordinal" not in audit_cols
+        or "network" not in audit_cols
+        or "settlement_meta" not in agent_run_cols
+        or rebuild_agent_runs
+        or rebuild_ledger
     )
     if not pending:
         return
@@ -221,6 +273,56 @@ def _migrate(conn: sqlite3.Connection) -> None:
                     "WHERE party IS NULL"
                 )
 
+            if rebuild_ledger:
+                # Stage 2 / WP-D: rebuild royalty_ledger to widen the status
+                # CHECK to include 'settling' and to add the three nullable
+                # columns. Runs AFTER the payee_id / party ALTERs above so the
+                # INSERT … SELECT below can read them. Pre-existing rows carry
+                # over verbatim with NULL in every new column — their status
+                # values ('accrued' / 'settled') are a strict subset of the new
+                # CHECK, so nothing is rejected or rewritten.
+                conn.execute("""
+                    CREATE TABLE royalty_ledger_new (
+                        id         TEXT    PRIMARY KEY,
+                        run_id     TEXT    NOT NULL,
+                        creator_id TEXT    NOT NULL,
+                        payee_id   TEXT    NOT NULL,
+                        party      TEXT    NOT NULL CHECK (party IN ('creator', 'platform', 'tax')),
+                        asset_id   TEXT    NOT NULL,
+                        amount     INTEGER NOT NULL CHECK (amount >= 0),
+                        currency   TEXT    NOT NULL,
+                        chain      TEXT,
+                        status     TEXT    NOT NULL CHECK (status IN ('accrued', 'settling', 'settled')),
+                        settlement_method TEXT,
+                        tx_hash           TEXT,
+                        note              TEXT,
+                        created_at TEXT    NOT NULL
+                    )
+                """)
+                conn.execute("""
+                    INSERT INTO royalty_ledger_new (
+                        id, run_id, creator_id, payee_id, party, asset_id,
+                        amount, currency, chain, status,
+                        settlement_method, tx_hash, note, created_at
+                    )
+                    SELECT
+                        id, run_id, creator_id, payee_id, party, asset_id,
+                        amount, currency, chain, status,
+                        NULL, NULL, NULL, created_at
+                    FROM royalty_ledger
+                """)
+                conn.execute("DROP TABLE royalty_ledger")
+                conn.execute(
+                    "ALTER TABLE royalty_ledger_new RENAME TO royalty_ledger"
+                )
+
+            if "network" not in audit_cols:
+                # Stage 2 / WP-D: CAIP-2 network for the tx_hash on an audit
+                # row. Nullable, no backfill — historical events were all on
+                # the mock / anvil / sepolia rails whose network was implied
+                # by `method`.
+                conn.execute("ALTER TABLE audit_log ADD COLUMN network TEXT")
+
             if "event_ordinal" not in audit_cols:
                 # U3 Phase 3 (codereviewer P1): explicit per-run insertion ordinal
                 # so list ordering doesn't rely on created_at + rowid ties. Added
@@ -246,10 +348,7 @@ def _migrate(conn: sqlite3.Connection) -> None:
                             (idx, row[0]),
                         )
 
-            if (
-                "settlement_method" not in agent_run_cols
-                or "tx_hash" not in agent_run_cols
-            ):
+            if rebuild_agent_runs:
                 # Rebuild agent_runs to widen the settlement_status CHECK and
                 # add the two new columns. The new table mirrors _create_tables;
                 # SELECT … carries pre-existing rows over with NULL tx_hash and
@@ -276,6 +375,7 @@ def _migrate(conn: sqlite3.Connection) -> None:
                         settlement_status TEXT    NOT NULL CHECK (settlement_status IN ('accrued', 'settling', 'settled', 'failed')),
                         settlement_method TEXT    NOT NULL DEFAULT 'ledger_only',
                         tx_hash           TEXT,
+                        settlement_meta   TEXT,
                         created_at        TEXT    NOT NULL
                     )
                 """)
@@ -286,7 +386,7 @@ def _migrate(conn: sqlite3.Connection) -> None:
                         success, asset_ids, royalty_splits,
                         charge_amount, charge_currency, charge_chain,
                         payment_method, settlement_status,
-                        settlement_method, tx_hash, created_at
+                        settlement_method, tx_hash, settlement_meta, created_at
                     )
                     SELECT
                         run_id, agent_name, caller_id, task_id,
@@ -294,11 +394,15 @@ def _migrate(conn: sqlite3.Connection) -> None:
                         success, asset_ids, royalty_splits,
                         charge_amount, charge_currency, charge_chain,
                         payment_method, settlement_status,
-                        'ledger_only', NULL, created_at
+                        'ledger_only', NULL, NULL, created_at
                     FROM agent_runs
                 """)
                 conn.execute("DROP TABLE agent_runs")
                 conn.execute("ALTER TABLE agent_runs_new RENAME TO agent_runs")
+            elif "settlement_meta" not in agent_run_cols:
+                # Already-modern agent_runs table (Phase 3 rebuild done):
+                # settlement_meta is a plain nullable ADD COLUMN.
+                conn.execute("ALTER TABLE agent_runs ADD COLUMN settlement_meta TEXT")
 
             conn.execute("COMMIT")
         except Exception:
