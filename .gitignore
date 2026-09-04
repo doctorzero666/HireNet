@@ -21,7 +21,7 @@ __pycache__/
 *.pyc
 *.pyd
 *.pyo
-# Cobo wallet keys (private key material — never commit)
+# Wallet keys (private key material — never commit)
 # Database
 # Environment
 # IDE
@@ -54,7 +54,7 @@ frontend/island_script_*.jsx
 frontend/island-ref.html
 frontend/island-styles.css
 
-# Cobo 私钥
+# 钱包私钥
 cobo-keys/
 
 # 旧文档和模板（本地保留，不传GitHub）

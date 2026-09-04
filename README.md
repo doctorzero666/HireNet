@@ -13,7 +13,7 @@
 ![Python](https://img.shields.io/badge/Python-3.11-blue?style=flat-square&logo=python)
 ![Flask](https://img.shields.io/badge/Flask-3.x-lightgrey?style=flat-square&logo=flask)
 ![React](https://img.shields.io/badge/React-18-61DAFB?style=flat-square&logo=react)
-![Tests](https://img.shields.io/badge/tests-532_passed-brightgreen?style=flat-square)
+![Tests](https://img.shields.io/badge/tests-597_passed-brightgreen?style=flat-square)
 ![Hackathon](https://img.shields.io/badge/AI×Web3-Hackathon-orange?style=flat-square)
 
 </div>
@@ -179,10 +179,10 @@ HireNet 将传统招聘平台的“岗位匹配”，扩展成了更前置的**�
 | --- | --- |
 | 前端 | React 18 + Vite + Island 动森风 UI |
 | 后端 | Flask + SQLite + 智谱 GLM-4 |
-| 链上结算 | Anvil 本地测试链（可切换 Cobo WaaS 2.0）|
+| 链上结算 | Mock / Anvil 本地链 / Sepolia 测试网，Provider 接口可插拔 |
 | Agent 协议 | MCP (Model Context Protocol) |
 | 鉴权 | JWT + pbkdf2 |
-| 测试 | pytest 532 passed |
+| 测试 | pytest 597 passed |
 
 ```text
 HireNet/
@@ -249,11 +249,10 @@ bash start.sh
 
 ---
 
-## 🏆 Hackathon
+## 🌱 起源
 
 - **赛事**：AI × Web3 Agentic Builders Hackathon
-- **赛道**：Cobo Track
-- **关键集成**：Cobo Agentic Wallet、智谱 GLM、MCP
+- **关键集成**：智谱 GLM、MCP
 - **交付物**：可运行代码、在线 Demo、演示视频与答辩材料
 
 ## 📌 说明

@@ -13,7 +13,7 @@
 ![Python](https://img.shields.io/badge/Python-3.11-blue?style=flat-square&logo=python)
 ![Flask](https://img.shields.io/badge/Flask-3.x-lightgrey?style=flat-square&logo=flask)
 ![React](https://img.shields.io/badge/React-18-61DAFB?style=flat-square&logo=react)
-![Tests](https://img.shields.io/badge/tests-532_passed-brightgreen?style=flat-square)
+![Tests](https://img.shields.io/badge/tests-597_passed-brightgreen?style=flat-square)
 ![Hackathon](https://img.shields.io/badge/AI×Web3-Hackathon-orange?style=flat-square)
 
 </div>
@@ -179,10 +179,10 @@ Later extensions could include company subscriptions, private agent hosting, age
 | --- | --- |
 | Frontend | React 18 + Vite, Animal-Crossing-inspired island UI |
 | Backend | Flask + SQLite + Zhipu GLM-4 |
-| On-chain settlement | Local Anvil testnet (switchable to Cobo WaaS 2.0) |
+| On-chain settlement | Mock / local Anvil chain / Sepolia testnet behind a pluggable provider interface |
 | Agent protocol | MCP (Model Context Protocol) |
 | Auth | JWT + pbkdf2 |
-| Tests | 532 passing pytest tests |
+| Tests | 597 passing pytest tests |
 
 ```text
 HireNet/
@@ -249,11 +249,10 @@ bash start.sh
 
 ---
 
-## 🏆 Hackathon
+## 🌱 Origin
 
 - **Event**: AI × Web3 Agentic Builders Hackathon
-- **Track**: Cobo Track
-- **Key integrations**: Cobo Agentic Wallet, Zhipu GLM, MCP
+- **Key integrations**: Zhipu GLM, MCP
 - **Deliverables**: running code, live demo, demo video and pitch materials
 
 ## 📌 Note
