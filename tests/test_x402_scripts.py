@@ -52,17 +52,15 @@ def no_real_network(monkeypatch):
 def clean_env(monkeypatch):
     """Never inherit the operator's key, address or payee.
 
-    `load_dotenv` is neutered for the same reason: both scripts read the
-    repo's real `.env` in `main()`, and that file holds the operator's funded
-    payer key. Letting a unit test load it would (a) make the test depend on a
-    machine-local secret and (b) leak that key into `os.environ` for every
-    test that runs after it in the same session.
+    Both scripts call `load_dotenv` on the repo's real `.env` in `main()`, and
+    that file holds the operator's funded payer key. The `no_dotenv` fixture in
+    tests/conftest.py neuters it suite-wide, so nothing here can read — or leak
+    into `os.environ` — a machine-local secret.
     """
     for name in (x402_wallet.KEY_ENV, x402_wallet.ADDRESS_ENV,
                  x402_e2e.PAYEE_ENV, "X402_RPC_URL", "X402_USDC_ADDRESS",
                  "X402_NETWORK", "X402_FACILITATOR_URL"):
         monkeypatch.delenv(name, raising=False)
-    monkeypatch.setattr("dotenv.load_dotenv", lambda *a, **k: False)
 
 
 class Recorder:

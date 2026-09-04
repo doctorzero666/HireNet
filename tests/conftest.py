@@ -44,6 +44,37 @@ def _snapshot(value):
 
 
 @pytest.fixture(autouse=True)
+def no_dotenv(monkeypatch):
+    """`create_app()` must not import the operator's `.env` into a test run.
+
+    `app/app.py:create_app` starts with `load_dotenv()`, which reads the repo's
+    untracked `.env` and writes every name in it into `os.environ` — AFTER the
+    test's own fixtures have set up the environment they intend to test. So a
+    fixture that does `monkeypatch.delenv("X402_PAYER_PRIVATE_KEY")` is silently
+    undone by the very next `create_app()`, and the test then asserts against
+    the developer's machine rather than against the code.
+
+    Observed, not hypothetical: with a real `.env` present (as it is on the
+    owner's machine, and as WP-F's live run requires), the two
+    "no payer key configured" tests in tests/test_pact_x402_settle.py flipped
+    from 502 to 200 because the key leaked back in. The suite's hermeticity is
+    not supposed to depend on whether a file exists.
+
+    Both names are patched because binding matters: `app.app` did
+    `from dotenv import load_dotenv` at import time, so patching
+    `dotenv.load_dotenv` alone would not reach it; patching only `app.app`'s
+    copy would not reach a call site that imports it lazily (both scripts in
+    `scripts/` do). Nothing in the suite depends on `.env` contents — the same
+    1285 tests pass with and without the file — so this removes a dependency,
+    never a behaviour.
+    """
+    import app.app as app_module
+
+    monkeypatch.setattr(app_module, "load_dotenv", lambda *a, **k: False)
+    monkeypatch.setattr("dotenv.load_dotenv", lambda *a, **k: False)
+
+
+@pytest.fixture(autouse=True)
 def isolate_module_level_stores():
     """Restore `app.app`'s in-memory demo stores around every test."""
     import app.app as app_module
