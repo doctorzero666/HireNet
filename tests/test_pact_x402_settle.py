@@ -180,7 +180,8 @@ def boot(monkeypatch):
     paths = []
 
     def _boot(*, provider, price_amount=1, facilitator=None, mcp_client=None,
-              gated=True, wallet=CREATOR_WALLET, endpoint_url=MCP_ENDPOINT):
+              gated=True, wallet=CREATOR_WALLET, endpoint_url=MCP_ENDPOINT,
+              session_wrapper=None):
         fd, db_path = tempfile.mkstemp(suffix=".db")
         os.close(fd)
         paths.append(db_path)
@@ -215,6 +216,10 @@ def boot(monkeypatch):
 
             session = requests.Session()
             session.mount(MCP_ENDPOINT, FlaskRequestsAdapter(mcp_app))
+            # WP-R: lets a test damage the RESPONSE (e.g. drop the settlement
+            # header) without touching the gate, the payer or the facilitator.
+            if session_wrapper is not None:
+                session = session_wrapper(session)
 
             # The REAL call_mcp_tool, with only its transport redirected into
             # the in-process MCP app. **kwargs forwards the WP-E `max_amount`.
@@ -540,3 +545,106 @@ def test_mock_provider_keeps_the_legacy_order_and_shape(boot):
     # Additive keys are x402-only: the legacy body is unchanged.
     for key in ("tx_hash", "explorer_url", "settled_amount"):
         assert key not in body
+
+
+# ---------------------------------------------------------------------------
+# 6. Stage 2 / WP-R (review F2): a signed authorization with an unknown outcome
+#    never resets the pact.
+#
+# The gate settles through the facilitator and only THEN writes the
+# PAYMENT-RESPONSE header. Losing that header on the way back is the one
+# failure where the creator may already have been paid and we cannot tell —
+# and before WP-R it walked the pact back to `approved`, so a retry signed a
+# second authorization with a fresh nonce against a payment that had settled.
+# ---------------------------------------------------------------------------
+
+class _LosesTheSettlementHeader:
+    """A session that drops PAYMENT-RESPONSE from the gate's answer.
+
+    The facilitator DID settle — `facilitator.calls` proves it — and the payer
+    simply never learns. Produced without changing a line of the gate, the
+    payer or the facilitator stub.
+    """
+
+    def __init__(self, inner):
+        self.inner = inner
+
+    def request(self, method, url, **kwargs):
+        response = self.inner.request(method, url, **kwargs)
+        response.headers.pop("PAYMENT-RESPONSE", None)
+        return response
+
+
+def _unknown_outcome_harness(boot, monkeypatch):
+    monkeypatch.setenv(PAYER_KEY_ENV, TEST_PRIVATE_KEY)
+    return boot(provider=_x402_provider(),
+                session_wrapper=_LosesTheSettlementHeader)
+
+
+def test_an_unknown_outcome_leaves_the_pact_settling_with_a_502(boot, monkeypatch):
+    h = _unknown_outcome_harness(boot, monkeypatch)
+    pact_id = h.create_and_approve(amount=1.0)
+
+    resp = h.settle(pact_id)
+
+    assert resp.status_code == 502
+    assert resp.get_json() == {
+        "error": "payment outcome unknown; manual reconciliation required",
+        "pact_id": pact_id,
+    }
+    # The claim is what stops a second signature: NOT back to `approved`.
+    assert h.pact(pact_id)["status"] == "settling"
+    # The facilitator really did settle — that is the whole danger.
+    assert h.facilitator.calls == ["supported", "verify", "settle"]
+
+
+def test_the_unknown_outcome_is_written_down_for_reconciliation(boot, monkeypatch):
+    h = _unknown_outcome_harness(boot, monkeypatch)
+    pact_id = h.create_and_approve(amount=1.0)
+
+    h.settle(pact_id)
+    pact = h.pact(pact_id)
+
+    pending = pact["payment_pending"]
+    # The nonce is the token's replay key: it is what an operator looks up
+    # on-chain to find out whether this authorization was redeemed.
+    assert pending["nonce"].startswith("0x")
+    assert len(pending["nonce"]) == 66
+    assert pending["payee"] == CREATOR_WALLET
+    assert pending["amount_atomic"] == "10000"
+    assert "PAYMENT-RESPONSE" in pending["error"]
+    assert "PaymentOutcomeUnknown" in pact["last_error"]
+    # Nothing is claimed as settled: no run, no ledger rows, no tx hash.
+    assert h.agent_run_count() == 0
+    assert h.royalty_row_count() == 0
+    assert pact.get("tx_hash") is None
+
+
+def test_a_retry_after_an_unknown_outcome_cannot_sign_again(boot, monkeypatch):
+    """The double-pay the review found. One authorization, and only one."""
+    h = _unknown_outcome_harness(boot, monkeypatch)
+    pact_id = h.create_and_approve(amount=1.0)
+
+    assert h.settle(pact_id).status_code == 502
+    second = h.settle(pact_id)
+
+    assert second.status_code == 400
+    assert "must be approved" in second.get_json()["error"]
+    # One verify, one settle: the payer was never asked to sign a second time.
+    assert h.facilitator.calls == ["supported", "verify", "settle"]
+    assert h.agent_run_count() == 0
+
+
+def test_a_pre_signing_refusal_still_returns_the_pact_to_approved(boot, monkeypatch):
+    """The other side of the line: nothing was signed, so the mandate is free
+    to be retried. Same 502, opposite pact state."""
+    monkeypatch.delenv(PAYER_KEY_ENV, raising=False)
+    h = boot(provider=_x402_provider())
+
+    pact_id = h.create_and_approve()
+    resp = h.settle(pact_id)
+
+    assert resp.status_code == 502
+    assert "PaymentRequiredError" in resp.get_json()["error"]
+    assert h.pact(pact_id)["status"] == "approved"
+    assert "payment_pending" not in h.pact(pact_id)

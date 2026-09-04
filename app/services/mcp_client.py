@@ -54,6 +54,7 @@ import requests
 
 from app.services.x402_payer import (
     PAYER_KEY_ENV,
+    PaymentOutcomeUnknown,
     PaymentRequiredError,
     X402PayerError,
     pay_and_retry,
@@ -137,6 +138,39 @@ def _mcp_error(
     }
 
 
+def _mcp_unknown(
+    tool_name: str,
+    endpoint_url: str,
+    exc: PaymentOutcomeUnknown,
+) -> dict[str, Any]:
+    """The THIRD status, for "we signed and transmitted, and never found out".
+
+    Stage 2 / WP-R (review F2). `status: "error"` is wrong here and is what the
+    review found: the caller reads it as "nothing happened" and releases its
+    claim, so a retry signs a SECOND authorization for a payment that may
+    already have settled. This status exists so the caller can tell the two
+    apart and freeze instead.
+
+    Additive: `payment` stays present and None (no CONFIRMED payment), the
+    error/tool/endpoint_url keys are unchanged, and `payment_pending` is the
+    one new key — the identity of the authorization now in limbo, so an
+    operator can look the nonce up on-chain.
+    """
+    return {
+        "status": "unknown",
+        "tool": tool_name,
+        "error": f"{exc.__class__.__name__}: {exc}",
+        "endpoint_url": endpoint_url,
+        "payment": None,
+        "payment_pending": {
+            "nonce": exc.nonce,
+            "payee": exc.payee,
+            "amount_atomic": exc.amount_atomic,
+            "error": str(exc),
+        },
+    }
+
+
 def call_mcp_tool(
     endpoint_url: str,
     tool_name: str,
@@ -157,6 +191,14 @@ def call_mcp_tool(
     refused or failed payment):
         {"status": "error", "tool": <name>, "error": <str>,
          "endpoint_url": <url>, "payment": <dict|None>}
+
+    Output shape when an authorization was signed and transmitted and the
+    server never said what became of it (Stage 2 / WP-R, review F2):
+        {"status": "unknown", "tool": <name>, "error": <str>,
+         "endpoint_url": <url>, "payment": None,
+         "payment_pending": {"nonce", "payee", "amount_atomic", "error"}}
+    A caller seeing this MUST NOT retry the invocation: retrying signs a
+    second authorization for a payment that may already have settled.
 
     `payment` is None unless an x402 payment actually settled; then it is
     `{"method": "x402", "tx_hash", "network", "payer", "payee",
@@ -230,6 +272,11 @@ def call_mcp_tool(
                 raise PaymentRequiredError(
                     f"x402 payment required but {PAYER_KEY_ENV} is not configured"
                 )
+    except PaymentOutcomeUnknown as exc:
+        # MUST precede the X402PayerError clause below — PaymentOutcomeUnknown
+        # is a PaymentFailed, and folding it into `status: "error"` is exactly
+        # the double-pay exposure review F2 found.
+        return _mcp_unknown(tool_name, endpoint_url, exc)
     except X402PayerError as exc:
         # Class name kept in the message: PaymentFailed / SpendCapExceeded /
         # NoMatchingPaymentOption / PaymentRequiredError are meaningfully

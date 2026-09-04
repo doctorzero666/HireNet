@@ -188,6 +188,44 @@ class PaymentFailed(X402PayerError):
     """We paid (or tried to) and the settlement did not succeed."""
 
 
+class PaymentOutcomeUnknown(PaymentFailed):
+    """A signed authorization LEFT THIS PROCESS and we never learned its fate.
+
+    Stage 2 / WP-R (review F2/F8). The invariant this class exists to protect:
+
+        an authorization that was transmitted must never be treated as
+        "did not happen", because the only safe response to "did not happen"
+        is to sign a fresh one — and if the first was settled out of band the
+        creator is paid twice.
+
+    So the boundary is not "did we get a result" but "did the server give us a
+    decodable answer about the settlement":
+
+      * an explicit, decodable `success=false` (or a 402, i.e. "I am not
+        paid") is an ANSWER -> plain PaymentFailed, safe to retry;
+      * silence (no `PAYMENT-RESPONSE`, an unreadable one, a transport error
+        on the paid retry) or a success with no transaction hash is NOT an
+        answer -> this class, and the caller must reconcile by hand.
+
+    Subclasses PaymentFailed on purpose: every existing caller that treats a
+    payment failure as "no usable result" keeps working unchanged; only the
+    callers that decide whether to RE-SIGN need to tell the two apart.
+
+    Attributes carry the identity of the authorization that is now in limbo:
+        nonce: the EIP-3009 nonce — the token's replay key, so this is what
+            identifies the authorization on-chain (`authorizationState`).
+        payee: who it would pay.
+        amount_atomic: how much, verbatim from the quote.
+    """
+
+    def __init__(self, message: str, *, nonce: str, payee: str,
+                 amount_atomic: str):
+        super().__init__(message)
+        self.nonce = nonce
+        self.payee = payee
+        self.amount_atomic = amount_atomic
+
+
 # ---------------------------------------------------------------------------
 # Env-backed configuration
 # ---------------------------------------------------------------------------
@@ -613,6 +651,12 @@ def pay_and_retry(
         caller has just signed (or refused to sign) a transfer, and that is not
         a condition to paper over.
 
+        PaymentOutcomeUnknown (a PaymentFailed subclass) is the one a caller
+        must handle differently: it means an authorization was TRANSMITTED and
+        the server never told us what became of it. Retrying signs a second
+        authorization; if the first one settled out of band, the creator is
+        paid twice. Callers must record the nonce and stop, not retry.
+
     EXACTLY ONE retry. If the server 402s again we stop: signing a second
     authorization against the same resource is how a buggy or hostile server
     drains a wallet one nonce at a time.
@@ -646,31 +690,83 @@ def pay_and_retry(
     paid_headers = dict(base_headers)
     paid_headers[PAYMENT_SIGNATURE_HEADER] = encode_header(payload)
 
-    paid_response = session_or_client.request(
-        method, url, json=json, headers=paid_headers, **request_kwargs
-    )
+    # ── The authorization is now out of our hands ────────────────────────────
+    # Everything below distinguishes "the server told us it is not paid" (an
+    # answer: PaymentFailed, safe to re-sign) from "we do not know" (silence:
+    # PaymentOutcomeUnknown, must be reconciled by hand). See the class
+    # docstring for why that line and not "did we get a result".
+    def unknown(reason: str) -> PaymentOutcomeUnknown:
+        return PaymentOutcomeUnknown(
+            reason,
+            nonce=auth["nonce"],
+            payee=option.pay_to,
+            amount_atomic=option.amount,
+        )
+
+    try:
+        paid_response = session_or_client.request(
+            method, url, json=json, headers=paid_headers, **request_kwargs
+        )
+    except Exception as exc:  # noqa: BLE001 - see below
+        # The request carrying our signature may or may not have reached the
+        # server; a read timeout in particular says nothing about whether the
+        # facilitator settled. Every exception class is folded in on purpose —
+        # the transport is the caller's (requests / httpx / a test seam) and we
+        # cannot enumerate its failures — with the class name kept in the
+        # message so the cause is still diagnosable.
+        raise unknown(
+            f"the paid retry raised {exc.__class__.__name__}: {exc}; the signed "
+            "authorization was already transmitted and its settlement is unknown"
+        ) from exc
 
     settle_header = paid_response.headers.get(PAYMENT_RESPONSE_HEADER)
-    settle = decode_payment_response(settle_header) if settle_header else None
+    settle = None
+    undecodable = None
+    if settle_header:
+        try:
+            settle = decode_payment_response(settle_header)
+        except PaymentFailed as exc:
+            undecodable = str(exc)
 
     if paid_response.status_code == 402:
-        # The gate answers a failed settlement with 402 + a success:false
-        # PAYMENT-RESPONSE (see tests/test_x402_gate.py). Either way we did not
-        # get the resource, so this is a failure — with the reason the server
-        # gave, not a guess.
-        raise PaymentFailed(_settle_failure_reason(settle))
+        # 402 is the server stating "I am not paid" — an explicit refusal, and
+        # the only post-signing outcome that returns a caller to "retriable".
+        # The gate reaches it two ways, and NEITHER settled: the facilitator
+        # said `isValid: false` (settle never called, no PAYMENT-RESPONSE), or
+        # settle itself failed (402 + a success:false PAYMENT-RESPONSE). See
+        # tests/test_x402_gate.py.
+        raise PaymentFailed(undecodable or _settle_failure_reason(settle))
+
+    if undecodable is not None:
+        # A non-402 answer carrying a PAYMENT-RESPONSE we cannot read. The
+        # server behaved as though it settled; we simply cannot tell.
+        raise unknown(
+            f"HTTP {paid_response.status_code} after our payment carried an "
+            f"unreadable {PAYMENT_RESPONSE_HEADER}: {undecodable}"
+        )
 
     if settle is None:
         # We handed over a signed, redeemable authorization and the server
         # answered without confirming settlement. Reporting "unpaid" here would
         # be a lie: the authorization may still be settled out of band.
-        raise PaymentFailed(
+        raise unknown(
             f"server returned HTTP {paid_response.status_code} after our payment but no "
             f"{PAYMENT_RESPONSE_HEADER} header; settlement is unconfirmed"
         )
 
     if not settle.success:
         raise PaymentFailed(_settle_failure_reason(settle))
+
+    if not settle.transaction:
+        # Review F8. `SettleResponse.transaction` is a required `str` with no
+        # min_length, so `success: true` with `""` is schema-valid. Recording
+        # it would produce a run that reads 'settled' with no hash to confirm
+        # — settled without a transaction, in substance if not in shape. We
+        # were told it worked but given nothing to verify it with: unknown.
+        raise unknown(
+            "the facilitator reported success=true with an empty transaction "
+            "hash; there is nothing to confirm this payment against"
+        )
 
     payment_info = {
         "method": "x402",

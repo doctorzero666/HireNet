@@ -163,6 +163,10 @@ class TestRoundTrip:
             explorer_url="https://sepolia.basescan.org/tx/0xdeadbeef",
             settled_amount=0.01,
             mcp_result={"status": "ok", "preview": ["a", "b"]},
+            # Stage 2 / WP-R: the "signed, outcome unknown" reconciliation pair.
+            last_error="payment outcome unknown",
+            payment_pending={"nonce": "0x" + "cd" * 32, "payee": "0xabc",
+                             "amount_atomic": "10000", "error": "no header"},
         )
         created = create_pact(db_path, pact)
 

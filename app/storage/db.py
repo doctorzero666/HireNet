@@ -195,7 +195,17 @@ def _create_tables(conn: sqlite3.Connection) -> None:
             tx_hash         TEXT,
             explorer_url    TEXT,
             settled_amount  REAL    CHECK (settled_amount IS NULL OR settled_amount >= 0),
-            mcp_result      TEXT
+            mcp_result      TEXT,
+            -- Stage 2 / WP-R (review F2). Written when a settle signed an
+            -- authorization and never learned its fate: the pact STAYS at
+            -- 'settling' (so no retry can sign a second one) and these two
+            -- columns are the whole reconciliation record. last_error is
+            -- prose; payment_pending is the JSON identity of the authorization
+            -- in limbo ({nonce, payee, amount_atomic, error}) — the nonce is
+            -- the token's replay key, so it is what an operator looks up
+            -- on-chain. Both NULL on every other pact.
+            last_error      TEXT,
+            payment_pending TEXT
         );
 
         CREATE INDEX IF NOT EXISTS idx_audit_log_run_id ON audit_log (run_id);
@@ -230,6 +240,11 @@ def _migrate(conn: sqlite3.Connection) -> None:
     row carries over unchanged with NULL in the new columns; no existing status
     value is rewritten.
 
+    Stage 2 / WP-R: pacts gains last_error + payment_pending (both nullable
+    TEXT, no backfill) so a settle whose signed authorization went out with an
+    unknown outcome can be left at 'settling' WITH a reconciliation record
+    instead of being reset and re-signed.
+
     Crash-safety: every ALTER + backfill UPDATE runs inside a single explicit
     transaction. Python's sqlite3 module auto-commits before DDL by default,
     which would otherwise leave the DB in a half-migrated state if a later
@@ -249,6 +264,20 @@ def _migrate(conn: sqlite3.Connection) -> None:
     audit_cols = {
         row[1] for row in conn.execute("PRAGMA table_info(audit_log)").fetchall()
     }
+    # Empty set = the table does not exist yet. _migrate always runs after
+    # _create_tables (see init_db), so that only happens when a caller migrates
+    # a hand-built pre-WP-G database; ALTERing a missing table would explode,
+    # so the pacts clause below is gated on the table being there at all.
+    pact_cols = {
+        row[1] for row in conn.execute("PRAGMA table_info(pacts)").fetchall()
+    }
+    # Stage 2 / WP-R: two nullable TEXT columns for the "authorization signed,
+    # outcome unknown" record. Additive; every existing pact reads NULL, which
+    # the DAO turns back into "the key is absent from the API response".
+    pact_wpr_columns = [
+        column for column in ("last_error", "payment_pending")
+        if pact_cols and column not in pact_cols
+    ]
 
     # Stage 2 / WP-D: agent_runs.settlement_meta, audit_log.network and the
     # three royalty_ledger columns (+ the widened status CHECK) are all
@@ -278,6 +307,7 @@ def _migrate(conn: sqlite3.Connection) -> None:
         or "settlement_meta" not in agent_run_cols
         or rebuild_agent_runs
         or rebuild_ledger
+        or bool(pact_wpr_columns)
     )
     if not pending:
         return
@@ -456,6 +486,17 @@ def _migrate(conn: sqlite3.Connection) -> None:
                 # Already-modern agent_runs table (Phase 3 rebuild done):
                 # settlement_meta is a plain nullable ADD COLUMN.
                 conn.execute("ALTER TABLE agent_runs ADD COLUMN settlement_meta TEXT")
+
+            for column in pact_wpr_columns:
+                # Stage 2 / WP-R: nullable TEXT, no backfill and no CHECK to
+                # widen, so a plain ADD COLUMN is the whole migration. NULL
+                # means "this pact never carried the key" — which is exactly
+                # what pacts._row_to_pact already does with every optional
+                # column, so no existing response shape changes.
+                # The f-string interpolates only the two hardcoded names in
+                # `pact_wpr_columns` above — SQLite cannot bind an identifier
+                # as a parameter, and no caller-supplied value reaches here.
+                conn.execute(f"ALTER TABLE pacts ADD COLUMN {column} TEXT")
 
             conn.execute("COMMIT")
         except Exception:

@@ -51,6 +51,7 @@ from app.services.x402_payer import (
     PAYMENT_SIGNATURE_HEADER,
     NoMatchingPaymentOption,
     PaymentFailed,
+    PaymentOutcomeUnknown,
     PaymentRequiredError,
     SpendCapExceeded,
     build_authorization,
@@ -645,6 +646,156 @@ def test_pay_and_retry_raises_when_a_200_carries_no_settlement_proof():
         pay_and_retry(server, "POST", MCP_BASE_URL, json={}, private_key=TEST_PRIVATE_KEY)
 
 
+# ---------------------------------------------------------------------------
+# 7b. Stage 2 / WP-R (review F2 + F8): "signed and transmitted" is not the same
+# failure as "refused before signing".
+#
+# The line: an authorization that LEFT this process and got no decodable answer
+# is PaymentOutcomeUnknown, and the caller must freeze rather than re-sign. A
+# server that explicitly says "I am not paid" (402, or a decodable
+# success=false) is a plain PaymentFailed and stays retriable.
+# ---------------------------------------------------------------------------
+
+class _GarbageSettleHeaderServer(FakeResourceServer):
+    """200 on the paid retry, with a PAYMENT-RESPONSE that will not decode."""
+
+    def request(self, method, url, **kwargs):
+        response = super().request(method, url, **kwargs)
+        if response.status_code != 402:
+            response.headers[PAYMENT_RESPONSE_HEADER] = "not%%%base64"
+        return response
+
+
+class _RaisesOnThePaidRetry:
+    """402 first, then the transport blows up carrying our signature."""
+
+    def __init__(self, exc=None):
+        self.option = make_option()
+        self.exc = exc or requests.ConnectionError("connection reset by peer")
+        self.requests = []
+
+    def request(self, method, url, *, json=None, headers=None, **kwargs):
+        headers = dict(headers or {})
+        self.requests.append(headers)
+        if not headers.get(PAYMENT_SIGNATURE_HEADER):
+            return FakeResponse(
+                402,
+                headers={PAYMENT_REQUIRED_HEADER: make_402_header(self.option)},
+                content=b"{}",
+            )
+        raise self.exc
+
+
+def _assert_names_the_authorization(exc, server=None):
+    """The exception must carry enough to find the authorization on-chain."""
+    assert exc.payee == CREATOR_WALLET
+    assert exc.amount_atomic == "10000"
+    assert exc.nonce.startswith("0x") and len(exc.nonce) == 66
+    if server is not None:
+        signed = server.signed_payload()["payload"]["authorization"]
+        assert exc.nonce == signed["nonce"]      # the one actually signed
+
+
+def test_a_200_with_no_settlement_proof_is_outcome_unknown():
+    """Review F2. The authorization is redeemable and we never heard back."""
+    server = FakeResourceServer(paid_status=200, settle=None)
+
+    with pytest.raises(PaymentOutcomeUnknown) as excinfo:
+        pay_and_retry(server, "POST", MCP_BASE_URL, json={},
+                      private_key=TEST_PRIVATE_KEY)
+
+    assert "unconfirmed" in str(excinfo.value)
+    _assert_names_the_authorization(excinfo.value, server)
+    assert len(server.requests) == 2             # and no third attempt
+
+
+def test_an_unreadable_settlement_header_is_outcome_unknown():
+    server = _GarbageSettleHeaderServer(paid_status=200)
+
+    with pytest.raises(PaymentOutcomeUnknown) as excinfo:
+        pay_and_retry(server, "POST", MCP_BASE_URL, json={},
+                      private_key=TEST_PRIVATE_KEY)
+
+    assert "unreadable" in str(excinfo.value)
+    _assert_names_the_authorization(excinfo.value, server)
+
+
+def test_a_transport_error_on_the_paid_retry_is_outcome_unknown():
+    """The signature was already on the wire; a reset says nothing about it."""
+    server = _RaisesOnThePaidRetry()
+
+    with pytest.raises(PaymentOutcomeUnknown) as excinfo:
+        pay_and_retry(server, "POST", MCP_BASE_URL, json={},
+                      private_key=TEST_PRIVATE_KEY)
+
+    assert "ConnectionError" in str(excinfo.value)
+    _assert_names_the_authorization(excinfo.value)
+    assert len(server.requests) == 2             # signed once, never re-signed
+
+
+def test_a_success_with_an_empty_transaction_is_outcome_unknown():
+    """Review F8. `SettleResponse.transaction` is a str with no min_length, so
+    success=true + "" is schema-valid — and would settle a run with no hash."""
+    server = FakeResourceServer(
+        paid_status=200,
+        settle={"success": True, "transaction": "",
+                "network": NETWORK, "payer": TEST_PAYER_ADDRESS},
+    )
+
+    with pytest.raises(PaymentOutcomeUnknown) as excinfo:
+        pay_and_retry(server, "POST", MCP_BASE_URL, json={},
+                      private_key=TEST_PRIVATE_KEY)
+
+    assert "empty transaction" in str(excinfo.value)
+    _assert_names_the_authorization(excinfo.value, server)
+
+
+def test_an_explicit_settlement_failure_is_not_outcome_unknown():
+    """The facilitator said it did not settle. That IS an answer: retriable."""
+    server = FakeResourceServer(
+        paid_status=402,
+        settle={"success": False, "errorReason": "insufficient_funds",
+                "transaction": "", "network": NETWORK,
+                "payer": TEST_PAYER_ADDRESS},
+    )
+
+    with pytest.raises(PaymentFailed) as excinfo:
+        pay_and_retry(server, "POST", MCP_BASE_URL, json={},
+                      private_key=TEST_PRIVATE_KEY)
+
+    assert not isinstance(excinfo.value, PaymentOutcomeUnknown)
+
+
+def test_a_402_on_the_retry_is_not_outcome_unknown():
+    """402 is the server stating 'I am not paid'. The gate reaches it only via
+    a failed verify (settle never called) or a failed settle — neither moved
+    money, so the caller may retry."""
+    server = FakeResourceServer(paid_status=402, settle=None)
+
+    with pytest.raises(PaymentFailed) as excinfo:
+        pay_and_retry(server, "POST", MCP_BASE_URL, json={},
+                      private_key=TEST_PRIVATE_KEY)
+
+    assert not isinstance(excinfo.value, PaymentOutcomeUnknown)
+
+
+@pytest.mark.parametrize("server,key,expected", [
+    (FakeResourceServer(option=make_option(amount="2000000")), TEST_PRIVATE_KEY,
+     SpendCapExceeded),
+    (FakeResourceServer(), "", PaymentRequiredError),
+    (FakeResourceServer(option=make_option(network="eip155:1")), TEST_PRIVATE_KEY,
+     NoMatchingPaymentOption),
+])
+def test_pre_signing_refusals_are_never_outcome_unknown(server, key, expected):
+    """Nothing was signed, so there is nothing in limbo — the caller is free to
+    fix the cause and retry."""
+    with pytest.raises(expected) as excinfo:
+        pay_and_retry(server, "POST", MCP_BASE_URL, json={}, private_key=key)
+
+    assert not isinstance(excinfo.value, PaymentOutcomeUnknown)
+    assert len(server.requests) == 1             # never retried
+
+
 def test_pay_and_retry_refuses_a_quote_on_another_network():
     server = FakeResourceServer(option=make_option(network="eip155:1"))
 
@@ -936,3 +1087,48 @@ def test_mcp_client_reads_the_key_from_the_environment_only(monkeypatch):
     source = open(mcp_client_module.__file__).read()
     assert TEST_PRIVATE_KEY not in source
     assert "X402_PAYER_PRIVATE_KEY" in source
+
+
+# ---------------------------------------------------------------------------
+# 9. Stage 2 / WP-R (review F2): the mcp_client fold for an unknown outcome.
+# ---------------------------------------------------------------------------
+
+class _LosesTheSettlementHeader:
+    """Session wrapper that drops PAYMENT-RESPONSE from the gate's answer.
+
+    Everything upstream is real and untouched: the facilitator settled, the
+    gate wrote the header, and only the payer's view of it is lost.
+    """
+
+    def __init__(self, inner):
+        self.inner = inner
+
+    def request(self, method, url, **kwargs):
+        response = self.inner.request(method, url, **kwargs)
+        response.headers.pop(PAYMENT_RESPONSE_HEADER, None)
+        return response
+
+
+def test_an_unknown_outcome_is_folded_as_unknown_not_error(db_path, monkeypatch):
+    """`status: "error"` here is the double-pay exposure: it reads as "nothing
+    happened", and the only sane response to that is to sign again."""
+    _insert_asset(db_path)
+    facilitator = FacilitatorStub()
+    session = _LosesTheSettlementHeader(
+        _gated_session(db_path, monkeypatch, facilitator)
+    )
+    monkeypatch.setenv(PAYER_KEY_ENV, TEST_PRIVATE_KEY)
+
+    result = call_mcp_tool(MCP_BASE_URL, TOOL, session=session)
+
+    assert result["status"] == "unknown"
+    assert "PaymentOutcomeUnknown" in result["error"]
+    # No CONFIRMED payment — the additive key keeps its meaning.
+    assert result["payment"] is None
+    pending = result["payment_pending"]
+    assert pending["payee"] == CREATOR_WALLET
+    assert pending["amount_atomic"] == "10000"
+    assert pending["nonce"].startswith("0x") and len(pending["nonce"]) == 66
+    assert PAYMENT_RESPONSE_HEADER in pending["error"]
+    # …and the facilitator really did settle it.
+    assert facilitator.calls == ["supported", "verify", "settle"]

@@ -2423,6 +2423,41 @@ def _pact_settle_x402(pact: dict, asset: dict | None, asset_id: str,
     result = result or {}
     payment = result.get("payment") or {}
 
+    # ── Signed, transmitted, outcome unknown (Stage 2 / WP-R, review F2) ─────
+    # Checked BEFORE the settle_success reset below, because it is the one
+    # not-a-success that must NOT go back to `approved`. mcp_client returns
+    # status "unknown" only when x402_payer signed an authorization, put it on
+    # the wire, and never got a decodable answer about it (no PAYMENT-RESPONSE,
+    # an unreadable one, a transport error on the paid retry, or success=true
+    # with an empty transaction hash). The authorization may still be settled
+    # out of band by the facilitator, so:
+    #   * the pact STAYS at `settling` — the claim is what stops a retry from
+    #     signing a second authorization with a fresh nonce and paying twice;
+    #   * the nonce/payee/amount go on the row so an operator can look the
+    #     authorization up on-chain and close it out by hand.
+    # There is deliberately no automatic recovery: only a human (or a future
+    # on-chain reconciler) can decide whether that money moved.
+    if result.get("status") == "unknown":
+        pending = result.get("payment_pending") or {}
+        error_text = result.get("error") or "payment outcome unknown"
+        current_app.logger.error(
+            "x402 pact %s signed an authorization (nonce %s, payee %s, %s atomic "
+            "units) and never learned its outcome; the pact stays 'settling' and "
+            "needs manual reconciliation: %s",
+            pact_id, pending.get("nonce"), pending.get("payee"),
+            pending.get("amount_atomic"), error_text,
+        )
+        update_pact_fields(
+            db_path, pact_id,
+            last_error=error_text,
+            payment_pending=pending,
+            mcp_result=result,
+        )
+        return jsonify({
+            "error": "payment outcome unknown; manual reconciliation required",
+            "pact_id": pact_id,
+        }), 502
+
     # `settle_success is True` is the only thing that means money moved. Note
     # this is checked BEFORE result["status"]: a tool that failed AFTER the
     # facilitator settled still has to be recorded, because dropping a tx hash

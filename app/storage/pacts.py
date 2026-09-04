@@ -72,11 +72,16 @@ _OPTIONAL_COLUMNS = (
     "explorer_url",
     "settled_amount",
     "mcp_result",
+    # Stage 2 / WP-R (review F2): the reconciliation record for a settle that
+    # signed an authorization and never learned its fate. Optional like the
+    # rest — a pact that settled cleanly has neither key.
+    "last_error",
+    "payment_pending",
 )
 
 # Stored as JSON text. `json.dumps(None)` is `'null'`, which is how a key
 # explicitly set to None stays distinguishable from a never-written column.
-_JSON_COLUMNS = frozenset({"royalty_splits", "mcp_result"})
+_JSON_COLUMNS = frozenset({"royalty_splits", "mcp_result", "payment_pending"})
 
 _ALL_COLUMNS = _BASE_COLUMNS + _OPTIONAL_COLUMNS
 
