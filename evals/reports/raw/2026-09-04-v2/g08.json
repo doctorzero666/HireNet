@@ -1,0 +1,868 @@
+{
+  "case_id": "g08",
+  "category": "content",
+  "agent": "v2",
+  "started_at": "2026-09-04T06:11:52+00:00",
+  "session_id": "bfc4b3a16c003da8",
+  "http": {
+    "start": 200,
+    "reply": [
+      200,
+      200
+    ],
+    "decide": 200
+  },
+  "turns": 2,
+  "completed": true,
+  "hit_turn_cap": false,
+  "transcript": [
+    {
+      "role": "employer",
+      "text": "我们下个月要上线一款新的护肤品，需要一整套营销内容：电商详情页文案、5 篇小红书种草稿、一个 SEO 落地页，还有一封给老客户的邮件。"
+    },
+    {
+      "role": "pipeline",
+      "text": "我需要了解更多关于这个护肤品项目的信息，以便更好地理解您的需求。\n\n请问这款护肤品的目标受众是谁？这将帮助我更好地理解内容风格和营销策略的侧重点。"
+    },
+    {
+      "role": "employer",
+      "text": "内容预算 2 万以内。"
+    },
+    {
+      "role": "pipeline",
+      "text": "\n感谢您提供预算信息。为了更好地规划这个项目，我想了解这款护肤品的主要卖点和独特之处是什么？这将帮助我确定营销内容的重点和差异化策略。"
+    },
+    {
+      "role": "employer",
+      "text": "四周内全部交付，之后每个月还会有新品，所以这套流程要能复用。"
+    },
+    {
+      "role": "pipeline",
+      "text": "\n[REQUIREMENT_COMPLETE]\n{\n  \"project_name\": \"护肤品营销内容创作\",\n  \"core_description\": \"为一款新护肤品创建全套营销内容，包括电商详情页文案、5篇小红书种草稿、一个SEO落地页和一封老客户邮件，并建立可复用的内容创作流程\",\n  \"tasks_hint\": [\"电商详情页文案撰写\", \"小红书种草内容创作\", \"SEO落地页设计与文案\", \"老客户邮件营销内容\", \"建立可复用的内容创作流程\"],\n  \"duration\": \"ongoing\",\n  \"team_context\": \"护肤品品牌团队，需要定期推出新品并保持营销内容的一致性和质量\",\n  \"urgency\": \"high\",\n  \"budget_hint\": \"medium\"\n}"
+    }
+  ],
+  "response": {
+    "decisions": {
+      "decisions": [
+        {
+          "estimated_hours": 12,
+          "evaluations": [
+            {
+              "can_complete": true,
+              "confidence": 0.9,
+              "estimated_time": "2-4小时",
+              "reason": "文案撰写Agent具备营销文案和SEO文章能力，符合任务需求",
+              "resource_id": "agent_content",
+              "resource_name": "文案撰写 Agent",
+              "resource_type": "agent",
+              "strengths": [
+                "营销文案能力",
+                "SEO优化能力",
+                "产品描述撰写经验"
+              ]
+            },
+            {
+              "can_complete": false,
+              "confidence": 0.2,
+              "estimated_time": "无法准确估算，因技能不匹配",
+              "reason": "张伟是全栈工程师，缺乏文案创作和电商营销经验",
+              "resource_id": "candidate_a",
+              "resource_name": "张伟（全栈工程师）",
+              "resource_type": "human",
+              "strengths": [
+                "技术背景可能有助于理解产品技术特点",
+                "有独立交付产品的经验，可能理解产品定位"
+              ]
+            }
+          ],
+          "is_recurring": false,
+          "recommendation": {
+            "cost_hint": "$0.02",
+            "decision": "agent",
+            "reason": "推荐使用 文案撰写 Agent，置信度 90%",
+            "resource": {
+              "can_complete": true,
+              "confidence": 0.9,
+              "estimated_time": "2-4小时",
+              "reason": "文案撰写Agent具备营销文案和SEO文章能力，符合任务需求",
+              "resource_id": "agent_content",
+              "resource_name": "文案撰写 Agent",
+              "resource_type": "agent",
+              "strengths": [
+                "营销文案能力",
+                "SEO优化能力",
+                "产品描述撰写经验"
+              ]
+            }
+          },
+          "requires_judgment": true,
+          "task_description": "为新护肤品创建吸引人的电商详情页文案，突出产品特点、功效和用户利益点，符合电商平台规范和SEO要求",
+          "task_id": "t1",
+          "task_name": "电商详情页文案撰写",
+          "task_type": "creative"
+        },
+        {
+          "estimated_hours": 16,
+          "evaluations": [
+            {
+              "can_complete": true,
+              "confidence": 0.85,
+              "estimated_time": "2-3小时",
+              "reason": "文案撰写Agent具备营销文案和产品描述能力，但缺乏小红书平台特定调性的深度理解",
+              "resource_id": "agent_content",
+              "resource_name": "文案撰写 Agent",
+              "resource_type": "agent",
+              "strengths": [
+                "擅长营销文案创作",
+                "能够撰写产品使用体验和效果展示内容"
+              ]
+            },
+            {
+              "can_complete": false,
+              "confidence": 0.2,
+              "estimated_time": "无法准确估算",
+              "reason": "张伟是全栈工程师，不具备小红书种草内容创作的专业能力和经验",
+              "resource_id": "candidate_a",
+              "resource_name": "张伟（全栈工程师）",
+              "resource_type": "human",
+              "strengths": [
+                "无相关优势"
+              ]
+            }
+          ],
+          "is_recurring": false,
+          "recommendation": {
+            "cost_hint": "$0.02",
+            "decision": "agent",
+            "reason": "推荐使用 文案撰写 Agent，置信度 85%",
+            "resource": {
+              "can_complete": true,
+              "confidence": 0.85,
+              "estimated_time": "2-3小时",
+              "reason": "文案撰写Agent具备营销文案和产品描述能力，但缺乏小红书平台特定调性的深度理解",
+              "resource_id": "agent_content",
+              "resource_name": "文案撰写 Agent",
+              "resource_type": "agent",
+              "strengths": [
+                "擅长营销文案创作",
+                "能够撰写产品使用体验和效果展示内容"
+              ]
+            }
+          },
+          "requires_judgment": true,
+          "task_description": "创作5篇符合小红书平台调性的种草内容，包括产品使用体验、效果展示和真实感分享，增加品牌曝光和用户互动",
+          "task_id": "t2",
+          "task_name": "小红书种草内容创作",
+          "task_type": "creative"
+        },
+        {
+          "estimated_hours": 10,
+          "evaluations": [
+            {
+              "can_complete": false,
+              "confidence": 0.3,
+              "estimated_time": "不适用",
+              "reason": "代码生成Agent专注于代码开发，而非SEO内容创作和页面设计",
+              "resource_id": "agent_code",
+              "resource_name": "代码生成 Agent",
+              "resource_type": "agent",
+              "strengths": [
+                "代码审查能力",
+                "脚本编写能力"
+              ]
+            },
+            {
+              "can_complete": false,
+              "confidence": 0.3,
+              "estimated_time": "无法准确估算，因为技能不匹配",
+              "reason": "张伟是全栈工程师，缺乏SEO和文案设计的专业技能",
+              "resource_id": "candidate_a",
+              "resource_name": "张伟（全栈工程师）",
+              "resource_type": "human",
+              "strengths": [
+                "技术实现能力",
+                "全栈开发经验"
+              ]
+            }
+          ],
+          "is_recurring": false,
+          "recommendation": {
+            "cost_hint": "需要评估薪资",
+            "decision": "human",
+            "reason": "此任务需要人类处理，建议招聘",
+            "resource": {
+              "can_complete": false,
+              "confidence": 0.3,
+              "estimated_time": "不适用",
+              "reason": "代码生成Agent专注于代码开发，而非SEO内容创作和页面设计",
+              "resource_id": "agent_code",
+              "resource_name": "代码生成 Agent",
+              "resource_type": "agent",
+              "strengths": [
+                "代码审查能力",
+                "脚本编写能力"
+              ]
+            }
+          },
+          "requires_judgment": true,
+          "task_description": "设计并撰写SEO优化的落地页内容，包含关键词布局、产品详细介绍和用户转化引导，提高搜索引擎排名",
+          "task_id": "t3",
+          "task_name": "SEO落地页设计与文案",
+          "task_type": "technical"
+        },
+        {
+          "estimated_hours": 8,
+          "evaluations": [
+            {
+              "can_complete": true,
+              "confidence": 0.9,
+              "estimated_time": "30-60分钟",
+              "reason": "文案撰写 Agent 具备邮件撰写能力，且任务需要创意内容，符合其能力范围",
+              "resource_id": "agent_content",
+              "resource_name": "文案撰写 Agent",
+              "resource_type": "agent",
+              "strengths": [
+                "营销文案撰写能力",
+                "情感连接内容创作",
+                "产品描述经验"
+              ]
+            },
+            {
+              "can_complete": true,
+              "confidence": 0.7,
+              "estimated_time": "3-5天",
+              "reason": "张伟作为全栈工程师具备技术背景，但缺乏营销内容创作的直接经验",
+              "resource_id": "candidate_a",
+              "resource_name": "张伟（全栈工程师）",
+              "resource_type": "human",
+              "strengths": [
+                "技术理解能力强，能快速理解产品特点",
+                "独立交付经验丰富，能自主完成项目"
+              ]
+            }
+          ],
+          "is_recurring": false,
+          "recommendation": {
+            "cost_hint": "$0.02",
+            "decision": "agent",
+            "reason": "推荐使用 文案撰写 Agent，置信度 90%",
+            "resource": {
+              "can_complete": true,
+              "confidence": 0.9,
+              "estimated_time": "30-60分钟",
+              "reason": "文案撰写 Agent 具备邮件撰写能力，且任务需要创意内容，符合其能力范围",
+              "resource_id": "agent_content",
+              "resource_name": "文案撰写 Agent",
+              "resource_type": "agent",
+              "strengths": [
+                "营销文案撰写能力",
+                "情感连接内容创作",
+                "产品描述经验"
+              ]
+            }
+          },
+          "requires_judgment": true,
+          "task_description": "创建针对老客户的邮件营销内容，包括新品介绍、专属优惠和情感连接，提高复购率和客户忠诚度",
+          "task_id": "t4",
+          "task_name": "老客户邮件营销内容",
+          "task_type": "creative"
+        },
+        {
+          "estimated_hours": 14,
+          "evaluations": [
+            {
+              "can_complete": true,
+              "confidence": 0.8,
+              "estimated_time": "2-3周",
+              "reason": "文案撰写Agent具备内容创作能力，但缺乏流程设计和团队协作经验",
+              "resource_id": "agent_content",
+              "resource_name": "文案撰写 Agent",
+              "resource_type": "agent",
+              "strengths": [
+                "擅长各类文案创作",
+                "能提供标准化内容模板"
+              ]
+            },
+            {
+              "can_complete": true,
+              "confidence": 0.8,
+              "estimated_time": "2-3周",
+              "reason": "张伟作为全栈工程师具备技术背景和独立交付经验，能够理解并建立标准化的内容创作流程。",
+              "resource_id": "candidate_a",
+              "resource_name": "张伟（全栈工程师）",
+              "resource_type": "human",
+              "strengths": [
+                "独立交付多个产品的经验",
+                "全栈开发能力有助于理解技术流程",
+                "3年经验积累的判断力"
+              ]
+            },
+            {
+              "can_complete": false,
+              "confidence": 0.3,
+              "estimated_time": "不适用",
+              "reason": "数据分析Agent缺乏内容创作和流程设计的专业知识",
+              "resource_id": "agent_data",
+              "resource_name": "数据分析 Agent",
+              "resource_type": "agent",
+              "strengths": [
+                "数据清洗能力",
+                "统计分析能力"
+              ]
+            }
+          ],
+          "is_recurring": false,
+          "recommendation": {
+            "cost_hint": "$0.02",
+            "decision": "agent",
+            "reason": "推荐使用 文案撰写 Agent，置信度 80%",
+            "resource": {
+              "can_complete": true,
+              "confidence": 0.8,
+              "estimated_time": "2-3周",
+              "reason": "文案撰写Agent具备内容创作能力，但缺乏流程设计和团队协作经验",
+              "resource_id": "agent_content",
+              "resource_name": "文案撰写 Agent",
+              "resource_type": "agent",
+              "strengths": [
+                "擅长各类文案创作",
+                "能提供标准化内容模板"
+              ]
+            }
+          },
+          "requires_judgment": true,
+          "task_description": "制定标准化的内容创作流程和模板，确保未来新品营销内容的一致性和质量，提高团队效率",
+          "task_id": "t5",
+          "task_name": "建立可复用的内容创作流程",
+          "task_type": "operational"
+        }
+      ]
+    },
+    "jd_report": {
+      "average_water_score": 85,
+      "job_count": 1,
+      "job_designs": [
+        {
+          "core_responsibilities": [
+            "撰写电商详情页文案，突出产品特点和卖点",
+            "创作5篇小红书种草稿，符合平台调性和用户喜好",
+            "设计并撰写SEO优化的落地页内容，包含关键词布局和转化引导",
+            "编写老客户维护邮件，提高复购率",
+            "建立可复用的内容创作流程，确保后续新品营销效率"
+          ],
+          "experience_range": {
+            "max": 3,
+            "min": 1,
+            "unit": "年"
+          },
+          "job_id": "jd_37b87a03c8bb",
+          "job_title": "护肤品营销内容专员",
+          "nice_to_have_skills": [
+            "HTML/CSS基础知识",
+            "数据分析能力",
+            "护肤品行业知识",
+            "邮件营销经验"
+          ],
+          "red_flags_removed": [
+            "移除了'一整套营销内容'的夸大表述",
+            "移除了不明确的'ongoing'持续时间要求"
+          ],
+          "required_skills": [
+            "护肤品营销文案撰写经验",
+            "小红书内容创作经验",
+            "SEO基础知识及关键词布局能力",
+            "电商详情页文案撰写能力"
+          ],
+          "salary_range": {
+            "max": 20000,
+            "min": 12000,
+            "unit": "元/月"
+          },
+          "task_id": "t3",
+          "task_name": "SEO落地页设计与文案",
+          "water_analysis": "与原始描述相比，明确了具体任务和交付物，添加了流程建立要求，移除了不切实际的'全套营销'表述",
+          "water_score": 85,
+          "work_type": "contract"
+        }
+      ],
+      "needs_hiring": true,
+      "water_interpretation": "JD 描述与实际需求高度一致，信息可信度高"
+    },
+    "requirement": {
+      "budget_hint": "medium",
+      "core_description": "为一款新护肤品创建全套营销内容，包括电商详情页文案、5篇小红书种草稿、一个SEO落地页和一封老客户邮件，并建立可复用的内容创作流程",
+      "duration": "ongoing",
+      "project_name": "护肤品营销内容创作",
+      "tasks_hint": [
+        "电商详情页文案撰写",
+        "小红书种草内容创作",
+        "SEO落地页设计与文案",
+        "老客户邮件营销内容",
+        "建立可复用的内容创作流程"
+      ],
+      "team_context": "护肤品品牌团队，需要定期推出新品并保持营销内容的一致性和质量",
+      "urgency": "high"
+    },
+    "summary": {
+      "agent_tasks": 4,
+      "human_tasks": 1,
+      "job_count": 1,
+      "needs_hiring": true,
+      "task_count": 5,
+      "verdict": "建议混合方案：4 个任务用 Agent，1 个任务需要人类",
+      "verdict_type": "hybrid",
+      "water_score": 85
+    },
+    "tasks": [
+      {
+        "description": "为新护肤品创建吸引人的电商详情页文案，突出产品特点、功效和用户利益点，符合电商平台规范和SEO要求",
+        "estimated_hours": 12,
+        "id": "t1",
+        "is_recurring": false,
+        "name": "电商详情页文案撰写",
+        "requires_judgment": true,
+        "type": "creative"
+      },
+      {
+        "description": "创作5篇符合小红书平台调性的种草内容，包括产品使用体验、效果展示和真实感分享，增加品牌曝光和用户互动",
+        "estimated_hours": 16,
+        "id": "t2",
+        "is_recurring": false,
+        "name": "小红书种草内容创作",
+        "requires_judgment": true,
+        "type": "creative"
+      },
+      {
+        "description": "设计并撰写SEO优化的落地页内容，包含关键词布局、产品详细介绍和用户转化引导，提高搜索引擎排名",
+        "estimated_hours": 10,
+        "id": "t3",
+        "is_recurring": false,
+        "name": "SEO落地页设计与文案",
+        "requires_judgment": true,
+        "type": "technical"
+      },
+      {
+        "description": "创建针对老客户的邮件营销内容，包括新品介绍、专属优惠和情感连接，提高复购率和客户忠诚度",
+        "estimated_hours": 8,
+        "id": "t4",
+        "is_recurring": false,
+        "name": "老客户邮件营销内容",
+        "requires_judgment": true,
+        "type": "creative"
+      },
+      {
+        "description": "制定标准化的内容创作流程和模板，确保未来新品营销内容的一致性和质量，提高团队效率",
+        "estimated_hours": 14,
+        "id": "t5",
+        "is_recurring": false,
+        "name": "建立可复用的内容创作流程",
+        "requires_judgment": true,
+        "type": "operational"
+      }
+    ]
+  },
+  "error": null,
+  "turn_count_reported": 3,
+  "requirement_after_clarify": {
+    "budget_hint": "medium",
+    "core_description": "为一款新护肤品创建全套营销内容，包括电商详情页文案、5篇小红书种草稿、一个SEO落地页和一封老客户邮件，并建立可复用的内容创作流程",
+    "duration": "ongoing",
+    "project_name": "护肤品营销内容创作",
+    "tasks_hint": [
+      "电商详情页文案撰写",
+      "小红书种草内容创作",
+      "SEO落地页设计与文案",
+      "老客户邮件营销内容",
+      "建立可复用的内容创作流程"
+    ],
+    "team_context": "护肤品品牌团队，需要定期推出新品并保持营销内容的一致性和质量",
+    "urgency": "high"
+  },
+  "app_accounting": {
+    "agent_runs": [
+      {
+        "agent_name": "job_design",
+        "task_id": "t3",
+        "input_tokens": 3244,
+        "output_tokens": 1525,
+        "time_ms": 32551,
+        "llm_cost_usd": "0.03333531"
+      }
+    ],
+    "reported_input_tokens": 3244,
+    "reported_output_tokens": 1525,
+    "reported_time_ms": 32551,
+    "reported_cost_usd": "0.03333531",
+    "analysis_traces": 16
+  },
+  "score": {
+    "case_id": "g08",
+    "category": "content",
+    "structural_score": 0.9333,
+    "components": {
+      "requirement": 1.0,
+      "task_count": 1.0,
+      "must_include": 0.6666666666666666,
+      "must_not_include": 1.0,
+      "decisions": 1.0
+    },
+    "details": {
+      "requirement": [
+        {
+          "check": "core_description_keywords_any",
+          "expected": [
+            "营销",
+            "文案",
+            "SEO",
+            "护肤品"
+          ],
+          "actual": "为一款新护肤品创建全套营销内容，包括电商详情页文案、5篇小红书种草稿、一个SEO落地页和一封老客户邮件，并建立可复用的内容创作流程",
+          "passed": true,
+          "matched": "营销"
+        }
+      ],
+      "task_count": {
+        "check": "count_range",
+        "expected": [
+          3,
+          5
+        ],
+        "actual": 5,
+        "passed": true
+      },
+      "must_include": [
+        {
+          "check": "must_include",
+          "expected": {
+            "name_keywords_any": [
+              "详情页",
+              "产品文案",
+              "商品描述"
+            ],
+            "type": "creative",
+            "routing": "agent"
+          },
+          "passed": true,
+          "matched_task": "电商详情页文案撰写",
+          "closest": {
+            "name_keyword": "详情页",
+            "type": {
+              "expected": "creative",
+              "actual": "creative"
+            },
+            "routing": {
+              "expected": "agent",
+              "actual": "agent"
+            }
+          }
+        },
+        {
+          "check": "must_include",
+          "expected": {
+            "name_keywords_any": [
+              "SEO",
+              "落地页",
+              "关键词"
+            ],
+            "routing": "agent"
+          },
+          "passed": false,
+          "matched_task": null,
+          "closest": {
+            "name_keyword": "SEO",
+            "routing": {
+              "expected": "agent",
+              "actual": "human"
+            }
+          }
+        },
+        {
+          "check": "must_include",
+          "expected": {
+            "name_keywords_any": [
+              "邮件",
+              "EDM",
+              "老客户"
+            ],
+            "routing": "agent"
+          },
+          "passed": true,
+          "matched_task": "老客户邮件营销内容",
+          "closest": {
+            "name_keyword": "邮件",
+            "routing": {
+              "expected": "agent",
+              "actual": "agent"
+            }
+          }
+        }
+      ],
+      "must_not_include": {
+        "check": "must_not_include_keywords",
+        "expected": [
+          "招聘",
+          "硬件"
+        ],
+        "passed": true,
+        "violations": []
+      },
+      "decisions": {
+        "check": "decisions",
+        "expected": {
+          "agent_min": 2
+        },
+        "actual": {
+          "agent": 4,
+          "human": 1,
+          "hybrid": 0,
+          "none": 0
+        },
+        "passed": true,
+        "failures": []
+      }
+    }
+  },
+  "decision_counts": {
+    "agent": 4,
+    "human": 1,
+    "hybrid": 0,
+    "none": 0
+  },
+  "judge": {
+    "score": 3,
+    "rationale": "SEO落地页任务路由给人类不合理，因为SEO优化属于已注册的SkillAsset服务；任务拆分合理但SEO任务路由决策错误，违背了评分标准中人类角色应限于审核而非执行Agent可覆盖工作的要求。",
+    "repaired": false,
+    "error": null,
+    "raw": "{\"score\": 3, \"rationale\": \"SEO落地页任务路由给人类不合理，因为SEO优化属于已注册的SkillAsset服务；任务拆分合理但SEO任务路由决策错误，违背了评分标准中人类角色应限于审核而非执行Agent可覆盖工作的要求。\"}"
+  },
+  "llm_calls": [
+    {
+      "case_id": "g08",
+      "phase": "pipeline",
+      "stage": "clarify",
+      "model": "glm-4-plus",
+      "input_tokens": 267,
+      "output_tokens": 37,
+      "total_tokens": 304,
+      "time_ms": 882,
+      "attempts": 1
+    },
+    {
+      "case_id": "g08",
+      "phase": "pipeline",
+      "stage": "clarify",
+      "model": "glm-4-plus",
+      "input_tokens": 318,
+      "output_tokens": 36,
+      "total_tokens": 354,
+      "time_ms": 852,
+      "attempts": 1
+    },
+    {
+      "case_id": "g08",
+      "phase": "pipeline",
+      "stage": "clarify",
+      "model": "glm-4-plus",
+      "input_tokens": 378,
+      "output_tokens": 159,
+      "total_tokens": 537,
+      "time_ms": 3095,
+      "attempts": 1
+    },
+    {
+      "case_id": "g08",
+      "phase": "pipeline",
+      "stage": "decompose",
+      "model": "glm-4-plus",
+      "input_tokens": 328,
+      "output_tokens": 450,
+      "total_tokens": 778,
+      "time_ms": 8039,
+      "attempts": 1
+    },
+    {
+      "case_id": "g08",
+      "phase": "pipeline",
+      "stage": "evaluate",
+      "model": "glm-4-plus",
+      "input_tokens": 169,
+      "output_tokens": 75,
+      "total_tokens": 244,
+      "time_ms": 1901,
+      "attempts": 1
+    },
+    {
+      "case_id": "g08",
+      "phase": "pipeline",
+      "stage": "evaluate",
+      "model": "glm-4-plus",
+      "input_tokens": 188,
+      "output_tokens": 85,
+      "total_tokens": 273,
+      "time_ms": 1724,
+      "attempts": 1
+    },
+    {
+      "case_id": "g08",
+      "phase": "pipeline",
+      "stage": "evaluate",
+      "model": "glm-4-plus",
+      "input_tokens": 175,
+      "output_tokens": 83,
+      "total_tokens": 258,
+      "time_ms": 1612,
+      "attempts": 1
+    },
+    {
+      "case_id": "g08",
+      "phase": "pipeline",
+      "stage": "evaluate",
+      "model": "glm-4-plus",
+      "input_tokens": 194,
+      "output_tokens": 66,
+      "total_tokens": 260,
+      "time_ms": 1149,
+      "attempts": 1
+    },
+    {
+      "case_id": "g08",
+      "phase": "pipeline",
+      "stage": "evaluate",
+      "model": "glm-4-plus",
+      "input_tokens": 168,
+      "output_tokens": 67,
+      "total_tokens": 235,
+      "time_ms": 1423,
+      "attempts": 1
+    },
+    {
+      "case_id": "g08",
+      "phase": "pipeline",
+      "stage": "evaluate",
+      "model": "glm-4-plus",
+      "input_tokens": 186,
+      "output_tokens": 73,
+      "total_tokens": 259,
+      "time_ms": 1684,
+      "attempts": 1
+    },
+    {
+      "case_id": "g08",
+      "phase": "pipeline",
+      "stage": "evaluate",
+      "model": "glm-4-plus",
+      "input_tokens": 168,
+      "output_tokens": 82,
+      "total_tokens": 250,
+      "time_ms": 1501,
+      "attempts": 1
+    },
+    {
+      "case_id": "g08",
+      "phase": "pipeline",
+      "stage": "evaluate",
+      "model": "glm-4-plus",
+      "input_tokens": 187,
+      "output_tokens": 84,
+      "total_tokens": 271,
+      "time_ms": 3861,
+      "attempts": 1
+    },
+    {
+      "case_id": "g08",
+      "phase": "pipeline",
+      "stage": "evaluate",
+      "model": "glm-4-plus",
+      "input_tokens": 167,
+      "output_tokens": 73,
+      "total_tokens": 240,
+      "time_ms": 1603,
+      "attempts": 1
+    },
+    {
+      "case_id": "g08",
+      "phase": "pipeline",
+      "stage": "evaluate",
+      "model": "glm-4-plus",
+      "input_tokens": 165,
+      "output_tokens": 61,
+      "total_tokens": 226,
+      "time_ms": 1426,
+      "attempts": 1
+    },
+    {
+      "case_id": "g08",
+      "phase": "pipeline",
+      "stage": "evaluate",
+      "model": "glm-4-plus",
+      "input_tokens": 186,
+      "output_tokens": 94,
+      "total_tokens": 280,
+      "time_ms": 1798,
+      "attempts": 1
+    },
+    {
+      "case_id": "g08",
+      "phase": "pipeline",
+      "stage": "job_design",
+      "model": "glm-4-plus",
+      "input_tokens": 571,
+      "output_tokens": 316,
+      "total_tokens": 887,
+      "time_ms": 6129,
+      "attempts": 1
+    },
+    {
+      "case_id": "g08",
+      "phase": "judge",
+      "stage": "other",
+      "model": "glm-4-plus",
+      "input_tokens": 1247,
+      "output_tokens": 62,
+      "total_tokens": 1309,
+      "time_ms": 1359,
+      "attempts": 1
+    }
+  ],
+  "usage": {
+    "pipeline": {
+      "calls": 16,
+      "input_tokens": 3815,
+      "output_tokens": 1841,
+      "total_tokens": 5656,
+      "time_ms": 38679,
+      "est_cost_usd": 0.039535
+    },
+    "judge": {
+      "calls": 1,
+      "input_tokens": 1247,
+      "output_tokens": 62,
+      "total_tokens": 1309,
+      "time_ms": 1359,
+      "est_cost_usd": 0.00915
+    },
+    "by_stage": {
+      "clarify": {
+        "calls": 3,
+        "input_tokens": 963,
+        "output_tokens": 232
+      },
+      "decompose": {
+        "calls": 1,
+        "input_tokens": 328,
+        "output_tokens": 450
+      },
+      "evaluate": {
+        "calls": 11,
+        "input_tokens": 1953,
+        "output_tokens": 843
+      },
+      "job_design": {
+        "calls": 1,
+        "input_tokens": 571,
+        "output_tokens": 316
+      }
+    }
+  },
+  "wall_time_s": 40.3
+}

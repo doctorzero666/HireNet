@@ -1,0 +1,955 @@
+{
+  "case_id": "g02",
+  "category": "data-analysis",
+  "agent": "v1",
+  "started_at": "2026-09-04T05:48:19+00:00",
+  "session_id": "d0c1b97b0371ff00",
+  "http": {
+    "start": 200,
+    "reply": [
+      200,
+      200
+    ],
+    "decide": 200
+  },
+  "turns": 2,
+  "completed": true,
+  "hit_turn_cap": false,
+  "transcript": [
+    {
+      "role": "employer",
+      "text": "帮我分析最近三个季度的销售数据，找出增长机会和异常波动。"
+    },
+    {
+      "role": "pipeline",
+      "text": "我需要了解更多关于您的需求细节，以便更好地理解您的具体要求。\n\n1. 您提到的\"销售数据\"具体包括哪些维度？比如产品类别、地区、客户类型、销售渠道等？\n2. 您期望的分析结果以什么形式呈现？比如报告、仪表板、还是其他形式？"
+    },
+    {
+      "role": "employer",
+      "text": "这次分析的预算不高，几千块就够了。"
+    },
+    {
+      "role": "pipeline",
+      "text": "\n感谢您提供预算信息。为了更好地理解您的需求，我想确认一下：\n\n1. 您提到\"最近三个季度\"，是指已经完成的分析，还是您希望我帮您进行这项分析？如果是后者，您是否有现成的销售数据可以提供？"
+    },
+    {
+      "role": "employer",
+      "text": "两周内要拿到结论，下个月董事会要用，做完这次就结束。"
+    },
+    {
+      "role": "pipeline",
+      "text": "\n[REQUIREMENT_COMPLETE]\n{\n  \"project_name\": \"销售数据分析项目\",\n  \"core_description\": \"分析最近三个季度的销售数据，识别增长机会和异常波动，为董事会决策提供支持\",\n  \"tasks_hint\": [\"数据收集与整理\", \"销售趋势分析\", \"异常波动识别\", \"增长机会挖掘\", \"分析报告撰写\"],\n  \"duration\": \"one-time\",\n  \"team_context\": \"需要为董事会提供销售数据分析支持，时间紧迫\",\n  \"urgency\": \"high\",\n  \"budget_hint\": \"low\"\n}"
+    }
+  ],
+  "response": {
+    "decisions": {
+      "decisions": [
+        {
+          "evaluations": [
+            {
+              "can_complete": true,
+              "confidence": 0.7,
+              "estimated_time": "2-3周",
+              "reason": "张伟具备全栈开发技能和数据处理经验，但缺乏专业的数据科学背景",
+              "resource_id": "candidate_a",
+              "resource_name": "张伟（全栈工程师）",
+              "resource_type": "human",
+              "strengths": [
+                "具备Python和数据处理能力",
+                "有独立交付产品的经验"
+              ]
+            },
+            {
+              "can_complete": false,
+              "confidence": 0.2,
+              "estimated_time": "不适用",
+              "reason": "代码生成Agent专注于代码开发，而非数据收集与处理",
+              "resource_id": "agent_code",
+              "resource_name": "代码生成 Agent",
+              "resource_type": "agent",
+              "strengths": [
+                "代码开发能力",
+                "自动化脚本编写"
+              ]
+            }
+          ],
+          "recommendation": {
+            "cost_hint": "需要评估薪资",
+            "decision": "human",
+            "reason": "建议招聘 张伟（全栈工程师） 类型人才，置信度 70%",
+            "resource": {
+              "can_complete": true,
+              "confidence": 0.7,
+              "estimated_time": "2-3周",
+              "reason": "张伟具备全栈开发技能和数据处理经验，但缺乏专业的数据科学背景",
+              "resource_id": "candidate_a",
+              "resource_name": "张伟（全栈工程师）",
+              "resource_type": "human",
+              "strengths": [
+                "具备Python和数据处理能力",
+                "有独立交付产品的经验"
+              ]
+            }
+          },
+          "task_id": "t1",
+          "task_name": "销售数据收集与整理",
+          "task_type": "technical"
+        },
+        {
+          "evaluations": [
+            {
+              "can_complete": true,
+              "confidence": 0.9,
+              "estimated_time": "2-4小时",
+              "reason": "数据分析Agent具备数据清洗、统计分析、数据可视化等核心能力，可完成销售趋势分析任务",
+              "resource_id": "agent_data",
+              "resource_name": "数据分析 Agent",
+              "resource_type": "agent",
+              "strengths": [
+                "数据清洗能力",
+                "统计分析能力",
+                "数据可视化能力"
+              ]
+            },
+            {
+              "can_complete": true,
+              "confidence": 0.7,
+              "estimated_time": "2-3周",
+              "reason": "张伟具备全栈开发技能，但缺乏专业的数据分析经验",
+              "resource_id": "candidate_a",
+              "resource_name": "张伟（全栈工程师）",
+              "resource_type": "human",
+              "strengths": [
+                "具备Python技能可用于数据处理",
+                "有独立交付产品的经验"
+              ]
+            }
+          ],
+          "recommendation": {
+            "cost_hint": "$0.03",
+            "decision": "agent",
+            "reason": "推荐使用 数据分析 Agent，置信度 90%",
+            "resource": {
+              "can_complete": true,
+              "confidence": 0.9,
+              "estimated_time": "2-4小时",
+              "reason": "数据分析Agent具备数据清洗、统计分析、数据可视化等核心能力，可完成销售趋势分析任务",
+              "resource_id": "agent_data",
+              "resource_name": "数据分析 Agent",
+              "resource_type": "agent",
+              "strengths": [
+                "数据清洗能力",
+                "统计分析能力",
+                "数据可视化能力"
+              ]
+            }
+          },
+          "task_id": "t2",
+          "task_name": "销售趋势分析",
+          "task_type": "analytical"
+        },
+        {
+          "evaluations": [
+            {
+              "can_complete": true,
+              "confidence": 0.85,
+              "estimated_time": "2-4小时",
+              "reason": "数据分析Agent具备数据清洗、统计分析和异常检测能力，但需要额外市场知识支持原因分析",
+              "resource_id": "agent_data",
+              "resource_name": "数据分析 Agent",
+              "resource_type": "agent",
+              "strengths": [
+                "数据清洗能力",
+                "统计分析能力",
+                "异常检测能力"
+              ]
+            },
+            {
+              "can_complete": false,
+              "confidence": 0.3,
+              "estimated_time": "无法准确估算，需额外学习",
+              "reason": "张伟缺乏数据分析、统计方法和销售业务背景经验",
+              "resource_id": "candidate_a",
+              "resource_name": "张伟（全栈工程师）",
+              "resource_type": "human",
+              "strengths": [
+                "具备编程基础",
+                "有独立交付产品的经验"
+              ]
+            }
+          ],
+          "recommendation": {
+            "cost_hint": "$0.03",
+            "decision": "agent",
+            "reason": "推荐使用 数据分析 Agent，置信度 85%",
+            "resource": {
+              "can_complete": true,
+              "confidence": 0.85,
+              "estimated_time": "2-4小时",
+              "reason": "数据分析Agent具备数据清洗、统计分析和异常检测能力，但需要额外市场知识支持原因分析",
+              "resource_id": "agent_data",
+              "resource_name": "数据分析 Agent",
+              "resource_type": "agent",
+              "strengths": [
+                "数据清洗能力",
+                "统计分析能力",
+                "异常检测能力"
+              ]
+            }
+          },
+          "task_id": "t3",
+          "task_name": "异常波动识别",
+          "task_type": "analytical"
+        },
+        {
+          "evaluations": [
+            {
+              "can_complete": false,
+              "confidence": 0.3,
+              "estimated_time": "无法准确估算",
+              "reason": "缺乏销售数据分析经验和战略规划能力",
+              "resource_id": "candidate_b",
+              "resource_name": "李娜（产品经理）",
+              "resource_type": "human",
+              "strengths": [
+                "AI产品设计经验",
+                "用户研究能力"
+              ]
+            },
+            {
+              "can_complete": false,
+              "confidence": 0.2,
+              "estimated_time": "不适用",
+              "reason": "文案撰写Agent缺乏数据分析能力，无法处理销售数据并识别增长机会",
+              "resource_id": "agent_content",
+              "resource_name": "文案撰写 Agent",
+              "resource_type": "agent",
+              "strengths": [
+                "擅长营销文案撰写",
+                "能够生成产品描述和SEO文章"
+              ]
+            }
+          ],
+          "recommendation": {
+            "cost_hint": "需要评估薪资",
+            "decision": "human",
+            "reason": "此任务需要人类处理，建议招聘",
+            "resource": {
+              "can_complete": false,
+              "confidence": 0.3,
+              "estimated_time": "无法准确估算",
+              "reason": "缺乏销售数据分析经验和战略规划能力",
+              "resource_id": "candidate_b",
+              "resource_name": "李娜（产品经理）",
+              "resource_type": "human",
+              "strengths": [
+                "AI产品设计经验",
+                "用户研究能力"
+              ]
+            }
+          },
+          "task_id": "t4",
+          "task_name": "增长机会挖掘",
+          "task_type": "strategic"
+        },
+        {
+          "evaluations": [
+            {
+              "can_complete": false,
+              "confidence": 0.3,
+              "estimated_time": "不适用",
+              "reason": "文案撰写Agent缺乏数据分析能力和商业判断力，无法完成面向董事会的分析报告",
+              "resource_id": "agent_content",
+              "resource_name": "文案撰写 Agent",
+              "resource_type": "agent",
+              "strengths": [
+                "擅长营销文案撰写",
+                "能够制作简洁明了的演示文稿"
+              ]
+            },
+            {
+              "can_complete": false,
+              "confidence": 0.3,
+              "estimated_time": "无法准确估算，因缺乏相关经验",
+              "reason": "张伟缺乏报告撰写和面向董事会演示的专业经验",
+              "resource_id": "candidate_a",
+              "resource_name": "张伟（全栈工程师）",
+              "resource_type": "human",
+              "strengths": [
+                "技术整合能力",
+                "独立交付产品的经验"
+              ]
+            }
+          ],
+          "recommendation": {
+            "cost_hint": "需要评估薪资",
+            "decision": "human",
+            "reason": "此任务需要人类处理，建议招聘",
+            "resource": {
+              "can_complete": false,
+              "confidence": 0.3,
+              "estimated_time": "不适用",
+              "reason": "文案撰写Agent缺乏数据分析能力和商业判断力，无法完成面向董事会的分析报告",
+              "resource_id": "agent_content",
+              "resource_name": "文案撰写 Agent",
+              "resource_type": "agent",
+              "strengths": [
+                "擅长营销文案撰写",
+                "能够制作简洁明了的演示文稿"
+              ]
+            }
+          },
+          "task_id": "t5",
+          "task_name": "分析报告撰写与呈现",
+          "task_type": "creative"
+        }
+      ]
+    },
+    "jd_report": {
+      "average_water_score": 85,
+      "job_count": 3,
+      "job_designs": [
+        {
+          "core_responsibilities": [
+            "收集并整理最近三个季度的销售数据",
+            "分析销售数据中的增长机会和异常波动",
+            "为董事会决策提供数据支持报告"
+          ],
+          "experience_range": {
+            "max": 4,
+            "min": 2,
+            "unit": "年"
+          },
+          "job_id": "jd_59ea16f84159",
+          "job_title": "销售数据分析顾问",
+          "nice_to_have_skills": [
+            "董事会报告经验",
+            "销售预测模型构建"
+          ],
+          "red_flags_removed": [
+            "移除了'找出增长机会'的模糊表述，改为'识别增长机会和异常波动'的具体任务"
+          ],
+          "required_skills": [
+            "数据收集与整理能力",
+            "销售数据分析经验",
+            "数据可视化技能"
+          ],
+          "salary_range": {
+            "max": 12000,
+            "min": 8000,
+            "unit": "元/月"
+          },
+          "task_id": "t1",
+          "task_name": "销售数据收集与整理",
+          "water_analysis": "与原始描述相比，明确了项目性质为一次性合同工作，澄清了具体任务和数据支持目的，移除了模糊的增长机会描述",
+          "water_score": 85,
+          "work_type": "contract"
+        },
+        {
+          "core_responsibilities": [
+            "分析最近三个季度的销售数据，识别增长机会和异常波动",
+            "为董事会决策提供数据支持和建议",
+            "完成40小时内的销售数据分析项目，提交可执行报告"
+          ],
+          "experience_range": {
+            "max": 5,
+            "min": 2,
+            "unit": "年"
+          },
+          "job_id": "jd_31c678e659c0",
+          "job_title": "销售数据分析顾问",
+          "nice_to_have_skills": [
+            "董事会汇报经验",
+            "销售预测模型构建",
+            "数据可视化工具使用"
+          ],
+          "red_flags_removed": [
+            "移除了'长期重复'的误导性描述",
+            "移除了不明确的'判断力'要求"
+          ],
+          "required_skills": [
+            "数据分析能力",
+            "销售数据解读经验",
+            "商业洞察力"
+          ],
+          "salary_range": {
+            "max": 12000,
+            "min": 8000,
+            "unit": "元/项目"
+          },
+          "task_id": "t4",
+          "task_name": "增长机会挖掘",
+          "water_analysis": "与原始描述相比，明确了项目性质、时间和具体交付物，移除了模糊的战略性描述",
+          "water_score": 85,
+          "work_type": "contract"
+        },
+        {
+          "core_responsibilities": [
+            "分析最近三个季度的销售数据，识别增长机会和异常波动",
+            "撰写销售数据分析报告，为董事会决策提供支持",
+            "在40小时内完成分析报告并准备呈现材料"
+          ],
+          "experience_range": {
+            "max": 4,
+            "min": 2,
+            "unit": "年"
+          },
+          "job_id": "jd_f19ac6ae9f7d",
+          "job_title": "销售数据分析顾问",
+          "nice_to_have_skills": [
+            "董事会报告经验",
+            "数据可视化技能"
+          ],
+          "red_flags_removed": [
+            "移除了不明确的'分析'表述",
+            "移除了未指定时间要求的假设"
+          ],
+          "required_skills": [
+            "数据分析能力",
+            "销售数据解读经验",
+            "报告撰写能力"
+          ],
+          "salary_range": {
+            "max": 12000,
+            "min": 8000,
+            "unit": "元/项目"
+          },
+          "task_id": "t5",
+          "task_name": "分析报告撰写与呈现",
+          "water_analysis": "与原始描述相比，明确了项目性质、时间限制和交付成果，移除了模糊的'分析'表述",
+          "water_score": 85,
+          "work_type": "contract"
+        }
+      ],
+      "needs_hiring": true,
+      "water_interpretation": "JD 描述与实际需求高度一致，信息可信度高"
+    },
+    "requirement": {
+      "budget_hint": "low",
+      "core_description": "分析最近三个季度的销售数据，识别增长机会和异常波动，为董事会决策提供支持",
+      "duration": "one-time",
+      "project_name": "销售数据分析项目",
+      "tasks_hint": [
+        "数据收集与整理",
+        "销售趋势分析",
+        "异常波动识别",
+        "增长机会挖掘",
+        "分析报告撰写"
+      ],
+      "team_context": "需要为董事会提供销售数据分析支持，时间紧迫",
+      "urgency": "high"
+    },
+    "summary": {
+      "agent_tasks": 2,
+      "human_tasks": 3,
+      "job_count": 3,
+      "needs_hiring": true,
+      "task_count": 5,
+      "verdict": "建议混合方案：2 个任务用 Agent，3 个任务需要人类",
+      "verdict_type": "hybrid",
+      "water_score": 85
+    },
+    "tasks": [
+      {
+        "description": "收集最近三个季度的销售数据，包括产品、区域、渠道等多维度信息，进行清洗和标准化处理",
+        "estimated_hours": 16,
+        "id": "t1",
+        "is_recurring": false,
+        "name": "销售数据收集与整理",
+        "requires_judgment": true,
+        "type": "technical"
+      },
+      {
+        "description": "分析销售数据的时间序列趋势，识别季节性模式和长期变化趋势，制作可视化图表",
+        "estimated_hours": 12,
+        "id": "t2",
+        "is_recurring": false,
+        "name": "销售趋势分析",
+        "requires_judgment": true,
+        "type": "analytical"
+      },
+      {
+        "description": "使用统计方法识别销售数据中的异常波动点，分析可能的原因，包括市场因素、内部政策等",
+        "estimated_hours": 10,
+        "id": "t3",
+        "is_recurring": false,
+        "name": "异常波动识别",
+        "requires_judgment": true,
+        "type": "analytical"
+      },
+      {
+        "description": "基于销售数据分析结果，识别潜在的增长机会，包括高潜力产品、区域或渠道，提出具体建议",
+        "estimated_hours": 8,
+        "id": "t4",
+        "is_recurring": false,
+        "name": "增长机会挖掘",
+        "requires_judgment": true,
+        "type": "strategic"
+      },
+      {
+        "description": "整合所有分析结果，撰写面向董事会的分析报告，制作简洁明了的演示文稿，突出关键发现和建议",
+        "estimated_hours": 6,
+        "id": "t5",
+        "is_recurring": false,
+        "name": "分析报告撰写与呈现",
+        "requires_judgment": true,
+        "type": "creative"
+      }
+    ]
+  },
+  "error": null,
+  "turn_count_reported": null,
+  "requirement_after_clarify": {
+    "budget_hint": "low",
+    "core_description": "分析最近三个季度的销售数据，识别增长机会和异常波动，为董事会决策提供支持",
+    "duration": "one-time",
+    "project_name": "销售数据分析项目",
+    "tasks_hint": [
+      "数据收集与整理",
+      "销售趋势分析",
+      "异常波动识别",
+      "增长机会挖掘",
+      "分析报告撰写"
+    ],
+    "team_context": "需要为董事会提供销售数据分析支持，时间紧迫",
+    "urgency": "high"
+  },
+  "app_accounting": {
+    "agent_runs": [
+      {
+        "agent_name": "job_design",
+        "task_id": "t5",
+        "input_tokens": null,
+        "output_tokens": null,
+        "time_ms": null,
+        "llm_cost_usd": null
+      },
+      {
+        "agent_name": "job_design",
+        "task_id": "t4",
+        "input_tokens": null,
+        "output_tokens": null,
+        "time_ms": null,
+        "llm_cost_usd": null
+      },
+      {
+        "agent_name": "job_design",
+        "task_id": "t1",
+        "input_tokens": null,
+        "output_tokens": null,
+        "time_ms": null,
+        "llm_cost_usd": null
+      }
+    ],
+    "reported_input_tokens": null,
+    "reported_output_tokens": null,
+    "reported_time_ms": null,
+    "reported_cost_usd": null,
+    "analysis_traces": 0
+  },
+  "score": {
+    "case_id": "g02",
+    "category": "data-analysis",
+    "structural_score": 0.6667,
+    "components": {
+      "requirement": 1.0,
+      "task_count": 1.0,
+      "must_include": 0.3333333333333333,
+      "must_not_include": 1.0,
+      "decisions": 0.0
+    },
+    "details": {
+      "requirement": [
+        {
+          "check": "core_description_keywords_any",
+          "expected": [
+            "销售数据",
+            "增长",
+            "异常"
+          ],
+          "actual": "分析最近三个季度的销售数据，识别增长机会和异常波动，为董事会决策提供支持",
+          "passed": true,
+          "matched": "销售数据"
+        },
+        {
+          "check": "duration",
+          "expected": "one-time",
+          "actual": "one-time",
+          "passed": true
+        },
+        {
+          "check": "budget_hint",
+          "expected": "low",
+          "actual": "low",
+          "passed": true
+        }
+      ],
+      "task_count": {
+        "check": "count_range",
+        "expected": [
+          3,
+          5
+        ],
+        "actual": 5,
+        "passed": true
+      },
+      "must_include": [
+        {
+          "check": "must_include",
+          "expected": {
+            "name_keywords_any": [
+              "数据清洗",
+              "数据准备",
+              "整理",
+              "预处理",
+              "导出"
+            ],
+            "type": "analytical",
+            "routing": "agent",
+            "requires_judgment": false
+          },
+          "passed": false,
+          "matched_task": null,
+          "closest": {
+            "name_keyword": "整理",
+            "type": {
+              "expected": "analytical",
+              "actual": "technical"
+            }
+          }
+        },
+        {
+          "check": "must_include",
+          "expected": {
+            "name_keywords_any": [
+              "异常",
+              "波动",
+              "检测"
+            ],
+            "type": "analytical",
+            "routing": "agent"
+          },
+          "passed": true,
+          "matched_task": "异常波动识别",
+          "closest": {
+            "name_keyword": "异常",
+            "type": {
+              "expected": "analytical",
+              "actual": "analytical"
+            },
+            "routing": {
+              "expected": "agent",
+              "actual": "agent"
+            }
+          }
+        },
+        {
+          "check": "must_include",
+          "expected": {
+            "name_keywords_any": [
+              "报告",
+              "洞察",
+              "结论",
+              "可视化",
+              "图表"
+            ],
+            "type": "analytical"
+          },
+          "passed": false,
+          "matched_task": null,
+          "closest": {
+            "name_keyword": "报告",
+            "type": {
+              "expected": "analytical",
+              "actual": "creative"
+            }
+          }
+        }
+      ],
+      "must_not_include": {
+        "check": "must_not_include_keywords",
+        "expected": [
+          "招聘",
+          "硬件"
+        ],
+        "passed": true,
+        "violations": []
+      },
+      "decisions": {
+        "check": "decisions",
+        "expected": {
+          "agent_min": 2,
+          "human_max": 2
+        },
+        "actual": {
+          "agent": 2,
+          "human": 3,
+          "hybrid": 0,
+          "none": 0
+        },
+        "passed": false,
+        "failures": [
+          {
+            "bound": "human_max",
+            "expected": 2,
+            "actual": 3
+          }
+        ]
+      }
+    }
+  },
+  "decision_counts": {
+    "agent": 2,
+    "human": 3,
+    "hybrid": 0,
+    "none": 0
+  },
+  "judge": {
+    "score": 4,
+    "rationale": "任务分解为准备、分析、沟通三阶段，三个交付物(增长机会、异常点、图表)对应任务t4、t3、t2，但t1数据收集路由human缺乏明确理由，AI Agent可处理数据清洗。",
+    "repaired": false,
+    "error": null,
+    "raw": "{\"score\": 4, \"rationale\": \"任务分解为准备、分析、沟通三阶段，三个交付物(增长机会、异常点、图表)对应任务t4、t3、t2，但t1数据收集路由human缺乏明确理由，AI Agent可处理数据清洗。\"}"
+  },
+  "llm_calls": [
+    {
+      "case_id": "g02",
+      "phase": "pipeline",
+      "stage": "clarify",
+      "model": "glm-4-plus",
+      "input_tokens": 237,
+      "output_tokens": 63,
+      "total_tokens": 300,
+      "time_ms": 9945,
+      "attempts": 1
+    },
+    {
+      "case_id": "g02",
+      "phase": "pipeline",
+      "stage": "clarify",
+      "model": "glm-4-plus",
+      "input_tokens": 316,
+      "output_tokens": 54,
+      "total_tokens": 370,
+      "time_ms": 1348,
+      "attempts": 1
+    },
+    {
+      "case_id": "g02",
+      "phase": "pipeline",
+      "stage": "clarify",
+      "model": "glm-4-plus",
+      "input_tokens": 392,
+      "output_tokens": 119,
+      "total_tokens": 511,
+      "time_ms": 2224,
+      "attempts": 1
+    },
+    {
+      "case_id": "g02",
+      "phase": "pipeline",
+      "stage": "decompose",
+      "model": "glm-4-plus",
+      "input_tokens": 288,
+      "output_tokens": 424,
+      "total_tokens": 712,
+      "time_ms": 9305,
+      "attempts": 1
+    },
+    {
+      "case_id": "g02",
+      "phase": "pipeline",
+      "stage": "evaluate",
+      "model": "glm-4-plus",
+      "input_tokens": 167,
+      "output_tokens": 65,
+      "total_tokens": 232,
+      "time_ms": 1562,
+      "attempts": 1
+    },
+    {
+      "case_id": "g02",
+      "phase": "pipeline",
+      "stage": "evaluate",
+      "model": "glm-4-plus",
+      "input_tokens": 185,
+      "output_tokens": 76,
+      "total_tokens": 261,
+      "time_ms": 1285,
+      "attempts": 1
+    },
+    {
+      "case_id": "g02",
+      "phase": "pipeline",
+      "stage": "evaluate",
+      "model": "glm-4-plus",
+      "input_tokens": 158,
+      "output_tokens": 79,
+      "total_tokens": 237,
+      "time_ms": 1589,
+      "attempts": 1
+    },
+    {
+      "case_id": "g02",
+      "phase": "pipeline",
+      "stage": "evaluate",
+      "model": "glm-4-plus",
+      "input_tokens": 179,
+      "output_tokens": 72,
+      "total_tokens": 251,
+      "time_ms": 2886,
+      "attempts": 1
+    },
+    {
+      "case_id": "g02",
+      "phase": "pipeline",
+      "stage": "evaluate",
+      "model": "glm-4-plus",
+      "input_tokens": 162,
+      "output_tokens": 79,
+      "total_tokens": 241,
+      "time_ms": 2386,
+      "attempts": 1
+    },
+    {
+      "case_id": "g02",
+      "phase": "pipeline",
+      "stage": "evaluate",
+      "model": "glm-4-plus",
+      "input_tokens": 183,
+      "output_tokens": 71,
+      "total_tokens": 254,
+      "time_ms": 1155,
+      "attempts": 1
+    },
+    {
+      "case_id": "g02",
+      "phase": "pipeline",
+      "stage": "evaluate",
+      "model": "glm-4-plus",
+      "input_tokens": 185,
+      "output_tokens": 61,
+      "total_tokens": 246,
+      "time_ms": 1131,
+      "attempts": 1
+    },
+    {
+      "case_id": "g02",
+      "phase": "pipeline",
+      "stage": "evaluate",
+      "model": "glm-4-plus",
+      "input_tokens": 164,
+      "output_tokens": 73,
+      "total_tokens": 237,
+      "time_ms": 1372,
+      "attempts": 1
+    },
+    {
+      "case_id": "g02",
+      "phase": "pipeline",
+      "stage": "evaluate",
+      "model": "glm-4-plus",
+      "input_tokens": 166,
+      "output_tokens": 75,
+      "total_tokens": 241,
+      "time_ms": 1428,
+      "attempts": 1
+    },
+    {
+      "case_id": "g02",
+      "phase": "pipeline",
+      "stage": "evaluate",
+      "model": "glm-4-plus",
+      "input_tokens": 185,
+      "output_tokens": 71,
+      "total_tokens": 256,
+      "time_ms": 1191,
+      "attempts": 1
+    },
+    {
+      "case_id": "g02",
+      "phase": "pipeline",
+      "stage": "job_design",
+      "model": "glm-4-plus",
+      "input_tokens": 488,
+      "output_tokens": 242,
+      "total_tokens": 730,
+      "time_ms": 3708,
+      "attempts": 1
+    },
+    {
+      "case_id": "g02",
+      "phase": "pipeline",
+      "stage": "job_design",
+      "model": "glm-4-plus",
+      "input_tokens": 487,
+      "output_tokens": 247,
+      "total_tokens": 734,
+      "time_ms": 4038,
+      "attempts": 1
+    },
+    {
+      "case_id": "g02",
+      "phase": "pipeline",
+      "stage": "job_design",
+      "model": "glm-4-plus",
+      "input_tokens": 488,
+      "output_tokens": 239,
+      "total_tokens": 727,
+      "time_ms": 3694,
+      "attempts": 1
+    },
+    {
+      "case_id": "g02",
+      "phase": "judge",
+      "stage": "other",
+      "model": "glm-4-plus",
+      "input_tokens": 1190,
+      "output_tokens": 65,
+      "total_tokens": 1255,
+      "time_ms": 1369,
+      "attempts": 1
+    }
+  ],
+  "usage": {
+    "pipeline": {
+      "calls": 17,
+      "input_tokens": 4430,
+      "output_tokens": 2110,
+      "total_tokens": 6540,
+      "time_ms": 50247,
+      "est_cost_usd": 0.045715
+    },
+    "judge": {
+      "calls": 1,
+      "input_tokens": 1190,
+      "output_tokens": 65,
+      "total_tokens": 1255,
+      "time_ms": 1369,
+      "est_cost_usd": 0.008772
+    },
+    "by_stage": {
+      "clarify": {
+        "calls": 3,
+        "input_tokens": 945,
+        "output_tokens": 236
+      },
+      "decompose": {
+        "calls": 1,
+        "input_tokens": 288,
+        "output_tokens": 424
+      },
+      "evaluate": {
+        "calls": 10,
+        "input_tokens": 1734,
+        "output_tokens": 722
+      },
+      "job_design": {
+        "calls": 3,
+        "input_tokens": 1463,
+        "output_tokens": 728
+      }
+    }
+  },
+  "wall_time_s": 51.78
+}

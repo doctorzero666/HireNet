@@ -1,0 +1,885 @@
+{
+  "case_id": "g16",
+  "category": "tasks-hint-given",
+  "agent": "v1",
+  "started_at": "2026-09-04T05:59:45+00:00",
+  "session_id": "52bd0dfa0c0c401f",
+  "http": {
+    "start": 200,
+    "reply": [
+      200,
+      200,
+      200
+    ],
+    "decide": 200
+  },
+  "turns": 3,
+  "completed": true,
+  "hit_turn_cap": false,
+  "transcript": [
+    {
+      "role": "employer",
+      "text": "我们要做一个 AI 产品的落地页。我自己已经列了几件事：1) 写文案 2) 做 UI 设计 3) 前端开发 4) 部署上线。帮我看看这四件事怎么分工。"
+    },
+    {
+      "role": "pipeline",
+      "text": "我需要了解更多关于这个 AI 产品的信息，以便更好地理解需求。请问：\n\n1. 这个 AI 产品的具体功能是什么？目标用户是谁？\n2. 你们团队目前有哪些人员可以参与这个项目？"
+    },
+    {
+      "role": "employer",
+      "text": "预算 2 万以内。"
+    },
+    {
+      "role": "pipeline",
+      "text": "\n我需要了解一些关键信息来帮助您更好地规划这个项目：\n\n1. 这个 AI 产品的具体功能是什么？目标用户是谁？这将影响文案和设计的方向。\n2. 你们团队目前有哪些人员可以参与这个项目？是内部团队还是需要外包？"
+    },
+    {
+      "role": "employer",
+      "text": "三周内上线，一次性项目。"
+    },
+    {
+      "role": "pipeline",
+      "text": "\n1. 这个 AI 产品的具体功能是什么？目标用户是谁？这将影响文案和设计的方向。"
+    },
+    {
+      "role": "employer",
+      "text": "就我一个人，会一点前端，其他都不会。"
+    },
+    {
+      "role": "pipeline",
+      "text": "\n[REQUIREMENT_COMPLETE]\n{\n  \"project_name\": \"AI产品落地页开发\",\n  \"core_description\": \"为AI产品创建一个完整的落地页，包括文案撰写、UI设计、前端开发和部署上线，预算2万以内，三周内完成\",\n  \"tasks_hint\": [\"文案撰写\", \"UI设计\", \"前端开发\", \"部署上线\"],\n  \"duration\": \"one-time\",\n  \"team_context\": \"单人项目，仅具备前端开发能力，其他方面需要外包或寻找合作\",\n  \"urgency\": \"high\",\n  \"budget_hint\": \"medium\"\n}"
+    }
+  ],
+  "response": {
+    "decisions": {
+      "decisions": [
+        {
+          "evaluations": [
+            {
+              "can_complete": true,
+              "confidence": 0.9,
+              "estimated_time": "2-4小时",
+              "reason": "文案撰写 Agent 具备营销文案撰写能力，符合任务需求",
+              "resource_id": "agent_content",
+              "resource_name": "文案撰写 Agent",
+              "resource_type": "agent",
+              "strengths": [
+                "营销文案撰写能力",
+                "产品描述经验",
+                "SEO文章撰写能力"
+              ]
+            },
+            {
+              "can_complete": false,
+              "confidence": 0.3,
+              "estimated_time": "无法准确估算，因非专业领域",
+              "reason": "张伟是全栈工程师，缺乏创意文案撰写经验和营销知识",
+              "resource_id": "candidate_a",
+              "resource_name": "张伟（全栈工程师）",
+              "resource_type": "human",
+              "strengths": [
+                "技术理解能力可能有助于准确描述产品功能",
+                "独立交付经验可能有助于理解产品价值"
+              ]
+            }
+          ],
+          "recommendation": {
+            "cost_hint": "$0.02",
+            "decision": "agent",
+            "reason": "推荐使用 文案撰写 Agent，置信度 90%",
+            "resource": {
+              "can_complete": true,
+              "confidence": 0.9,
+              "estimated_time": "2-4小时",
+              "reason": "文案撰写 Agent 具备营销文案撰写能力，符合任务需求",
+              "resource_id": "agent_content",
+              "resource_name": "文案撰写 Agent",
+              "resource_type": "agent",
+              "strengths": [
+                "营销文案撰写能力",
+                "产品描述经验",
+                "SEO文章撰写能力"
+              ]
+            }
+          },
+          "task_id": "t1",
+          "task_name": "AI产品文案撰写",
+          "task_type": "creative"
+        },
+        {
+          "evaluations": [
+            {
+              "can_complete": false,
+              "confidence": 0.3,
+              "estimated_time": "无法准确估算，因为这不是他的专业领域",
+              "reason": "张伟是全栈工程师，缺乏UI设计和创意方面的专业能力",
+              "resource_id": "candidate_a",
+              "resource_name": "张伟（全栈工程师）",
+              "resource_type": "human",
+              "strengths": [
+                "有全栈开发经验，可以理解产品需求",
+                "熟悉前端技术，可以与设计团队协作"
+              ]
+            },
+            {
+              "can_complete": false,
+              "confidence": 0.2,
+              "estimated_time": "不适用",
+              "reason": "文案撰写Agent不具备UI设计能力，无法完成视觉界面设计任务",
+              "resource_id": "agent_content",
+              "resource_name": "文案撰写 Agent",
+              "resource_type": "agent",
+              "strengths": [
+                "文案撰写Agent擅长营销文案和产品描述，但无法提供UI设计服务"
+              ]
+            }
+          ],
+          "recommendation": {
+            "cost_hint": "需要评估薪资",
+            "decision": "human",
+            "reason": "此任务需要人类处理，建议招聘",
+            "resource": {
+              "can_complete": false,
+              "confidence": 0.3,
+              "estimated_time": "无法准确估算，因为这不是他的专业领域",
+              "reason": "张伟是全栈工程师，缺乏UI设计和创意方面的专业能力",
+              "resource_id": "candidate_a",
+              "resource_name": "张伟（全栈工程师）",
+              "resource_type": "human",
+              "strengths": [
+                "有全栈开发经验，可以理解产品需求",
+                "熟悉前端技术，可以与设计团队协作"
+              ]
+            }
+          },
+          "task_id": "t2",
+          "task_name": "落地页UI设计",
+          "task_type": "creative"
+        },
+        {
+          "evaluations": [
+            {
+              "can_complete": true,
+              "confidence": 0.9,
+              "estimated_time": "1-2周",
+              "reason": "张伟具备全栈开发能力，包括React和响应式布局经验，能够胜任前端开发任务。",
+              "resource_id": "candidate_a",
+              "resource_name": "张伟（全栈工程师）",
+              "resource_type": "human",
+              "strengths": [
+                "React技能熟练",
+                "3年全栈开发经验",
+                "独立交付产品能力"
+              ]
+            },
+            {
+              "can_complete": true,
+              "confidence": 0.85,
+              "estimated_time": "根据设计稿复杂度，预计需要2-5天完成",
+              "reason": "代码生成Agent具备前端开发能力，能够响应设计稿实现响应式布局、交互功能和动画效果",
+              "resource_id": "agent_code",
+              "resource_name": "代码生成 Agent",
+              "resource_type": "agent",
+              "strengths": [
+                "前端开发能力",
+                "响应式布局实现",
+                "交互功能开发",
+                "动画效果实现"
+              ]
+            }
+          ],
+          "recommendation": {
+            "cost_hint": "需要评估薪资",
+            "decision": "human",
+            "reason": "建议招聘 张伟（全栈工程师） 类型人才，置信度 90%",
+            "resource": {
+              "can_complete": true,
+              "confidence": 0.9,
+              "estimated_time": "1-2周",
+              "reason": "张伟具备全栈开发能力，包括React和响应式布局经验，能够胜任前端开发任务。",
+              "resource_id": "candidate_a",
+              "resource_name": "张伟（全栈工程师）",
+              "resource_type": "human",
+              "strengths": [
+                "React技能熟练",
+                "3年全栈开发经验",
+                "独立交付产品能力"
+              ]
+            }
+          },
+          "task_id": "t3",
+          "task_name": "前端开发实现",
+          "task_type": "technical"
+        },
+        {
+          "evaluations": [
+            {
+              "can_complete": true,
+              "confidence": 0.9,
+              "estimated_time": "1-2天",
+              "reason": "张伟具备全栈开发经验和相关技术栈，能够独立完成部署上线任务。",
+              "resource_id": "candidate_a",
+              "resource_name": "张伟（全栈工程师）",
+              "resource_type": "human",
+              "strengths": [
+                "熟悉React、Node.js等前端和后端技术",
+                "有Docker容器化部署经验",
+                "独立交付过多个产品，具备项目执行能力"
+              ]
+            },
+            {
+              "can_complete": true,
+              "confidence": 0.7,
+              "estimated_time": "2-3天",
+              "reason": "代码生成Agent具备前端和后端开发能力，但缺乏实际部署和运维经验",
+              "resource_id": "agent_code",
+              "resource_name": "代码生成 Agent",
+              "resource_type": "agent",
+              "strengths": [
+                "代码编写能力",
+                "技术选型判断力",
+                "基本性能优化知识"
+              ]
+            }
+          ],
+          "recommendation": {
+            "cost_hint": "需要评估薪资",
+            "decision": "human",
+            "reason": "建议招聘 张伟（全栈工程师） 类型人才，置信度 90%",
+            "resource": {
+              "can_complete": true,
+              "confidence": 0.9,
+              "estimated_time": "1-2天",
+              "reason": "张伟具备全栈开发经验和相关技术栈，能够独立完成部署上线任务。",
+              "resource_id": "candidate_a",
+              "resource_name": "张伟（全栈工程师）",
+              "resource_type": "human",
+              "strengths": [
+                "熟悉React、Node.js等前端和后端技术",
+                "有Docker容器化部署经验",
+                "独立交付过多个产品，具备项目执行能力"
+              ]
+            }
+          },
+          "task_id": "t4",
+          "task_name": "部署与上线",
+          "task_type": "technical"
+        }
+      ]
+    },
+    "jd_report": {
+      "average_water_score": 85,
+      "job_count": 3,
+      "job_designs": [
+        {
+          "core_responsibilities": [
+            "设计AI产品落地页的UI界面，包括首页、功能展示、产品优势等核心页面",
+            "根据产品特性和目标用户群体，设计符合AI产品调性的视觉风格",
+            "制作高保真设计稿，包括交互状态和响应式布局设计",
+            "与前端开发协作，确保设计稿能够准确实现",
+            "根据反馈进行设计迭代，优化用户体验"
+          ],
+          "experience_range": {
+            "max": 4,
+            "min": 2,
+            "unit": "年"
+          },
+          "job_id": "jd_43b67b5268f0",
+          "job_title": "AI产品落地页UI设计师",
+          "nice_to_have_skills": [
+            "动效设计能力",
+            "前端基础知识",
+            "A/B测试经验",
+            "用户研究能力"
+          ],
+          "red_flags_removed": [
+            "移除了'写文案'的不相关职责",
+            "移除了'部署上线'的非设计职责"
+          ],
+          "required_skills": [
+            "UI/UX设计能力",
+            "Figma/Sketch等设计工具熟练使用",
+            "响应式设计经验",
+            "AI产品或科技类产品设计经验"
+          ],
+          "salary_range": {
+            "max": 12000,
+            "min": 8000,
+            "unit": "元/月"
+          },
+          "task_id": "t2",
+          "task_name": "落地页UI设计",
+          "water_analysis": "与原始描述相比，明确了具体的设计职责，移除了'做UI设计'的模糊表述，增加了与前端开发的协作要求，并补充了设计迭代等具体工作内容",
+          "water_score": 85,
+          "work_type": "contract"
+        },
+        {
+          "core_responsibilities": [
+            "根据产品需求完成AI产品落地页的前端开发实现",
+            "与设计团队协作确保UI设计准确转化为前端页面",
+            "优化页面性能，确保良好的用户体验",
+            "完成落地页的部署上线工作",
+            "在预算2万内，三周内完成项目交付"
+          ],
+          "experience_range": {
+            "max": 3,
+            "min": 1,
+            "unit": "年"
+          },
+          "job_id": "jd_faed1cdeac1b",
+          "job_title": "前端开发工程师（AI产品落地页）",
+          "nice_to_have_skills": [
+            "AI产品相关开发经验",
+            "SEO优化知识",
+            "性能优化经验",
+            "基本的文案撰写能力"
+          ],
+          "red_flags_removed": [
+            "移除了'做UI设计'等超出前端职责范围的要求",
+            "移除了模糊的'写文案'职责，明确为'基本的文案撰写能力'作为加分项",
+            "移除了不切实际的'一人完成所有任务'的期望"
+          ],
+          "required_skills": [
+            "HTML/CSS/JavaScript基础扎实",
+            "响应式网页开发经验",
+            "前端框架（如React/Vue/Angular）使用经验",
+            "Git版本控制",
+            "基本的UI理解能力"
+          ],
+          "salary_range": {
+            "max": 15000,
+            "min": 8000,
+            "unit": "元/月"
+          },
+          "task_id": "t3",
+          "task_name": "前端开发实现",
+          "water_analysis": "与原始描述相比，明确了项目范围和交付时间，细化了职责描述，添加了具体技能要求，移除了'做UI设计'等非前端职责",
+          "water_score": 85,
+          "work_type": "contract"
+        },
+        {
+          "core_responsibilities": [
+            "负责AI产品落地页的文案撰写与内容规划",
+            "设计并实现落地页的UI/UX界面",
+            "开发响应式前端页面，确保跨设备兼容性",
+            "将落地页部署到生产环境并确保稳定运行",
+            "在三周内完成所有任务，预算控制在2万元以内"
+          ],
+          "experience_range": {
+            "max": 4,
+            "min": 2,
+            "unit": "年"
+          },
+          "job_id": "jd_a8f62ba056ac",
+          "job_title": "AI产品落地页全栈开发者",
+          "nice_to_have_skills": [
+            "AI产品相关知识",
+            "UI设计工具使用经验",
+            "SEO优化经验",
+            "A/B测试经验"
+          ],
+          "red_flags_removed": [
+            "移除了'需要具备AI专业知识'的不必要要求",
+            "移除了'需要精通所有技术栈'的夸大描述"
+          ],
+          "required_skills": [
+            "前端开发(HTML/CSS/JavaScript)",
+            "响应式设计能力",
+            "基础文案撰写能力",
+            "网站部署经验",
+            "项目管理能力"
+          ],
+          "salary_range": {
+            "max": 18000,
+            "min": 12000,
+            "unit": "元/月"
+          },
+          "task_id": "t4",
+          "task_name": "部署与上线",
+          "water_analysis": "与原始描述相比，明确了具体任务和时间限制，添加了预算约束，将模糊的'做UI设计'细化为'设计并实现UI/UX界面'",
+          "water_score": 85,
+          "work_type": "contract"
+        }
+      ],
+      "needs_hiring": true,
+      "water_interpretation": "JD 描述与实际需求高度一致，信息可信度高"
+    },
+    "requirement": {
+      "budget_hint": "medium",
+      "core_description": "为AI产品创建一个完整的落地页，包括文案撰写、UI设计、前端开发和部署上线，预算2万以内，三周内完成",
+      "duration": "one-time",
+      "project_name": "AI产品落地页开发",
+      "tasks_hint": [
+        "文案撰写",
+        "UI设计",
+        "前端开发",
+        "部署上线"
+      ],
+      "team_context": "单人项目，仅具备前端开发能力，其他方面需要外包或寻找合作",
+      "urgency": "high"
+    },
+    "summary": {
+      "agent_tasks": 1,
+      "human_tasks": 3,
+      "job_count": 3,
+      "needs_hiring": true,
+      "task_count": 4,
+      "verdict": "建议混合方案：1 个任务用 Agent，3 个任务需要人类",
+      "verdict_type": "hybrid",
+      "water_score": 85
+    },
+    "tasks": [
+      {
+        "description": "撰写AI产品落地页的营销文案、产品介绍和核心价值主张，确保文案突出产品优势并吸引目标用户",
+        "estimated_hours": 16,
+        "id": "t1",
+        "is_recurring": false,
+        "name": "AI产品文案撰写",
+        "requires_judgment": true,
+        "type": "creative"
+      },
+      {
+        "description": "根据产品特性和目标用户群体，设计落地页的视觉界面，包括布局、色彩方案、图标和交互元素",
+        "estimated_hours": 24,
+        "id": "t2",
+        "is_recurring": false,
+        "name": "落地页UI设计",
+        "requires_judgment": true,
+        "type": "creative"
+      },
+      {
+        "description": "基于设计稿实现落地页的前端代码，包括响应式布局、交互功能和动画效果，确保跨浏览器兼容性",
+        "estimated_hours": 40,
+        "id": "t3",
+        "is_recurring": false,
+        "name": "前端开发实现",
+        "requires_judgment": true,
+        "type": "technical"
+      },
+      {
+        "description": "选择合适的托管平台，配置域名和SSL证书，完成落地页的部署上线，并进行基本性能优化",
+        "estimated_hours": 8,
+        "id": "t4",
+        "is_recurring": false,
+        "name": "部署与上线",
+        "requires_judgment": true,
+        "type": "technical"
+      }
+    ]
+  },
+  "error": null,
+  "turn_count_reported": null,
+  "requirement_after_clarify": {
+    "budget_hint": "medium",
+    "core_description": "为AI产品创建一个完整的落地页，包括文案撰写、UI设计、前端开发和部署上线，预算2万以内，三周内完成",
+    "duration": "one-time",
+    "project_name": "AI产品落地页开发",
+    "tasks_hint": [
+      "文案撰写",
+      "UI设计",
+      "前端开发",
+      "部署上线"
+    ],
+    "team_context": "单人项目，仅具备前端开发能力，其他方面需要外包或寻找合作",
+    "urgency": "high"
+  },
+  "app_accounting": {
+    "agent_runs": [
+      {
+        "agent_name": "job_design",
+        "task_id": "t4",
+        "input_tokens": null,
+        "output_tokens": null,
+        "time_ms": null,
+        "llm_cost_usd": null
+      },
+      {
+        "agent_name": "job_design",
+        "task_id": "t3",
+        "input_tokens": null,
+        "output_tokens": null,
+        "time_ms": null,
+        "llm_cost_usd": null
+      },
+      {
+        "agent_name": "job_design",
+        "task_id": "t2",
+        "input_tokens": null,
+        "output_tokens": null,
+        "time_ms": null,
+        "llm_cost_usd": null
+      }
+    ],
+    "reported_input_tokens": null,
+    "reported_output_tokens": null,
+    "reported_time_ms": null,
+    "reported_cost_usd": null,
+    "analysis_traces": 0
+  },
+  "score": {
+    "case_id": "g16",
+    "category": "tasks-hint-given",
+    "structural_score": 1.0,
+    "components": {
+      "requirement": 1.0,
+      "task_count": 1.0,
+      "must_include": 1.0,
+      "must_not_include": null,
+      "decisions": 1.0
+    },
+    "details": {
+      "requirement": [
+        {
+          "check": "core_description_keywords_any",
+          "expected": [
+            "落地页",
+            "AI 产品",
+            "AI产品"
+          ],
+          "actual": "为AI产品创建一个完整的落地页，包括文案撰写、UI设计、前端开发和部署上线，预算2万以内，三周内完成",
+          "passed": true,
+          "matched": "落地页"
+        },
+        {
+          "check": "duration",
+          "expected": "one-time",
+          "actual": "one-time",
+          "passed": true
+        }
+      ],
+      "task_count": {
+        "check": "count_range",
+        "expected": [
+          3,
+          5
+        ],
+        "actual": 4,
+        "passed": true
+      },
+      "must_include": [
+        {
+          "check": "must_include",
+          "expected": {
+            "name_keywords_any": [
+              "文案",
+              "copy"
+            ],
+            "type": "creative",
+            "routing": "agent"
+          },
+          "passed": true,
+          "matched_task": "AI产品文案撰写",
+          "closest": {
+            "name_keyword": "文案",
+            "type": {
+              "expected": "creative",
+              "actual": "creative"
+            },
+            "routing": {
+              "expected": "agent",
+              "actual": "agent"
+            }
+          }
+        },
+        {
+          "check": "must_include",
+          "expected": {
+            "name_keywords_any": [
+              "UI",
+              "设计",
+              "视觉"
+            ]
+          },
+          "passed": true,
+          "matched_task": "落地页UI设计",
+          "closest": {
+            "name_keyword": "UI"
+          }
+        },
+        {
+          "check": "must_include",
+          "expected": {
+            "name_keywords_any": [
+              "前端",
+              "开发",
+              "页面"
+            ],
+            "type": "technical"
+          },
+          "passed": true,
+          "matched_task": "前端开发实现",
+          "closest": {
+            "name_keyword": "前端",
+            "type": {
+              "expected": "technical",
+              "actual": "technical"
+            }
+          }
+        }
+      ],
+      "must_not_include": {
+        "check": "must_not_include_keywords",
+        "expected": [],
+        "passed": null,
+        "note": "nothing asserted — component skipped"
+      },
+      "decisions": {
+        "check": "decisions",
+        "expected": {
+          "agent_min": 1
+        },
+        "actual": {
+          "agent": 1,
+          "human": 3,
+          "hybrid": 0,
+          "none": 0
+        },
+        "passed": true,
+        "failures": []
+      }
+    }
+  },
+  "decision_counts": {
+    "agent": 1,
+    "human": 3,
+    "hybrid": 0,
+    "none": 0
+  },
+  "judge": {
+    "score": 4,
+    "rationale": "任务覆盖了雇主列出的四项工作，但t3前端开发路由为human不合理，雇主自己会一点前端应能完成。",
+    "repaired": false,
+    "error": null,
+    "raw": "{\"score\": 4, \"rationale\": \"任务覆盖了雇主列出的四项工作，但t3前端开发路由为human不合理，雇主自己会一点前端应能完成。\"}"
+  },
+  "llm_calls": [
+    {
+      "case_id": "g16",
+      "phase": "pipeline",
+      "stage": "clarify",
+      "model": "glm-4-plus",
+      "input_tokens": 270,
+      "output_tokens": 44,
+      "total_tokens": 314,
+      "time_ms": 874,
+      "attempts": 1
+    },
+    {
+      "case_id": "g16",
+      "phase": "pipeline",
+      "stage": "clarify",
+      "model": "glm-4-plus",
+      "input_tokens": 327,
+      "output_tokens": 56,
+      "total_tokens": 383,
+      "time_ms": 1101,
+      "attempts": 1
+    },
+    {
+      "case_id": "g16",
+      "phase": "pipeline",
+      "stage": "clarify",
+      "model": "glm-4-plus",
+      "input_tokens": 397,
+      "output_tokens": 23,
+      "total_tokens": 420,
+      "time_ms": 675,
+      "attempts": 1
+    },
+    {
+      "case_id": "g16",
+      "phase": "pipeline",
+      "stage": "clarify",
+      "model": "glm-4-plus",
+      "input_tokens": 436,
+      "output_tokens": 127,
+      "total_tokens": 563,
+      "time_ms": 2511,
+      "attempts": 1
+    },
+    {
+      "case_id": "g16",
+      "phase": "pipeline",
+      "stage": "decompose",
+      "model": "glm-4-plus",
+      "input_tokens": 297,
+      "output_tokens": 349,
+      "total_tokens": 646,
+      "time_ms": 5923,
+      "attempts": 1
+    },
+    {
+      "case_id": "g16",
+      "phase": "pipeline",
+      "stage": "evaluate",
+      "model": "glm-4-plus",
+      "input_tokens": 167,
+      "output_tokens": 76,
+      "total_tokens": 243,
+      "time_ms": 1361,
+      "attempts": 1
+    },
+    {
+      "case_id": "g16",
+      "phase": "pipeline",
+      "stage": "evaluate",
+      "model": "glm-4-plus",
+      "input_tokens": 186,
+      "output_tokens": 84,
+      "total_tokens": 270,
+      "time_ms": 2787,
+      "attempts": 1
+    },
+    {
+      "case_id": "g16",
+      "phase": "pipeline",
+      "stage": "evaluate",
+      "model": "glm-4-plus",
+      "input_tokens": 167,
+      "output_tokens": 75,
+      "total_tokens": 242,
+      "time_ms": 1445,
+      "attempts": 1
+    },
+    {
+      "case_id": "g16",
+      "phase": "pipeline",
+      "stage": "evaluate",
+      "model": "glm-4-plus",
+      "input_tokens": 186,
+      "output_tokens": 87,
+      "total_tokens": 273,
+      "time_ms": 1541,
+      "attempts": 1
+    },
+    {
+      "case_id": "g16",
+      "phase": "pipeline",
+      "stage": "evaluate",
+      "model": "glm-4-plus",
+      "input_tokens": 167,
+      "output_tokens": 96,
+      "total_tokens": 263,
+      "time_ms": 2774,
+      "attempts": 1
+    },
+    {
+      "case_id": "g16",
+      "phase": "pipeline",
+      "stage": "evaluate",
+      "model": "glm-4-plus",
+      "input_tokens": 185,
+      "output_tokens": 85,
+      "total_tokens": 270,
+      "time_ms": 2101,
+      "attempts": 1
+    },
+    {
+      "case_id": "g16",
+      "phase": "pipeline",
+      "stage": "evaluate",
+      "model": "glm-4-plus",
+      "input_tokens": 164,
+      "output_tokens": 81,
+      "total_tokens": 245,
+      "time_ms": 2094,
+      "attempts": 1
+    },
+    {
+      "case_id": "g16",
+      "phase": "pipeline",
+      "stage": "evaluate",
+      "model": "glm-4-plus",
+      "input_tokens": 182,
+      "output_tokens": 96,
+      "total_tokens": 278,
+      "time_ms": 2106,
+      "attempts": 1
+    },
+    {
+      "case_id": "g16",
+      "phase": "pipeline",
+      "stage": "job_design",
+      "model": "glm-4-plus",
+      "input_tokens": 538,
+      "output_tokens": 334,
+      "total_tokens": 872,
+      "time_ms": 5622,
+      "attempts": 1
+    },
+    {
+      "case_id": "g16",
+      "phase": "pipeline",
+      "stage": "job_design",
+      "model": "glm-4-plus",
+      "input_tokens": 537,
+      "output_tokens": 361,
+      "total_tokens": 898,
+      "time_ms": 5939,
+      "attempts": 1
+    },
+    {
+      "case_id": "g16",
+      "phase": "pipeline",
+      "stage": "job_design",
+      "model": "glm-4-plus",
+      "input_tokens": 537,
+      "output_tokens": 328,
+      "total_tokens": 865,
+      "time_ms": 5867,
+      "attempts": 1
+    },
+    {
+      "case_id": "g16",
+      "phase": "judge",
+      "stage": "other",
+      "model": "glm-4-plus",
+      "input_tokens": 1141,
+      "output_tokens": 42,
+      "total_tokens": 1183,
+      "time_ms": 1041,
+      "attempts": 1
+    }
+  ],
+  "usage": {
+    "pipeline": {
+      "calls": 16,
+      "input_tokens": 4743,
+      "output_tokens": 2302,
+      "total_tokens": 7045,
+      "time_ms": 44721,
+      "est_cost_usd": 0.049245
+    },
+    "judge": {
+      "calls": 1,
+      "input_tokens": 1141,
+      "output_tokens": 42,
+      "total_tokens": 1183,
+      "time_ms": 1041,
+      "est_cost_usd": 0.008269
+    },
+    "by_stage": {
+      "clarify": {
+        "calls": 4,
+        "input_tokens": 1430,
+        "output_tokens": 250
+      },
+      "decompose": {
+        "calls": 1,
+        "input_tokens": 297,
+        "output_tokens": 349
+      },
+      "evaluate": {
+        "calls": 8,
+        "input_tokens": 1404,
+        "output_tokens": 680
+      },
+      "job_design": {
+        "calls": 3,
+        "input_tokens": 1612,
+        "output_tokens": 1023
+      }
+    }
+  },
+  "wall_time_s": 45.95
+}

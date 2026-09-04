@@ -1,0 +1,1192 @@
+{
+  "case_id": "g10",
+  "category": "hiring-only",
+  "agent": "v2",
+  "started_at": "2026-09-04T06:13:11+00:00",
+  "session_id": "8d76aa11d744880e",
+  "http": {
+    "start": 200,
+    "reply": [
+      200,
+      200
+    ],
+    "decide": 200
+  },
+  "turns": 2,
+  "completed": true,
+  "hit_turn_cap": false,
+  "transcript": [
+    {
+      "role": "employer",
+      "text": "我们要在华东开拓线下渠道，需要有人常驻上海，负责拜访经销商、现场谈判、签合同，并且带两个实习生。"
+    },
+    {
+      "role": "pipeline",
+      "text": "请问这个渠道开拓计划是针对特定产品线还是整个公司的业务？以及目前是否有明确的经销商目标数量或区域范围？"
+    },
+    {
+      "role": "employer",
+      "text": "月薪预算 2 万到 3 万，另有提成。"
+    },
+    {
+      "role": "pipeline",
+      "text": "\n请问这个渠道开拓计划有明确的时间框架吗？比如是3个月、6个月还是一年的项目？另外，您期望这位常驻上海的负责人在多长时间内建立起初步的经销商网络？"
+    },
+    {
+      "role": "employer",
+      "text": "这是长期岗位，希望人尽快到岗，至少做满两年。"
+    },
+    {
+      "role": "pipeline",
+      "text": "\n[REQUIREMENT_COMPLETE]\n{\n  \"project_name\": \"华东地区线下渠道拓展\",\n  \"core_description\": \"在华东地区建立并管理线下销售渠道，包括经销商开发、拜访、谈判和合同签订，同时带领两名实习生团队\",\n  \"tasks_hint\": [\"开发并拜访华东地区经销商\", \"现场谈判与合同签订\", \"管理两名实习生团队\", \"维护现有经销商关系\"],\n  \"duration\": \"ongoing\",\n  \"team_context\": \"需要一位常驻上海的渠道负责人，能够独立开展工作并管理小型团队\",\n  \"urgency\": \"high\",\n  \"budget_hint\": \"medium\"\n}"
+    }
+  ],
+  "response": {
+    "decisions": {
+      "decisions": [
+        {
+          "estimated_hours": 16,
+          "evaluations": [
+            {
+              "can_complete": false,
+              "confidence": 0.2,
+              "estimated_time": "无法准确估算",
+              "reason": "李娜缺乏经销商开发相关的经验和技能",
+              "resource_id": "candidate_b",
+              "resource_name": "李娜（产品经理）",
+              "resource_type": "human",
+              "strengths": [
+                "需求分析能力",
+                "AI产品设计经验"
+              ]
+            },
+            {
+              "can_complete": false,
+              "confidence": 0.2,
+              "estimated_time": "不适用",
+              "reason": "文案撰写Agent仅擅长文本创作，无法执行经销商开发的战略任务",
+              "resource_id": "agent_content",
+              "resource_name": "文案撰写 Agent",
+              "resource_type": "agent",
+              "strengths": [
+                "营销文案创作",
+                "产品描述撰写",
+                "SEO文章生成",
+                "邮件撰写"
+              ]
+            },
+            {
+              "can_complete": false,
+              "confidence": 0.2,
+              "estimated_time": "无法准确估算，因为任务与候选人专业领域完全不匹配",
+              "reason": "张伟是全栈工程师，缺乏经销商开发所需的行业经验和销售技能",
+              "resource_id": "candidate_a",
+              "resource_name": "张伟（全栈工程师）",
+              "resource_type": "human",
+              "strengths": [
+                "技术背景可能有助于理解产品特性",
+                "独立交付经验显示有项目执行能力"
+              ]
+            }
+          ],
+          "is_recurring": true,
+          "recommendation": {
+            "cost_hint": "需要评估薪资",
+            "decision": "human",
+            "reason": "此任务需要人类处理，建议招聘",
+            "resource": {
+              "can_complete": false,
+              "confidence": 0.2,
+              "estimated_time": "无法准确估算",
+              "reason": "李娜缺乏经销商开发相关的经验和技能",
+              "resource_id": "candidate_b",
+              "resource_name": "李娜（产品经理）",
+              "resource_type": "human",
+              "strengths": [
+                "需求分析能力",
+                "AI产品设计经验"
+              ]
+            }
+          },
+          "requires_judgment": true,
+          "task_description": "在华东地区识别、筛选并联系潜在经销商合作伙伴，建立初步合作关系",
+          "task_id": "t1",
+          "task_name": "华东地区经销商开发",
+          "task_type": "strategic"
+        },
+        {
+          "estimated_hours": 12,
+          "evaluations": [
+            {
+              "can_complete": false,
+              "confidence": 0.1,
+              "estimated_time": "不适用",
+              "reason": "文案撰写Agent无法执行实地拜访和谈判等需要物理互动和判断力的操作任务",
+              "resource_id": "agent_content",
+              "resource_name": "文案撰写 Agent",
+              "resource_type": "agent",
+              "strengthes": [
+                "擅长文案创作",
+                "能够快速生成营销内容"
+              ]
+            },
+            {
+              "can_complete": false,
+              "confidence": 0.1,
+              "estimated_time": "不适用",
+              "reason": "数据分析Agent无法执行实地拜访和谈判等需要物理互动和人际沟通的任务",
+              "resource_id": "agent_data",
+              "resource_name": "数据分析 Agent",
+              "resource_type": "agent",
+              "strengths": [
+                "数据清洗",
+                "报表生成",
+                "数据可视化",
+                "统计分析"
+              ]
+            },
+            {
+              "can_complete": false,
+              "confidence": 0.1,
+              "estimated_time": "不适用",
+              "reason": "张伟是全栈工程师，缺乏经销商实地拜访与谈判的经验和技能",
+              "resource_id": "candidate_a",
+              "resource_name": "张伟（全栈工程师）",
+              "resource_type": "human",
+              "strengths": [
+                "无相关优势"
+              ]
+            }
+          ],
+          "is_recurring": true,
+          "recommendation": {
+            "cost_hint": "需要评估薪资",
+            "decision": "human",
+            "reason": "此任务需要人类处理，建议招聘",
+            "resource": {
+              "can_complete": false,
+              "confidence": 0.1,
+              "estimated_time": "不适用",
+              "reason": "文案撰写Agent无法执行实地拜访和谈判等需要物理互动和判断力的操作任务",
+              "resource_id": "agent_content",
+              "resource_name": "文案撰写 Agent",
+              "resource_type": "agent",
+              "strengthes": [
+                "擅长文案创作",
+                "能够快速生成营销内容"
+              ]
+            }
+          },
+          "requires_judgment": true,
+          "task_description": "安排并执行对潜在及现有经销商的实地拜访，进行业务洽谈和合作条件谈判",
+          "task_id": "t2",
+          "task_name": "经销商实地拜访与谈判",
+          "task_type": "operational"
+        },
+        {
+          "estimated_hours": 8,
+          "evaluations": [
+            {
+              "can_complete": false,
+              "confidence": 0.3,
+              "estimated_time": "无法准确估算，需专业法务支持",
+              "reason": "李娜缺乏合同起草、审核和法律合规方面的专业知识和经验",
+              "resource_id": "candidate_b",
+              "resource_name": "李娜（产品经理）",
+              "resource_type": "human",
+              "strengths": [
+                "需求分析能力",
+                "AI产品设计经验"
+              ]
+            },
+            {
+              "can_complete": false,
+              "confidence": 0.2,
+              "estimated_time": "不适用",
+              "reason": "代码生成 Agent 不具备法律专业知识和合同起草能力",
+              "resource_id": "agent_code",
+              "resource_name": "代码生成 Agent",
+              "resource_type": "agent",
+              "strengths": [
+                "代码生成",
+                "技术问题解决"
+              ]
+            },
+            {
+              "can_complete": false,
+              "confidence": 0.2,
+              "estimated_time": "无法准确估算，需专业法务人员介入",
+              "reason": "张伟是全栈工程师，缺乏法律合同起草和流程管理的专业知识",
+              "resource_id": "candidate_a",
+              "resource_name": "张伟（全栈工程师）",
+              "resource_type": "human",
+              "strengths": [
+                "技术文档编写经验",
+                "项目流程理解能力"
+              ]
+            }
+          ],
+          "is_recurring": true,
+          "recommendation": {
+            "cost_hint": "需要评估薪资",
+            "decision": "human",
+            "reason": "此任务需要人类处理，建议招聘",
+            "resource": {
+              "can_complete": false,
+              "confidence": 0.3,
+              "estimated_time": "无法准确估算，需专业法务支持",
+              "reason": "李娜缺乏合同起草、审核和法律合规方面的专业知识和经验",
+              "resource_id": "candidate_b",
+              "resource_name": "李娜（产品经理）",
+              "resource_type": "human",
+              "strengths": [
+                "需求分析能力",
+                "AI产品设计经验"
+              ]
+            }
+          },
+          "requires_judgment": true,
+          "task_description": "起草、审核并完成与经销商的合作合同，确保条款合规并跟进签约流程",
+          "task_id": "t3",
+          "task_name": "合同签订与流程管理",
+          "task_type": "technical"
+        },
+        {
+          "estimated_hours": 10,
+          "evaluations": [
+            {
+              "can_complete": false,
+              "confidence": 0.2,
+              "estimated_time": "不适用",
+              "reason": "文案撰写Agent仅擅长文本创作，缺乏人际沟通和关系维护能力",
+              "resource_id": "agent_content",
+              "resource_name": "文案撰写 Agent",
+              "resource_type": "agent",
+              "strengths": [
+                "可协助撰写经销商沟通邮件",
+                "能生成产品描述材料"
+              ]
+            },
+            {
+              "can_complete": false,
+              "confidence": 0.2,
+              "estimated_time": "不适用",
+              "reason": "数据分析Agent无法执行人际沟通和关系维护任务",
+              "resource_id": "agent_data",
+              "resource_name": "数据分析 Agent",
+              "resource_type": "agent",
+              "strengths": [
+                "数据清洗",
+                "报表生成",
+                "数据可视化",
+                "统计分析"
+              ]
+            },
+            {
+              "can_complete": false,
+              "confidence": 0.2,
+              "estimated_time": "不适用",
+              "reason": "张伟是全栈工程师，缺乏经销商关系维护所需的沟通和客户管理经验",
+              "resource_id": "candidate_a",
+              "resource_name": "张伟（全栈工程师）",
+              "resource_type": "human",
+              "strengths": [
+                "技术背景可能有助于理解产品问题",
+                "独立交付产品的经验可能有助于解决问题"
+              ]
+            }
+          ],
+          "is_recurring": true,
+          "recommendation": {
+            "cost_hint": "需要评估薪资",
+            "decision": "human",
+            "reason": "此任务需要人类处理，建议招聘",
+            "resource": {
+              "can_complete": false,
+              "confidence": 0.2,
+              "estimated_time": "不适用",
+              "reason": "文案撰写Agent仅擅长文本创作，缺乏人际沟通和关系维护能力",
+              "resource_id": "agent_content",
+              "resource_name": "文案撰写 Agent",
+              "resource_type": "agent",
+              "strengths": [
+                "可协助撰写经销商沟通邮件",
+                "能生成产品描述材料"
+              ]
+            }
+          },
+          "requires_judgment": true,
+          "task_description": "定期与现有经销商沟通，解决合作问题，收集反馈并维护长期合作关系",
+          "task_id": "t4",
+          "task_name": "经销商关系维护",
+          "task_type": "operational"
+        },
+        {
+          "estimated_hours": 6,
+          "evaluations": [
+            {
+              "can_complete": false,
+              "confidence": 0.3,
+              "estimated_time": "无法准确估算",
+              "reason": "缺乏团队管理经验和实习生指导相关技能",
+              "resource_id": "candidate_a",
+              "resource_name": "张伟（全栈工程师）",
+              "resource_type": "human",
+              "strengths": [
+                "技术能力全面",
+                "有独立交付产品的经验"
+              ]
+            },
+            {
+              "can_complete": false,
+              "confidence": 0.2,
+              "estimated_time": "不适用",
+              "reason": "文案撰写Agent不具备管理实习生团队所需的人际互动和判断能力",
+              "resource_id": "agent_content",
+              "resource_name": "文案撰写 Agent",
+              "resource_type": "agent",
+              "strengths": [
+                "擅长文案创作",
+                "能够高效完成写作任务"
+              ]
+            },
+            {
+              "can_complete": false,
+              "confidence": 0.2,
+              "estimated_time": "不适用",
+              "reason": "数据分析Agent缺乏人际互动和团队管理能力",
+              "resource_id": "agent_data",
+              "resource_name": "数据分析 Agent",
+              "resource_type": "agent",
+              "strengths": [
+                "数据处理能力",
+                "自动化分析"
+              ]
+            }
+          ],
+          "is_recurring": true,
+          "recommendation": {
+            "cost_hint": "需要评估薪资",
+            "decision": "human",
+            "reason": "此任务需要人类处理，建议招聘",
+            "resource": {
+              "can_complete": false,
+              "confidence": 0.3,
+              "estimated_time": "无法准确估算",
+              "reason": "缺乏团队管理经验和实习生指导相关技能",
+              "resource_id": "candidate_a",
+              "resource_name": "张伟（全栈工程师）",
+              "resource_type": "human",
+              "strengths": [
+                "技术能力全面",
+                "有独立交付产品的经验"
+              ]
+            }
+          },
+          "requires_judgment": true,
+          "task_description": "指导、培训并管理两名实习生，分配工作任务，评估绩效并提供职业发展支持",
+          "task_id": "t5",
+          "task_name": "实习生团队管理",
+          "task_type": "operational"
+        }
+      ]
+    },
+    "jd_report": {
+      "average_water_score": 85,
+      "job_count": 5,
+      "job_designs": [
+        {
+          "core_responsibilities": [
+            "在华东地区识别、筛选并联系潜在经销商合作伙伴",
+            "负责经销商拜访、谈判和合同签订工作",
+            "带领两名实习生完成渠道拓展任务",
+            "建立并维护与华东地区经销商的良好合作关系"
+          ],
+          "experience_range": {
+            "max": 4,
+            "min": 2,
+            "unit": "年"
+          },
+          "job_id": "jd_0042174c03f8",
+          "job_title": "华东渠道拓展专员",
+          "nice_to_have_skills": [
+            "华东地区市场资源",
+            "销售数据分析能力",
+            "CRM系统使用经验"
+          ],
+          "red_flags_removed": [
+            "移除了模糊的'开拓线下渠道'表述",
+            "将'带两个实习生'具体化为团队管理职责"
+          ],
+          "required_skills": [
+            "线下渠道拓展经验",
+            "经销商谈判能力",
+            "合同管理知识",
+            "团队管理经验"
+          ],
+          "salary_range": {
+            "max": 28000,
+            "min": 18000,
+            "unit": "元/月"
+          },
+          "task_id": "t1",
+          "task_name": "华东地区经销商开发",
+          "water_analysis": "与原始描述相比，明确了具体工作内容，细化了职责范围，合理化了经验要求",
+          "water_score": 85,
+          "work_type": "full-time"
+        },
+        {
+          "core_responsibilities": [
+            "在华东地区开发并维护线下销售渠道，包括潜在经销商的寻找与评估",
+            "安排并执行对经销商的实地拜访，进行业务洽谈和合作条件谈判",
+            "独立完成销售合同的起草、谈判与签订",
+            "管理两名实习生，指导其完成渠道拓展相关工作",
+            "定期汇报渠道拓展进展与市场反馈"
+          ],
+          "experience_range": {
+            "max": 4,
+            "min": 2,
+            "unit": "年"
+          },
+          "job_id": "jd_cd1f591a8574",
+          "job_title": "华东渠道拓展专员",
+          "nice_to_have_skills": [
+            "快消品或零售行业渠道经验",
+            "华东地区人脉资源",
+            "CRM系统使用经验"
+          ],
+          "red_flags_removed": [
+            "移除了'带两个实习生'的模糊表述，改为明确的管理职责",
+            "移除了'开拓'等夸大词汇，改为具体的开发与维护工作"
+          ],
+          "required_skills": [
+            "线下渠道开发与维护经验",
+            "商务谈判与合同签订能力",
+            "团队管理经验",
+            "市场分析与客户评估能力"
+          ],
+          "salary_range": {
+            "max": 28000,
+            "min": 18000,
+            "unit": "元/月"
+          },
+          "task_id": "t2",
+          "task_name": "经销商实地拜访与谈判",
+          "water_analysis": "与原始描述相比，明确了具体工作内容，细化了职责范围，合理化了经验要求",
+          "water_score": 85,
+          "work_type": "full-time"
+        },
+        {
+          "core_responsibilities": [
+            "在华东地区开发并维护线下销售渠道",
+            "定期拜访经销商，进行业务洽谈和合作谈判",
+            "起草、审核并完成与经销商的合作合同，确保条款合规",
+            "跟进签约流程，确保合同顺利执行",
+            "带领两名实习生，指导其完成渠道拓展相关工作"
+          ],
+          "experience_range": {
+            "max": 4,
+            "min": 2,
+            "unit": "年"
+          },
+          "job_id": "jd_4eae912b0063",
+          "job_title": "华东渠道拓展专员",
+          "nice_to_have_skills": [
+            "华东地区行业资源",
+            "法律合规知识",
+            "数据分析能力"
+          ],
+          "red_flags_removed": [
+            "移除了模糊的'开拓线下渠道'表述，替换为具体的'开发并维护线下销售渠道'"
+          ],
+          "required_skills": [
+            "销售渠道开发与管理经验",
+            "商务谈判能力",
+            "合同起草与审核能力",
+            "团队管理经验"
+          ],
+          "salary_range": {
+            "max": 28000,
+            "min": 18000,
+            "unit": "元/月"
+          },
+          "task_id": "t3",
+          "task_name": "合同签订与流程管理",
+          "water_analysis": "与原始描述相比，明确了具体工作内容，细化了职责描述，将'带两个实习生'具体化为带领实习生完成渠道拓展相关工作",
+          "water_score": 85,
+          "work_type": "full-time"
+        },
+        {
+          "core_responsibilities": [
+            "在华东地区开发并维护线下销售渠道，包括经销商拜访、谈判和合同签订",
+            "定期与现有经销商沟通，解决合作问题，收集市场反馈",
+            "带领两名实习生团队，指导日常工作并评估表现",
+            "制定并执行华东地区渠道拓展计划，达成销售目标"
+          ],
+          "experience_range": {
+            "max": 4,
+            "min": 2,
+            "unit": "年"
+          },
+          "job_id": "jd_6c4b34727916",
+          "job_title": "华东渠道拓展专员",
+          "nice_to_have_skills": [
+            "华东地区行业资源",
+            "销售数据分析能力",
+            "CRM系统使用经验"
+          ],
+          "red_flags_removed": [
+            "移除了模糊的'开拓渠道'描述，替换为具体可衡量的职责",
+            "移除了不合理的'带两个实习生'作为核心要求，调整为团队管理职责的一部分"
+          ],
+          "required_skills": [
+            "线下渠道开发与维护经验",
+            "经销商谈判与合同管理能力",
+            "团队管理经验",
+            "市场分析与客户需求判断能力"
+          ],
+          "salary_range": {
+            "max": 28000,
+            "min": 18000,
+            "unit": "元/月"
+          },
+          "task_id": "t4",
+          "task_name": "经销商关系维护",
+          "water_analysis": "与原始描述相比，明确了具体工作内容，细化了职责范围，合理化了经验要求",
+          "water_score": 85,
+          "work_type": "full-time"
+        },
+        {
+          "core_responsibilities": [
+            "在华东地区开发并维护线下销售渠道，包括经销商拜访、关系建立和合作洽谈",
+            "独立完成经销商谈判和合同签订工作，确保达成销售目标",
+            "指导、培训并管理两名实习生，分配日常工作任务，评估绩效并提供反馈",
+            "定期收集市场信息，分析渠道拓展效果，提出优化建议"
+          ],
+          "experience_range": {
+            "max": 4,
+            "min": 2,
+            "unit": "年"
+          },
+          "job_id": "jd_108775520994",
+          "job_title": "华东渠道拓展专员",
+          "nice_to_have_skills": [
+            "华东地区市场资源",
+            "销售数据分析能力",
+            "行业相关产品知识"
+          ],
+          "red_flags_removed": [
+            "移除了'带两个实习生'的模糊表述，明确了具体管理职责",
+            "移除了'开拓线下渠道'的夸大表述，具体化为开发和维护现有渠道"
+          ],
+          "required_skills": [
+            "线下渠道开发和经销商管理经验",
+            "商务谈判和合同签订能力",
+            "团队管理和人员指导经验",
+            "良好的沟通协调能力和抗压能力"
+          ],
+          "salary_range": {
+            "max": 28000,
+            "min": 18000,
+            "unit": "元/月"
+          },
+          "task_id": "t5",
+          "task_name": "实习生团队管理",
+          "water_analysis": "与原始描述相比，明确了具体工作内容和技能要求，细化了团队管理职责，提供了合理的薪资范围",
+          "water_score": 85,
+          "work_type": "full-time"
+        }
+      ],
+      "needs_hiring": true,
+      "water_interpretation": "JD 描述与实际需求高度一致，信息可信度高"
+    },
+    "requirement": {
+      "budget_hint": "medium",
+      "core_description": "在华东地区建立并管理线下销售渠道，包括经销商开发、拜访、谈判和合同签订，同时带领两名实习生团队",
+      "duration": "ongoing",
+      "project_name": "华东地区线下渠道拓展",
+      "tasks_hint": [
+        "开发并拜访华东地区经销商",
+        "现场谈判与合同签订",
+        "管理两名实习生团队",
+        "维护现有经销商关系"
+      ],
+      "team_context": "需要一位常驻上海的渠道负责人，能够独立开展工作并管理小型团队",
+      "urgency": "high"
+    },
+    "summary": {
+      "agent_tasks": 0,
+      "human_tasks": 5,
+      "job_count": 5,
+      "needs_hiring": true,
+      "task_count": 5,
+      "verdict": "建议招聘，当前 Agent 无法满足需求",
+      "verdict_type": "human_only",
+      "water_score": 85
+    },
+    "tasks": [
+      {
+        "description": "在华东地区识别、筛选并联系潜在经销商合作伙伴，建立初步合作关系",
+        "estimated_hours": 16,
+        "id": "t1",
+        "is_recurring": true,
+        "name": "华东地区经销商开发",
+        "requires_judgment": true,
+        "type": "strategic"
+      },
+      {
+        "description": "安排并执行对潜在及现有经销商的实地拜访，进行业务洽谈和合作条件谈判",
+        "estimated_hours": 12,
+        "id": "t2",
+        "is_recurring": true,
+        "name": "经销商实地拜访与谈判",
+        "requires_judgment": true,
+        "type": "operational"
+      },
+      {
+        "description": "起草、审核并完成与经销商的合作合同，确保条款合规并跟进签约流程",
+        "estimated_hours": 8,
+        "id": "t3",
+        "is_recurring": true,
+        "name": "合同签订与流程管理",
+        "requires_judgment": true,
+        "type": "technical"
+      },
+      {
+        "description": "定期与现有经销商沟通，解决合作问题，收集反馈并维护长期合作关系",
+        "estimated_hours": 10,
+        "id": "t4",
+        "is_recurring": true,
+        "name": "经销商关系维护",
+        "requires_judgment": true,
+        "type": "operational"
+      },
+      {
+        "description": "指导、培训并管理两名实习生，分配工作任务，评估绩效并提供职业发展支持",
+        "estimated_hours": 6,
+        "id": "t5",
+        "is_recurring": true,
+        "name": "实习生团队管理",
+        "requires_judgment": true,
+        "type": "operational"
+      }
+    ]
+  },
+  "error": null,
+  "turn_count_reported": 3,
+  "requirement_after_clarify": {
+    "budget_hint": "medium",
+    "core_description": "在华东地区建立并管理线下销售渠道，包括经销商开发、拜访、谈判和合同签订，同时带领两名实习生团队",
+    "duration": "ongoing",
+    "project_name": "华东地区线下渠道拓展",
+    "tasks_hint": [
+      "开发并拜访华东地区经销商",
+      "现场谈判与合同签订",
+      "管理两名实习生团队",
+      "维护现有经销商关系"
+    ],
+    "team_context": "需要一位常驻上海的渠道负责人，能够独立开展工作并管理小型团队",
+    "urgency": "high"
+  },
+  "app_accounting": {
+    "agent_runs": [
+      {
+        "agent_name": "job_design",
+        "task_id": "t5",
+        "input_tokens": 3735,
+        "output_tokens": 1666,
+        "time_ms": 34871,
+        "llm_cost_usd": "0.03775299"
+      },
+      {
+        "agent_name": "job_design",
+        "task_id": "t4",
+        "input_tokens": 3735,
+        "output_tokens": 1666,
+        "time_ms": 34871,
+        "llm_cost_usd": "0.03775299"
+      },
+      {
+        "agent_name": "job_design",
+        "task_id": "t3",
+        "input_tokens": 3735,
+        "output_tokens": 1666,
+        "time_ms": 34871,
+        "llm_cost_usd": "0.03775299"
+      },
+      {
+        "agent_name": "job_design",
+        "task_id": "t2",
+        "input_tokens": 3735,
+        "output_tokens": 1666,
+        "time_ms": 34871,
+        "llm_cost_usd": "0.03775299"
+      },
+      {
+        "agent_name": "job_design",
+        "task_id": "t1",
+        "input_tokens": 3735,
+        "output_tokens": 1666,
+        "time_ms": 34871,
+        "llm_cost_usd": "0.03775299"
+      }
+    ],
+    "reported_input_tokens": 3735,
+    "reported_output_tokens": 1666,
+    "reported_time_ms": 34871,
+    "reported_cost_usd": "0.03775299",
+    "analysis_traces": 20
+  },
+  "score": {
+    "case_id": "g10",
+    "category": "hiring-only",
+    "structural_score": 1.0,
+    "components": {
+      "requirement": 1.0,
+      "task_count": 1.0,
+      "must_include": 1.0,
+      "must_not_include": 1.0,
+      "decisions": 1.0
+    },
+    "details": {
+      "requirement": [
+        {
+          "check": "core_description_keywords_any",
+          "expected": [
+            "线下",
+            "经销商",
+            "渠道",
+            "谈判"
+          ],
+          "actual": "在华东地区建立并管理线下销售渠道，包括经销商开发、拜访、谈判和合同签订，同时带领两名实习生团队",
+          "passed": true,
+          "matched": "线下"
+        },
+        {
+          "check": "duration",
+          "expected": "ongoing",
+          "actual": "ongoing",
+          "passed": true
+        }
+      ],
+      "task_count": {
+        "check": "count_range",
+        "expected": [
+          3,
+          5
+        ],
+        "actual": 5,
+        "passed": true
+      },
+      "must_include": [
+        {
+          "check": "must_include",
+          "expected": {
+            "name_keywords_any": [
+              "拜访",
+              "经销商",
+              "谈判",
+              "商务"
+            ],
+            "routing": "human",
+            "requires_judgment": true
+          },
+          "passed": true,
+          "matched_task": "华东地区经销商开发",
+          "closest": {
+            "name_keyword": "经销商",
+            "requires_judgment": {
+              "expected": true,
+              "actual": true
+            },
+            "routing": {
+              "expected": "human",
+              "actual": "human"
+            }
+          }
+        },
+        {
+          "check": "must_include",
+          "expected": {
+            "name_keywords_any": [
+              "合同",
+              "签约",
+              "签订"
+            ],
+            "routing": "human",
+            "requires_judgment": true
+          },
+          "passed": true,
+          "matched_task": "合同签订与流程管理",
+          "closest": {
+            "name_keyword": "合同",
+            "requires_judgment": {
+              "expected": true,
+              "actual": true
+            },
+            "routing": {
+              "expected": "human",
+              "actual": "human"
+            }
+          }
+        }
+      ],
+      "must_not_include": {
+        "check": "must_not_include_keywords",
+        "expected": [
+          "自动化客服",
+          "Agent 自动",
+          "代码"
+        ],
+        "passed": true,
+        "violations": []
+      },
+      "decisions": {
+        "check": "decisions",
+        "expected": {
+          "human_min": 2,
+          "agent_max": 1
+        },
+        "actual": {
+          "agent": 0,
+          "human": 5,
+          "hybrid": 0,
+          "none": 0
+        },
+        "passed": true,
+        "failures": []
+      }
+    }
+  },
+  "decision_counts": {
+    "agent": 0,
+    "human": 5,
+    "hybrid": 0,
+    "none": 0
+  },
+  "judge": {
+    "score": 5,
+    "rationale": "任务路由全部判给human，正确识别了线下拜访、谈判、签合同等必须由人类完成的工作，没有错误地将这些任务分配给AI Agent。",
+    "repaired": false,
+    "error": null,
+    "raw": "{\"score\": 5, \"rationale\": \"任务路由全部判给human，正确识别了线下拜访、谈判、签合同等必须由人类完成的工作，没有错误地将这些任务分配给AI Agent。\"}"
+  },
+  "llm_calls": [
+    {
+      "case_id": "g10",
+      "phase": "pipeline",
+      "stage": "clarify",
+      "model": "glm-4-plus",
+      "input_tokens": 249,
+      "output_tokens": 27,
+      "total_tokens": 276,
+      "time_ms": 736,
+      "attempts": 1
+    },
+    {
+      "case_id": "g10",
+      "phase": "pipeline",
+      "stage": "clarify",
+      "model": "glm-4-plus",
+      "input_tokens": 296,
+      "output_tokens": 43,
+      "total_tokens": 339,
+      "time_ms": 924,
+      "attempts": 1
+    },
+    {
+      "case_id": "g10",
+      "phase": "pipeline",
+      "stage": "clarify",
+      "model": "glm-4-plus",
+      "input_tokens": 360,
+      "output_tokens": 133,
+      "total_tokens": 493,
+      "time_ms": 2820,
+      "attempts": 1
+    },
+    {
+      "case_id": "g10",
+      "phase": "pipeline",
+      "stage": "decompose",
+      "model": "glm-4-plus",
+      "input_tokens": 304,
+      "output_tokens": 402,
+      "total_tokens": 706,
+      "time_ms": 7839,
+      "attempts": 1
+    },
+    {
+      "case_id": "g10",
+      "phase": "pipeline",
+      "stage": "evaluate",
+      "model": "glm-4-plus",
+      "input_tokens": 179,
+      "output_tokens": 62,
+      "total_tokens": 241,
+      "time_ms": 1487,
+      "attempts": 1
+    },
+    {
+      "case_id": "g10",
+      "phase": "pipeline",
+      "stage": "evaluate",
+      "model": "glm-4-plus",
+      "input_tokens": 158,
+      "output_tokens": 76,
+      "total_tokens": 234,
+      "time_ms": 1302,
+      "attempts": 1
+    },
+    {
+      "case_id": "g10",
+      "phase": "pipeline",
+      "stage": "evaluate",
+      "model": "glm-4-plus",
+      "input_tokens": 177,
+      "output_tokens": 87,
+      "total_tokens": 264,
+      "time_ms": 2031,
+      "attempts": 1
+    },
+    {
+      "case_id": "g10",
+      "phase": "pipeline",
+      "stage": "evaluate",
+      "model": "glm-4-plus",
+      "input_tokens": 163,
+      "output_tokens": 73,
+      "total_tokens": 236,
+      "time_ms": 1592,
+      "attempts": 1
+    },
+    {
+      "case_id": "g10",
+      "phase": "pipeline",
+      "stage": "evaluate",
+      "model": "glm-4-plus",
+      "input_tokens": 161,
+      "output_tokens": 74,
+      "total_tokens": 235,
+      "time_ms": 2585,
+      "attempts": 1
+    },
+    {
+      "case_id": "g10",
+      "phase": "pipeline",
+      "stage": "evaluate",
+      "model": "glm-4-plus",
+      "input_tokens": 182,
+      "output_tokens": 64,
+      "total_tokens": 246,
+      "time_ms": 1361,
+      "attempts": 1
+    },
+    {
+      "case_id": "g10",
+      "phase": "pipeline",
+      "stage": "evaluate",
+      "model": "glm-4-plus",
+      "input_tokens": 161,
+      "output_tokens": 63,
+      "total_tokens": 224,
+      "time_ms": 1376,
+      "attempts": 1
+    },
+    {
+      "case_id": "g10",
+      "phase": "pipeline",
+      "stage": "evaluate",
+      "model": "glm-4-plus",
+      "input_tokens": 179,
+      "output_tokens": 78,
+      "total_tokens": 257,
+      "time_ms": 1209,
+      "attempts": 1
+    },
+    {
+      "case_id": "g10",
+      "phase": "pipeline",
+      "stage": "evaluate",
+      "model": "glm-4-plus",
+      "input_tokens": 181,
+      "output_tokens": 73,
+      "total_tokens": 254,
+      "time_ms": 1511,
+      "attempts": 1
+    },
+    {
+      "case_id": "g10",
+      "phase": "pipeline",
+      "stage": "evaluate",
+      "model": "glm-4-plus",
+      "input_tokens": 158,
+      "output_tokens": 73,
+      "total_tokens": 231,
+      "time_ms": 1217,
+      "attempts": 1
+    },
+    {
+      "case_id": "g10",
+      "phase": "pipeline",
+      "stage": "evaluate",
+      "model": "glm-4-plus",
+      "input_tokens": 156,
+      "output_tokens": 68,
+      "total_tokens": 224,
+      "time_ms": 1887,
+      "attempts": 1
+    },
+    {
+      "case_id": "g10",
+      "phase": "pipeline",
+      "stage": "evaluate",
+      "model": "glm-4-plus",
+      "input_tokens": 177,
+      "output_tokens": 78,
+      "total_tokens": 255,
+      "time_ms": 1225,
+      "attempts": 1
+    },
+    {
+      "case_id": "g10",
+      "phase": "pipeline",
+      "stage": "evaluate",
+      "model": "glm-4-plus",
+      "input_tokens": 159,
+      "output_tokens": 68,
+      "total_tokens": 227,
+      "time_ms": 1261,
+      "attempts": 1
+    },
+    {
+      "case_id": "g10",
+      "phase": "pipeline",
+      "stage": "evaluate",
+      "model": "glm-4-plus",
+      "input_tokens": 157,
+      "output_tokens": 60,
+      "total_tokens": 217,
+      "time_ms": 1407,
+      "attempts": 1
+    },
+    {
+      "case_id": "g10",
+      "phase": "pipeline",
+      "stage": "evaluate",
+      "model": "glm-4-plus",
+      "input_tokens": 178,
+      "output_tokens": 64,
+      "total_tokens": 242,
+      "time_ms": 1101,
+      "attempts": 1
+    },
+    {
+      "case_id": "g10",
+      "phase": "pipeline",
+      "stage": "job_design",
+      "model": "glm-4-plus",
+      "input_tokens": 529,
+      "output_tokens": 263,
+      "total_tokens": 792,
+      "time_ms": 5245,
+      "attempts": 1
+    },
+    {
+      "case_id": "g10",
+      "phase": "pipeline",
+      "stage": "job_design",
+      "model": "glm-4-plus",
+      "input_tokens": 534,
+      "output_tokens": 313,
+      "total_tokens": 847,
+      "time_ms": 7768,
+      "attempts": 1
+    },
+    {
+      "case_id": "g10",
+      "phase": "pipeline",
+      "stage": "job_design",
+      "model": "glm-4-plus",
+      "input_tokens": 531,
+      "output_tokens": 290,
+      "total_tokens": 821,
+      "time_ms": 5777,
+      "attempts": 1
+    },
+    {
+      "case_id": "g10",
+      "phase": "pipeline",
+      "stage": "job_design",
+      "model": "glm-4-plus",
+      "input_tokens": 529,
+      "output_tokens": 302,
+      "total_tokens": 831,
+      "time_ms": 7126,
+      "attempts": 1
+    },
+    {
+      "case_id": "g10",
+      "phase": "pipeline",
+      "stage": "job_design",
+      "model": "glm-4-plus",
+      "input_tokens": 530,
+      "output_tokens": 313,
+      "total_tokens": 843,
+      "time_ms": 7742,
+      "attempts": 1
+    },
+    {
+      "case_id": "g10",
+      "phase": "judge",
+      "stage": "other",
+      "model": "glm-4-plus",
+      "input_tokens": 1173,
+      "output_tokens": 47,
+      "total_tokens": 1220,
+      "time_ms": 1096,
+      "attempts": 1
+    }
+  ],
+  "usage": {
+    "pipeline": {
+      "calls": 24,
+      "input_tokens": 6388,
+      "output_tokens": 3147,
+      "total_tokens": 9535,
+      "time_ms": 68529,
+      "est_cost_usd": 0.06665
+    },
+    "judge": {
+      "calls": 1,
+      "input_tokens": 1173,
+      "output_tokens": 47,
+      "total_tokens": 1220,
+      "time_ms": 1096,
+      "est_cost_usd": 0.008528
+    },
+    "by_stage": {
+      "clarify": {
+        "calls": 3,
+        "input_tokens": 905,
+        "output_tokens": 203
+      },
+      "decompose": {
+        "calls": 1,
+        "input_tokens": 304,
+        "output_tokens": 402
+      },
+      "evaluate": {
+        "calls": 15,
+        "input_tokens": 2526,
+        "output_tokens": 1061
+      },
+      "job_design": {
+        "calls": 5,
+        "input_tokens": 2653,
+        "output_tokens": 1481
+      }
+    }
+  },
+  "wall_time_s": 70.14
+}

@@ -161,6 +161,35 @@ def failure_modes(run: dict, top: int = 3) -> list[str]:
     return lines
 
 
+def largest_swings(v1: dict, v2: dict, top: int = 5) -> list[str]:
+    """Cases where the two versions disagreed most, with the loser's own bullets.
+
+    A mean hides this: two versions can average the same while trading a case
+    they each get badly wrong. Ranked by |v2 − v1|, and each row carries the
+    scorer's observations for whichever version scored lower, so the swing can
+    be read without opening the raw JSON. Purely mechanical — no interpretation.
+    """
+    rows = []
+    for case_id in sorted(set(v1["cases"]) & set(v2["cases"])):
+        r1, r2 = v1["cases"][case_id], v2["cases"][case_id]
+        s1 = r1["score"]["structural_score"]
+        s2 = r2["score"]["structural_score"]
+        delta = s2 - s1
+        if abs(delta) < 1e-9:
+            continue
+        loser, label = (r1, "v1") if s1 < s2 else (r2, "v2")
+        bullets = "; ".join(failure_bullets(loser["score"], limit=3)) or "—"
+        # An objective fact worth flagging: a run that "completed" without ever
+        # asking the employer anything.
+        zero_turn = " **(completed at turn 0 — no clarification round)**" if loser["turns"] == 0 else ""
+        rows.append((abs(delta), (
+            f"| {case_id} | {r1['category']} | {s1:.2f} | {s2:.2f} | {delta:+.2f} | "
+            f"{label}{zero_turn}: {bullets} |"
+        )))
+    rows.sort(key=lambda pair: pair[0], reverse=True)
+    return [row for _, row in rows[:top]]
+
+
 def crosscheck_rows(run: dict) -> list[str]:
     """Per-case: what the app billed vs what the proxy counted.
 
@@ -331,6 +360,16 @@ def build_report(v1: dict, v2: dict, commands: list[str]) -> str:
     add("**v2**")
     add("")
     lines.extend(failure_modes(v2))
+    add("")
+    add("### Largest per-case swings")
+    add("")
+    add("Ranked by |v2 − v1|. The last column carries the scorer's own observations for "
+        "whichever version scored lower on that case — a mean hides a case the two versions "
+        "trade.")
+    add("")
+    add("| case | category | v1 | v2 | delta | what the lower-scoring version got wrong |")
+    add("|---|---|---|---|---|---|")
+    lines.extend(largest_swings(v1, v2))
 
     # ── 6. judge caveat ──────────────────────────────────────────────────────
     add("")

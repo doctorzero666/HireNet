@@ -1,0 +1,1119 @@
+{
+  "case_id": "g17",
+  "category": "hardware-mixed",
+  "agent": "v2",
+  "started_at": "2026-09-04T06:19:17+00:00",
+  "session_id": "b23d9a7022732a05",
+  "http": {
+    "start": 200,
+    "reply": [
+      200,
+      200,
+      200,
+      200
+    ],
+    "decide": 200
+  },
+  "turns": 4,
+  "completed": true,
+  "hit_turn_cap": false,
+  "transcript": [
+    {
+      "role": "employer",
+      "text": "我们要在 20 家门店铺设智能货柜：需要选型采购货柜硬件、现场布线和安装调试，同时还要开发配套的小程序和后台管理系统。"
+    },
+    {
+      "role": "pipeline",
+      "text": "这个项目涉及硬件采购、安装和软件开发，我需要了解一些关键信息来更好地理解需求。\n\n1. 这20家门店是同时开始实施，还是分批次进行？\n2. 对于小程序和后台管理系统，是否有现成的参考案例或特定功能要求？"
+    },
+    {
+      "role": "employer",
+      "text": "总预算 60 万，硬件占大头。"
+    },
+    {
+      "role": "pipeline",
+      "text": "1. 这20家门店的智能货柜项目是一次性全部部署，还是计划分阶段实施？"
+    },
+    {
+      "role": "employer",
+      "text": "三个月内完成第一批 5 家门店。"
+    },
+    {
+      "role": "pipeline",
+      "text": "1. 这5家门店的智能货柜系统需要实现哪些核心功能？例如库存管理、销售数据分析、远程监控等？"
+    },
+    {
+      "role": "employer",
+      "text": "我们有两个软件工程师，硬件这块完全没人。"
+    },
+    {
+      "role": "pipeline",
+      "text": "\n1. 对于智能货柜的硬件选型，是否有特定的品牌或功能要求，或者需要根据预算和功能需求来推荐最适合的方案？"
+    },
+    {
+      "role": "employer",
+      "text": "标准是门店能正常扫码取货，后台能看到每台货柜的实时库存。"
+    },
+    {
+      "role": "pipeline",
+      "text": "\n[REQUIREMENT_COMPLETE]\n{\n  \"project_name\": \"智能货柜系统部署项目\",\n  \"core_description\": \"在5家门店部署智能货柜系统，包括硬件选型采购、现场布线安装调试，以及开发配套的小程序和后台管理系统，实现扫码取货和实时库存监控功能\",\n  \"tasks_hint\": [\"智能货柜硬件选型与采购\", \"现场布线与安装调试\", \"小程序开发（扫码取货功能）\", \"后台管理系统开发（实时库存监控）\"],\n  \"duration\": \"one-time\",\n  \"team_context\": \"团队有2名软件工程师，无硬件相关技术人员\",\n  \"urgency\": \"medium\",\n  \"budget_hint\": \"medium\"\n}"
+    }
+  ],
+  "response": {
+    "decisions": {
+      "decisions": [
+        {
+          "estimated_hours": 16,
+          "evaluations": [
+            {
+              "can_complete": false,
+              "confidence": 0.3,
+              "estimated_time": "无法准确估算，因为缺乏相关经验",
+              "reason": "张伟是全栈工程师，缺乏智能货柜硬件选型与采购的专业知识和经验",
+              "resource_id": "candidate_a",
+              "resource_name": "张伟（全栈工程师）",
+              "resource_type": "human",
+              "strengths": [
+                "具备技术调研能力",
+                "有独立交付产品的经验"
+              ]
+            },
+            {
+              "can_complete": false,
+              "confidence": 0.2,
+              "estimated_time": "不适用",
+              "reason": "代码生成Agent专注于软件开发，无法完成硬件选型与采购任务",
+              "resource_id": "agent_code",
+              "resource_name": "代码生成 Agent",
+              "resource_type": "agent",
+              "strengths": [
+                "代码开发能力",
+                "技术问题解决"
+              ]
+            }
+          ],
+          "is_recurring": false,
+          "recommendation": {
+            "cost_hint": "需要评估薪资",
+            "decision": "human",
+            "reason": "此任务需要人类处理，建议招聘",
+            "resource": {
+              "can_complete": false,
+              "confidence": 0.3,
+              "estimated_time": "无法准确估算，因为缺乏相关经验",
+              "reason": "张伟是全栈工程师，缺乏智能货柜硬件选型与采购的专业知识和经验",
+              "resource_id": "candidate_a",
+              "resource_name": "张伟（全栈工程师）",
+              "resource_type": "human",
+              "strengths": [
+                "具备技术调研能力",
+                "有独立交付产品的经验"
+              ]
+            }
+          },
+          "requires_judgment": true,
+          "task_description": "调研并选择适合的智能货柜硬件设备，包括货柜本体、传感器、扫码设备等，完成采购流程",
+          "task_id": "t1",
+          "task_name": "智能货柜硬件选型与采购",
+          "task_type": "technical"
+        },
+        {
+          "estimated_hours": 40,
+          "evaluations": [
+            {
+              "can_complete": false,
+              "confidence": 0.2,
+              "estimated_time": "无法准确估算",
+              "reason": "张伟是全栈工程师，缺乏现场布线与安装调试的实际经验",
+              "resource_id": "candidate_a",
+              "resource_name": "张伟（全栈工程师）",
+              "resource_type": "human",
+              "strengths": [
+                "技术背景扎实",
+                "具备项目协调能力"
+              ]
+            },
+            {
+              "can_complete": false,
+              "confidence": 0.1,
+              "estimated_time": "不适用",
+              "reason": "代码生成Agent无法执行物理布线和安装调试工作",
+              "resource_id": "agent_code",
+              "resource_name": "代码生成 Agent",
+              "resource_type": "agent",
+              "strengths": [
+                "代码生成能力",
+                "技术文档理解"
+              ]
+            }
+          ],
+          "is_recurring": false,
+          "recommendation": {
+            "cost_hint": "需要评估薪资",
+            "decision": "human",
+            "reason": "此任务需要人类处理，建议招聘",
+            "resource": {
+              "can_complete": false,
+              "confidence": 0.2,
+              "estimated_time": "无法准确估算",
+              "reason": "张伟是全栈工程师，缺乏现场布线与安装调试的实际经验",
+              "resource_id": "candidate_a",
+              "resource_name": "张伟（全栈工程师）",
+              "resource_type": "human",
+              "strengths": [
+                "技术背景扎实",
+                "具备项目协调能力"
+              ]
+            }
+          },
+          "requires_judgment": true,
+          "task_description": "协调外部技术人员完成5家门店的智能货柜安装、布线和初步调试工作",
+          "task_id": "t2",
+          "task_name": "现场布线与安装调试",
+          "task_type": "technical"
+        },
+        {
+          "estimated_hours": 80,
+          "evaluations": [
+            {
+              "can_complete": true,
+              "confidence": 0.9,
+              "estimated_time": "2-3周",
+              "reason": "张伟具备全栈开发能力和相关技术栈，能够独立完成小程序开发任务。",
+              "resource_id": "candidate_a",
+              "resource_name": "张伟（全栈工程师）",
+              "resource_type": "human",
+              "strengths": [
+                "React和Node.js经验丰富",
+                "独立交付多个产品的经验"
+              ]
+            },
+            {
+              "can_complete": true,
+              "confidence": 0.85,
+              "estimated_time": "2-3周",
+              "reason": "代码生成 Agent 具备前端开发能力，能够实现小程序扫码取货功能的核心需求",
+              "resource_id": "agent_code",
+              "resource_name": "代码生成 Agent",
+              "resource_type": "agent",
+              "strengths": [
+                "前端开发能力",
+                "代码审查能力",
+                "脚本编写能力"
+              ]
+            }
+          ],
+          "is_recurring": false,
+          "recommendation": {
+            "cost_hint": "需要评估薪资",
+            "decision": "human",
+            "reason": "建议招聘 张伟（全栈工程师） 类型人才，置信度 90%",
+            "resource": {
+              "can_complete": true,
+              "confidence": 0.9,
+              "estimated_time": "2-3周",
+              "reason": "张伟具备全栈开发能力和相关技术栈，能够独立完成小程序开发任务。",
+              "resource_id": "candidate_a",
+              "resource_name": "张伟（全栈工程师）",
+              "resource_type": "human",
+              "strengths": [
+                "React和Node.js经验丰富",
+                "独立交付多个产品的经验"
+              ]
+            }
+          },
+          "requires_judgment": true,
+          "task_description": "开发用户端小程序，实现扫码取货、订单查询、支付等功能",
+          "task_id": "t3",
+          "task_name": "小程序开发（扫码取货功能）",
+          "task_type": "technical"
+        },
+        {
+          "estimated_hours": 64,
+          "evaluations": [
+            {
+              "can_complete": true,
+              "confidence": 0.85,
+              "estimated_time": "2-3个月",
+              "reason": "张伟具备全栈开发能力和相关技术栈经验，能够独立完成后台管理系统开发。",
+              "resource_id": "candidate_a",
+              "resource_name": "张伟（全栈工程师）",
+              "resource_type": "human",
+              "strengths": [
+                "React前端开发能力",
+                "Node.js后端开发能力",
+                "Docker容器化部署经验",
+                "独立交付产品的经验"
+              ]
+            },
+            {
+              "can_complete": true,
+              "confidence": 0.8,
+              "estimated_time": "2-3周",
+              "reason": "代码生成Agent具备前后端开发能力，但缺乏对特定业务场景的深度理解",
+              "resource_id": "agent_code",
+              "resource_name": "代码生成 Agent",
+              "resource_type": "agent",
+              "strengths": [
+                "前端开发能力",
+                "后端开发能力",
+                "代码审查能力"
+              ]
+            }
+          ],
+          "is_recurring": false,
+          "recommendation": {
+            "cost_hint": "需要评估薪资",
+            "decision": "human",
+            "reason": "建议招聘 张伟（全栈工程师） 类型人才，置信度 85%",
+            "resource": {
+              "can_complete": true,
+              "confidence": 0.85,
+              "estimated_time": "2-3个月",
+              "reason": "张伟具备全栈开发能力和相关技术栈经验，能够独立完成后台管理系统开发。",
+              "resource_id": "candidate_a",
+              "resource_name": "张伟（全栈工程师）",
+              "resource_type": "human",
+              "strengths": [
+                "React前端开发能力",
+                "Node.js后端开发能力",
+                "Docker容器化部署经验",
+                "独立交付产品的经验"
+              ]
+            }
+          },
+          "requires_judgment": true,
+          "task_description": "开发管理后台系统，实现货柜实时库存监控、销售数据分析、设备状态管理等功能",
+          "task_id": "t4",
+          "task_name": "后台管理系统开发（实时库存监控）",
+          "task_type": "technical"
+        },
+        {
+          "estimated_hours": 24,
+          "evaluations": [
+            {
+              "can_complete": true,
+              "confidence": 0.8,
+              "estimated_time": "2-3周",
+              "reason": "张伟具备全栈开发经验和技术栈，能够处理系统联调与测试任务",
+              "resource_id": "candidate_a",
+              "resource_name": "张伟（全栈工程师）",
+              "resource_type": "human",
+              "strengths": [
+                "React、Node.js、TypeScript等前端和后端技术栈",
+                "3年全栈开发经验，熟悉系统联调流程"
+              ]
+            },
+            {
+              "can_complete": false,
+              "confidence": 0.3,
+              "estimated_time": "无法估算",
+              "reason": "代码生成Agent缺乏硬件交互和系统联调的实际操作能力",
+              "resource_id": "agent_code",
+              "resource_name": "代码生成 Agent",
+              "resource_type": "agent",
+              "strengths": [
+                "代码编写能力",
+                "代码审查能力"
+              ]
+            }
+          ],
+          "is_recurring": false,
+          "recommendation": {
+            "cost_hint": "需要评估薪资",
+            "decision": "human",
+            "reason": "建议招聘 张伟（全栈工程师） 类型人才，置信度 80%",
+            "resource": {
+              "can_complete": true,
+              "confidence": 0.8,
+              "estimated_time": "2-3周",
+              "reason": "张伟具备全栈开发经验和技术栈，能够处理系统联调与测试任务",
+              "resource_id": "candidate_a",
+              "resource_name": "张伟（全栈工程师）",
+              "resource_type": "human",
+              "strengths": [
+                "React、Node.js、TypeScript等前端和后端技术栈",
+                "3年全栈开发经验，熟悉系统联调流程"
+              ]
+            }
+          },
+          "requires_judgment": true,
+          "task_description": "完成硬件、小程序和后台管理系统的联调测试，确保各系统间数据交互正常",
+          "task_id": "t5",
+          "task_name": "系统联调与测试",
+          "task_type": "technical"
+        }
+      ]
+    },
+    "jd_report": {
+      "average_water_score": 85,
+      "job_count": 5,
+      "job_designs": [
+        {
+          "core_responsibilities": [
+            "调研并选择适合的智能货柜硬件设备，包括货柜本体、传感器、扫码设备等",
+            "完成智能货柜硬件的采购流程",
+            "负责5家门店的智能货柜现场布线和安装调试",
+            "开发配套的扫码取货小程序",
+            "开发实时库存监控的后台管理系统",
+            "确保系统功能正常并完成项目交付"
+          ],
+          "experience_range": {
+            "max": 4,
+            "min": 2,
+            "unit": "年"
+          },
+          "job_id": "jd_9cb4405eecda",
+          "job_title": "智能货柜系统部署工程师",
+          "nice_to_have_skills": [
+            "智能零售设备经验",
+            "IoT设备集成经验",
+            "库存管理系统开发经验"
+          ],
+          "red_flags_removed": [
+            "移除了'20家门店'的夸大数量",
+            "移除了'持续工作'的模糊描述",
+            "移除了未明确的功能要求"
+          ],
+          "required_skills": [
+            "硬件选型与采购经验",
+            "现场布线和安装调试能力",
+            "小程序开发经验",
+            "后台管理系统开发经验",
+            "项目管理能力"
+          ],
+          "salary_range": {
+            "max": 28000,
+            "min": 18000,
+            "unit": "元/月"
+          },
+          "task_id": "t1",
+          "task_name": "智能货柜硬件选型与采购",
+          "water_analysis": "与原始描述相比，明确了门店数量为5家而非20家，澄清了项目是一次性的而非长期工作，明确了系统功能为扫码取货和实时库存监控",
+          "water_score": 85,
+          "work_type": "contract"
+        },
+        {
+          "core_responsibilities": [
+            "负责5家门店智能货柜硬件的选型与采购",
+            "协调外部技术人员完成货柜安装、布线和初步调试",
+            "开发配套小程序实现扫码取货功能",
+            "开发后台管理系统实现实时库存监控",
+            "确保系统在5家门店顺利运行并完成交付"
+          ],
+          "experience_range": {
+            "max": 4,
+            "min": 2,
+            "unit": "年"
+          },
+          "job_id": "jd_651566085e7a",
+          "job_title": "智能货柜系统部署工程师",
+          "nice_to_have_skills": [
+            "零售行业经验",
+            "IoT设备部署经验",
+            "库存管理系统开发经验"
+          ],
+          "red_flags_removed": [
+            "移除了'20家门店铺设'的夸大数量",
+            "移除了长期维护的模糊描述"
+          ],
+          "required_skills": [
+            "智能货柜硬件选型经验",
+            "现场布线与安装协调能力",
+            "小程序开发能力",
+            "后台管理系统开发能力",
+            "项目管理经验"
+          ],
+          "salary_range": {
+            "max": 28000,
+            "min": 18000,
+            "unit": "元/月"
+          },
+          "task_id": "t2",
+          "task_name": "现场布线与安装调试",
+          "water_analysis": "与原始描述相比，明确了门店数量为5家而非20家，澄清了项目是一次性而非长期，并明确了具体功能需求",
+          "water_score": 85,
+          "work_type": "contract"
+        },
+        {
+          "core_responsibilities": [
+            "负责5家门店智能货柜系统的硬件选型采购",
+            "完成现场布线、安装调试工作",
+            "开发用户端小程序，实现扫码取货、订单查询、支付功能",
+            "开发后台管理系统，实现实时库存监控功能"
+          ],
+          "experience_range": {
+            "max": 4,
+            "min": 2,
+            "unit": "年"
+          },
+          "job_id": "jd_4847152debd8",
+          "job_title": "智能货柜系统开发工程师",
+          "nice_to_have_skills": [
+            "零售行业经验",
+            "IoT设备集成经验",
+            "支付系统对接经验"
+          ],
+          "red_flags_removed": [
+            "移除了'20家门店'的夸大数量",
+            "移除了对团队规模的模糊描述",
+            "明确了项目是一次性而非长期"
+          ],
+          "required_skills": [
+            "小程序开发经验",
+            "后端系统开发经验",
+            "硬件设备部署经验",
+            "数据库设计与操作"
+          ],
+          "salary_range": {
+            "max": 28000,
+            "min": 18000,
+            "unit": "元/月"
+          },
+          "task_id": "t3",
+          "task_name": "小程序开发（扫码取货功能）",
+          "water_analysis": "与原始描述相比，明确了门店数量为5家而非20家，澄清了项目是一次性而非长期，移除了对团队规模的夸大描述，明确了具体功能需求",
+          "water_score": 85,
+          "work_type": "contract"
+        },
+        {
+          "core_responsibilities": [
+            "开发智能货柜后台管理系统，实现实时库存监控功能",
+            "开发配套小程序，实现扫码取货功能",
+            "负责智能货柜硬件选型与采购指导",
+            "参与现场货柜布线、安装与调试工作",
+            "实现销售数据分析和设备状态管理功能"
+          ],
+          "experience_range": {
+            "max": 4,
+            "min": 2,
+            "unit": "年"
+          },
+          "job_id": "jd_a7f800358e6b",
+          "job_title": "智能货柜系统开发工程师",
+          "nice_to_have_skills": [
+            "硬件设备集成经验",
+            "物联网系统开发经验",
+            "库存管理系统开发经验",
+            "现场设备调试经验"
+          ],
+          "red_flags_removed": [
+            "移除了'在20家门店铺设'的夸大数量",
+            "移除了'需要选型采购货柜硬件'的不合理要求（团队已有硬件供应商）",
+            "移除了长期工作的暗示，明确为一次性项目"
+          ],
+          "required_skills": [
+            "Web开发经验（前端/后端）",
+            "数据库设计与开发能力",
+            "RESTful API设计与开发",
+            "小程序开发经验"
+          ],
+          "salary_range": {
+            "max": 28000,
+            "min": 18000,
+            "unit": "元/月"
+          },
+          "task_id": "t4",
+          "task_name": "后台管理系统开发（实时库存监控）",
+          "water_analysis": "与原始描述相比，明确了项目规模（5家门店而非20家），澄清了是一次性项目而非长期工作，移除了对硬件技术的夸大要求",
+          "water_score": 85,
+          "work_type": "contract"
+        },
+        {
+          "core_responsibilities": [
+            "负责5家门店智能货柜系统的硬件选型采购",
+            "完成现场布线、安装和调试工作",
+            "开发配套的小程序，实现扫码取货功能",
+            "开发后台管理系统，实现实时库存监控功能",
+            "完成硬件、小程序和后台管理系统的联调测试，确保数据交互正常"
+          ],
+          "experience_range": {
+            "max": 4,
+            "min": 2,
+            "unit": "年"
+          },
+          "job_id": "jd_e14e671043aa",
+          "job_title": "智能货柜系统部署工程师",
+          "nice_to_have_skills": [
+            "零售行业经验",
+            "IoT设备部署经验",
+            "库存管理系统开发经验"
+          ],
+          "red_flags_removed": [
+            "移除了'20家门店铺设'的夸大数量",
+            "移除了团队有硬件技术人员的虚假信息",
+            "明确了项目是一次性的而非长期工作"
+          ],
+          "required_skills": [
+            "智能货柜硬件选型与安装经验",
+            "小程序开发能力",
+            "后台管理系统开发能力",
+            "系统联调测试经验"
+          ],
+          "salary_range": {
+            "max": 28000,
+            "min": 18000,
+            "unit": "元/月"
+          },
+          "task_id": "t5",
+          "task_name": "系统联调与测试",
+          "water_analysis": "与原始描述相比，明确了门店数量为5家而非20家，澄清了项目是一次性的而非长期工作，移除了硬件团队不存在的误导信息",
+          "water_score": 85,
+          "work_type": "contract"
+        }
+      ],
+      "needs_hiring": true,
+      "water_interpretation": "JD 描述与实际需求高度一致，信息可信度高"
+    },
+    "requirement": {
+      "budget_hint": "medium",
+      "core_description": "在5家门店部署智能货柜系统，包括硬件选型采购、现场布线安装调试，以及开发配套的小程序和后台管理系统，实现扫码取货和实时库存监控功能",
+      "duration": "one-time",
+      "project_name": "智能货柜系统部署项目",
+      "tasks_hint": [
+        "智能货柜硬件选型与采购",
+        "现场布线与安装调试",
+        "小程序开发（扫码取货功能）",
+        "后台管理系统开发（实时库存监控）"
+      ],
+      "team_context": "团队有2名软件工程师，无硬件相关技术人员",
+      "urgency": "medium"
+    },
+    "summary": {
+      "agent_tasks": 0,
+      "human_tasks": 5,
+      "job_count": 5,
+      "needs_hiring": true,
+      "task_count": 5,
+      "verdict": "建议招聘，当前 Agent 无法满足需求",
+      "verdict_type": "human_only",
+      "water_score": 85
+    },
+    "tasks": [
+      {
+        "description": "调研并选择适合的智能货柜硬件设备，包括货柜本体、传感器、扫码设备等，完成采购流程",
+        "estimated_hours": 16,
+        "id": "t1",
+        "is_recurring": false,
+        "name": "智能货柜硬件选型与采购",
+        "requires_judgment": true,
+        "type": "technical"
+      },
+      {
+        "description": "协调外部技术人员完成5家门店的智能货柜安装、布线和初步调试工作",
+        "estimated_hours": 40,
+        "id": "t2",
+        "is_recurring": false,
+        "name": "现场布线与安装调试",
+        "requires_judgment": true,
+        "type": "technical"
+      },
+      {
+        "description": "开发用户端小程序，实现扫码取货、订单查询、支付等功能",
+        "estimated_hours": 80,
+        "id": "t3",
+        "is_recurring": false,
+        "name": "小程序开发（扫码取货功能）",
+        "requires_judgment": true,
+        "type": "technical"
+      },
+      {
+        "description": "开发管理后台系统，实现货柜实时库存监控、销售数据分析、设备状态管理等功能",
+        "estimated_hours": 64,
+        "id": "t4",
+        "is_recurring": false,
+        "name": "后台管理系统开发（实时库存监控）",
+        "requires_judgment": true,
+        "type": "technical"
+      },
+      {
+        "description": "完成硬件、小程序和后台管理系统的联调测试，确保各系统间数据交互正常",
+        "estimated_hours": 24,
+        "id": "t5",
+        "is_recurring": false,
+        "name": "系统联调与测试",
+        "requires_judgment": true,
+        "type": "technical"
+      }
+    ]
+  },
+  "error": null,
+  "turn_count_reported": 5,
+  "requirement_after_clarify": {
+    "budget_hint": "medium",
+    "core_description": "在5家门店部署智能货柜系统，包括硬件选型采购、现场布线安装调试，以及开发配套的小程序和后台管理系统，实现扫码取货和实时库存监控功能",
+    "duration": "one-time",
+    "project_name": "智能货柜系统部署项目",
+    "tasks_hint": [
+      "智能货柜硬件选型与采购",
+      "现场布线与安装调试",
+      "小程序开发（扫码取货功能）",
+      "后台管理系统开发（实时库存监控）"
+    ],
+    "team_context": "团队有2名软件工程师，无硬件相关技术人员",
+    "urgency": "medium"
+  },
+  "app_accounting": {
+    "agent_runs": [
+      {
+        "agent_name": "job_design",
+        "task_id": "t5",
+        "input_tokens": 3905,
+        "output_tokens": 1489,
+        "time_ms": 31212,
+        "llm_cost_usd": "0.03770406"
+      },
+      {
+        "agent_name": "job_design",
+        "task_id": "t4",
+        "input_tokens": 3905,
+        "output_tokens": 1489,
+        "time_ms": 31212,
+        "llm_cost_usd": "0.03770406"
+      },
+      {
+        "agent_name": "job_design",
+        "task_id": "t3",
+        "input_tokens": 3905,
+        "output_tokens": 1489,
+        "time_ms": 31212,
+        "llm_cost_usd": "0.03770406"
+      },
+      {
+        "agent_name": "job_design",
+        "task_id": "t2",
+        "input_tokens": 3905,
+        "output_tokens": 1489,
+        "time_ms": 31212,
+        "llm_cost_usd": "0.03770406"
+      },
+      {
+        "agent_name": "job_design",
+        "task_id": "t1",
+        "input_tokens": 3905,
+        "output_tokens": 1489,
+        "time_ms": 31212,
+        "llm_cost_usd": "0.03770406"
+      }
+    ],
+    "reported_input_tokens": 3905,
+    "reported_output_tokens": 1489,
+    "reported_time_ms": 31212,
+    "reported_cost_usd": "0.03770406",
+    "analysis_traces": 17
+  },
+  "score": {
+    "case_id": "g17",
+    "category": "hardware-mixed",
+    "structural_score": 1.0,
+    "components": {
+      "requirement": 1.0,
+      "task_count": 1.0,
+      "must_include": 1.0,
+      "must_not_include": null,
+      "decisions": 1.0
+    },
+    "details": {
+      "requirement": [
+        {
+          "check": "core_description_keywords_any",
+          "expected": [
+            "货柜",
+            "门店",
+            "硬件",
+            "小程序"
+          ],
+          "actual": "在5家门店部署智能货柜系统，包括硬件选型采购、现场布线安装调试，以及开发配套的小程序和后台管理系统，实现扫码取货和实时库存监控功能",
+          "passed": true,
+          "matched": "货柜"
+        }
+      ],
+      "task_count": {
+        "check": "count_range",
+        "expected": [
+          3,
+          6
+        ],
+        "actual": 5,
+        "passed": true
+      },
+      "must_include": [
+        {
+          "check": "must_include",
+          "expected": {
+            "name_keywords_any": [
+              "安装",
+              "布线",
+              "调试",
+              "现场",
+              "施工"
+            ],
+            "routing": "human"
+          },
+          "passed": true,
+          "matched_task": "现场布线与安装调试",
+          "closest": {
+            "name_keyword": "安装",
+            "routing": {
+              "expected": "human",
+              "actual": "human"
+            }
+          }
+        },
+        {
+          "check": "must_include",
+          "expected": {
+            "name_keywords_any": [
+              "小程序",
+              "后台",
+              "管理系统"
+            ],
+            "type": "technical"
+          },
+          "passed": true,
+          "matched_task": "小程序开发（扫码取货功能）",
+          "closest": {
+            "name_keyword": "小程序",
+            "type": {
+              "expected": "technical",
+              "actual": "technical"
+            }
+          }
+        },
+        {
+          "check": "must_include",
+          "expected": {
+            "name_keywords_any": [
+              "选型",
+              "采购",
+              "硬件"
+            ]
+          },
+          "passed": true,
+          "matched_task": "智能货柜硬件选型与采购",
+          "closest": {
+            "name_keyword": "选型"
+          }
+        }
+      ],
+      "must_not_include": {
+        "check": "must_not_include_keywords",
+        "expected": [],
+        "passed": null,
+        "note": "nothing asserted — component skipped"
+      },
+      "decisions": {
+        "check": "decisions",
+        "expected": {
+          "human_min": 1
+        },
+        "actual": {
+          "agent": 0,
+          "human": 5,
+          "hybrid": 0,
+          "none": 0
+        },
+        "passed": true,
+        "failures": []
+      }
+    }
+  },
+  "decision_counts": {
+    "agent": 0,
+    "human": 5,
+    "hybrid": 0,
+    "none": 0
+  },
+  "judge": {
+    "score": 5,
+    "rationale": "物理和软件任务分离明确，现场安装任务[t2]路由为human，未暗示Agent可采购或安装硬件。",
+    "repaired": false,
+    "error": null,
+    "raw": "{\"score\": 5, \"rationale\": \"物理和软件任务分离明确，现场安装任务[t2]路由为human，未暗示Agent可采购或安装硬件。\"}"
+  },
+  "llm_calls": [
+    {
+      "case_id": "g17",
+      "phase": "pipeline",
+      "stage": "clarify",
+      "model": "glm-4-plus",
+      "input_tokens": 257,
+      "output_tokens": 56,
+      "total_tokens": 313,
+      "time_ms": 1169,
+      "attempts": 1
+    },
+    {
+      "case_id": "g17",
+      "phase": "pipeline",
+      "stage": "clarify",
+      "model": "glm-4-plus",
+      "input_tokens": 330,
+      "output_tokens": 23,
+      "total_tokens": 353,
+      "time_ms": 739,
+      "attempts": 1
+    },
+    {
+      "case_id": "g17",
+      "phase": "pipeline",
+      "stage": "clarify",
+      "model": "glm-4-plus",
+      "input_tokens": 369,
+      "output_tokens": 29,
+      "total_tokens": 398,
+      "time_ms": 863,
+      "attempts": 1
+    },
+    {
+      "case_id": "g17",
+      "phase": "pipeline",
+      "stage": "clarify",
+      "model": "glm-4-plus",
+      "input_tokens": 415,
+      "output_tokens": 33,
+      "total_tokens": 448,
+      "time_ms": 925,
+      "attempts": 1
+    },
+    {
+      "case_id": "g17",
+      "phase": "pipeline",
+      "stage": "clarify",
+      "model": "glm-4-plus",
+      "input_tokens": 473,
+      "output_tokens": 155,
+      "total_tokens": 628,
+      "time_ms": 2965,
+      "attempts": 1
+    },
+    {
+      "case_id": "g17",
+      "phase": "pipeline",
+      "stage": "decompose",
+      "model": "glm-4-plus",
+      "input_tokens": 323,
+      "output_tokens": 425,
+      "total_tokens": 748,
+      "time_ms": 6989,
+      "attempts": 1
+    },
+    {
+      "case_id": "g17",
+      "phase": "pipeline",
+      "stage": "evaluate",
+      "model": "glm-4-plus",
+      "input_tokens": 172,
+      "output_tokens": 67,
+      "total_tokens": 239,
+      "time_ms": 1639,
+      "attempts": 1
+    },
+    {
+      "case_id": "g17",
+      "phase": "pipeline",
+      "stage": "evaluate",
+      "model": "glm-4-plus",
+      "input_tokens": 190,
+      "output_tokens": 81,
+      "total_tokens": 271,
+      "time_ms": 1953,
+      "attempts": 1
+    },
+    {
+      "case_id": "g17",
+      "phase": "pipeline",
+      "stage": "evaluate",
+      "model": "glm-4-plus",
+      "input_tokens": 163,
+      "output_tokens": 64,
+      "total_tokens": 227,
+      "time_ms": 1567,
+      "attempts": 1
+    },
+    {
+      "case_id": "g17",
+      "phase": "pipeline",
+      "stage": "evaluate",
+      "model": "glm-4-plus",
+      "input_tokens": 181,
+      "output_tokens": 71,
+      "total_tokens": 252,
+      "time_ms": 1375,
+      "attempts": 1
+    },
+    {
+      "case_id": "g17",
+      "phase": "pipeline",
+      "stage": "evaluate",
+      "model": "glm-4-plus",
+      "input_tokens": 161,
+      "output_tokens": 79,
+      "total_tokens": 240,
+      "time_ms": 2029,
+      "attempts": 1
+    },
+    {
+      "case_id": "g17",
+      "phase": "pipeline",
+      "stage": "evaluate",
+      "model": "glm-4-plus",
+      "input_tokens": 179,
+      "output_tokens": 77,
+      "total_tokens": 256,
+      "time_ms": 1453,
+      "attempts": 1
+    },
+    {
+      "case_id": "g17",
+      "phase": "pipeline",
+      "stage": "evaluate",
+      "model": "glm-4-plus",
+      "input_tokens": 165,
+      "output_tokens": 79,
+      "total_tokens": 244,
+      "time_ms": 1994,
+      "attempts": 1
+    },
+    {
+      "case_id": "g17",
+      "phase": "pipeline",
+      "stage": "evaluate",
+      "model": "glm-4-plus",
+      "input_tokens": 183,
+      "output_tokens": 91,
+      "total_tokens": 274,
+      "time_ms": 2285,
+      "attempts": 1
+    },
+    {
+      "case_id": "g17",
+      "phase": "pipeline",
+      "stage": "evaluate",
+      "model": "glm-4-plus",
+      "input_tokens": 163,
+      "output_tokens": 66,
+      "total_tokens": 229,
+      "time_ms": 1552,
+      "attempts": 1
+    },
+    {
+      "case_id": "g17",
+      "phase": "pipeline",
+      "stage": "evaluate",
+      "model": "glm-4-plus",
+      "input_tokens": 181,
+      "output_tokens": 93,
+      "total_tokens": 274,
+      "time_ms": 1715,
+      "attempts": 1
+    },
+    {
+      "case_id": "g17",
+      "phase": "pipeline",
+      "stage": "job_design",
+      "model": "glm-4-plus",
+      "input_tokens": 561,
+      "output_tokens": 334,
+      "total_tokens": 895,
+      "time_ms": 6825,
+      "attempts": 1
+    },
+    {
+      "case_id": "g17",
+      "phase": "pipeline",
+      "stage": "job_design",
+      "model": "glm-4-plus",
+      "input_tokens": 552,
+      "output_tokens": 303,
+      "total_tokens": 855,
+      "time_ms": 6242,
+      "attempts": 1
+    },
+    {
+      "case_id": "g17",
+      "phase": "pipeline",
+      "stage": "job_design",
+      "model": "glm-4-plus",
+      "input_tokens": 550,
+      "output_tokens": 297,
+      "total_tokens": 847,
+      "time_ms": 6301,
+      "attempts": 1
+    },
+    {
+      "case_id": "g17",
+      "phase": "pipeline",
+      "stage": "job_design",
+      "model": "glm-4-plus",
+      "input_tokens": 554,
+      "output_tokens": 341,
+      "total_tokens": 895,
+      "time_ms": 7116,
+      "attempts": 1
+    },
+    {
+      "case_id": "g17",
+      "phase": "pipeline",
+      "stage": "job_design",
+      "model": "glm-4-plus",
+      "input_tokens": 552,
+      "output_tokens": 318,
+      "total_tokens": 870,
+      "time_ms": 6803,
+      "attempts": 1
+    },
+    {
+      "case_id": "g17",
+      "phase": "judge",
+      "stage": "other",
+      "model": "glm-4-plus",
+      "input_tokens": 1199,
+      "output_tokens": 39,
+      "total_tokens": 1238,
+      "time_ms": 1216,
+      "attempts": 1
+    }
+  ],
+  "usage": {
+    "pipeline": {
+      "calls": 21,
+      "input_tokens": 6674,
+      "output_tokens": 3082,
+      "total_tokens": 9756,
+      "time_ms": 64499,
+      "est_cost_usd": 0.068194
+    },
+    "judge": {
+      "calls": 1,
+      "input_tokens": 1199,
+      "output_tokens": 39,
+      "total_tokens": 1238,
+      "time_ms": 1216,
+      "est_cost_usd": 0.008654
+    },
+    "by_stage": {
+      "clarify": {
+        "calls": 5,
+        "input_tokens": 1844,
+        "output_tokens": 296
+      },
+      "decompose": {
+        "calls": 1,
+        "input_tokens": 323,
+        "output_tokens": 425
+      },
+      "evaluate": {
+        "calls": 10,
+        "input_tokens": 1738,
+        "output_tokens": 768
+      },
+      "job_design": {
+        "calls": 5,
+        "input_tokens": 2769,
+        "output_tokens": 1593
+      }
+    }
+  },
+  "wall_time_s": 66.22
+}

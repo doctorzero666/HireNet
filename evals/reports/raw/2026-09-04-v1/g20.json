@@ -1,0 +1,1049 @@
+{
+  "case_id": "g20",
+  "category": "mixed-multi-domain",
+  "agent": "v1",
+  "started_at": "2026-09-04T06:03:47+00:00",
+  "session_id": "83389df4ee639028",
+  "http": {
+    "start": 200,
+    "reply": [
+      200,
+      200
+    ],
+    "decide": 200
+  },
+  "turns": 2,
+  "completed": true,
+  "hit_turn_cap": false,
+  "transcript": [
+    {
+      "role": "employer",
+      "text": "我们电商平台今年要一起做三件事：上线智能客服、做一个经营数据看板、每个月产出一批营销内容。"
+    },
+    {
+      "role": "pipeline",
+      "text": "请问这三个项目中，哪个是当前最紧急或优先级最高的？"
+    },
+    {
+      "role": "employer",
+      "text": "全年预算 30 万。"
+    },
+    {
+      "role": "pipeline",
+      "text": "\n请问这三个项目中，哪个是当前最紧急或优先级最高的？"
+    },
+    {
+      "role": "employer",
+      "text": "一年内分三期做完，之后长期运行。"
+    },
+    {
+      "role": "pipeline",
+      "text": "\n请问这三个项目中，哪个是当前最紧急或优先级最高的？\n\n[REQUIREMENT_COMPLETE]\n{\n  \"project_name\": \"电商平台数字化转型项目\",\n  \"core_description\": \"电商平台分三期实施智能客服、经营数据看板和营销内容生产系统，一年内完成并长期运行\",\n  \"tasks_hint\": [\"智能客服系统开发\", \"经营数据看板设计与实现\", \"营销内容生产流程建立\"],\n  \"duration\": \"ongoing\",\n  \"team_context\": \"电商平台运营团队，需要技术、营销和客服协作\",\n  \"urgency\": \"medium\",\n  \"budget_hint\": \"medium\"\n}"
+    }
+  ],
+  "response": {
+    "decisions": {
+      "decisions": [
+        {
+          "evaluations": [
+            {
+              "can_complete": true,
+              "confidence": 0.8,
+              "estimated_time": "3-4个月",
+              "reason": "张伟具备全栈开发能力和相关技术栈，但缺乏NLP专业知识",
+              "resource_id": "candidate_a",
+              "resource_name": "张伟（全栈工程师）",
+              "resource_type": "human",
+              "strengths": [
+                "全栈开发经验丰富",
+                "熟悉React和Node.js",
+                "有独立交付产品的经验"
+              ]
+            },
+            {
+              "can_complete": true,
+              "confidence": 0.7,
+              "estimated_time": "3-6个月",
+              "reason": "代码生成Agent具备前后端开发和脚本编写能力，但缺乏自然语言处理和多渠道接入的专业经验",
+              "resource_id": "agent_code",
+              "resource_name": "代码生成 Agent",
+              "resource_type": "agent",
+              "strengths": [
+                "前端开发能力",
+                "后端开发能力",
+                "代码审查能力"
+              ]
+            }
+          ],
+          "recommendation": {
+            "cost_hint": "需要评估薪资",
+            "decision": "human",
+            "reason": "建议招聘 张伟（全栈工程师） 类型人才，置信度 80%",
+            "resource": {
+              "can_complete": true,
+              "confidence": 0.8,
+              "estimated_time": "3-4个月",
+              "reason": "张伟具备全栈开发能力和相关技术栈，但缺乏NLP专业知识",
+              "resource_id": "candidate_a",
+              "resource_name": "张伟（全栈工程师）",
+              "resource_type": "human",
+              "strengths": [
+                "全栈开发经验丰富",
+                "熟悉React和Node.js",
+                "有独立交付产品的经验"
+              ]
+            }
+          },
+          "task_id": "t1",
+          "task_name": "智能客服系统开发",
+          "task_type": "technical"
+        },
+        {
+          "evaluations": [
+            {
+              "can_complete": true,
+              "confidence": 0.85,
+              "estimated_time": "2-3周",
+              "reason": "代码生成Agent具备前端和后端开发能力，能够实现数据可视化看板的核心功能",
+              "resource_id": "agent_code",
+              "resource_name": "代码生成 Agent",
+              "resource_type": "agent",
+              "strengths": [
+                "多语言开发能力",
+                "代码审查能力",
+                "数据可视化经验"
+              ]
+            },
+            {
+              "can_complete": true,
+              "confidence": 0.85,
+              "estimated_time": "2-3周",
+              "reason": "张伟具备全栈开发能力和数据可视化相关技术栈，能够独立完成数据看板的设计与实现。",
+              "resource_id": "candidate_a",
+              "resource_name": "张伟（全栈工程师）",
+              "resource_type": "human",
+              "strengths": [
+                "全栈开发经验丰富",
+                "掌握React和Node.js等前端后端技术",
+                "有独立交付产品的经验"
+              ]
+            }
+          ],
+          "recommendation": {
+            "cost_hint": "$0.05",
+            "decision": "agent",
+            "reason": "推荐使用 代码生成 Agent，置信度 85%",
+            "resource": {
+              "can_complete": true,
+              "confidence": 0.85,
+              "estimated_time": "2-3周",
+              "reason": "代码生成Agent具备前端和后端开发能力，能够实现数据可视化看板的核心功能",
+              "resource_id": "agent_code",
+              "resource_name": "代码生成 Agent",
+              "resource_type": "agent",
+              "strengths": [
+                "多语言开发能力",
+                "代码审查能力",
+                "数据可视化经验"
+              ]
+            }
+          },
+          "task_id": "t2",
+          "task_name": "经营数据看板设计与实现",
+          "task_type": "technical"
+        },
+        {
+          "evaluations": [
+            {
+              "can_complete": true,
+              "confidence": 0.7,
+              "estimated_time": "2-3个月",
+              "reason": "张伟具备全栈开发技能和独立交付产品的经验，但缺乏营销内容生产流程的专业知识",
+              "resource_id": "candidate_a",
+              "resource_name": "张伟（全栈工程师）",
+              "resource_type": "human",
+              "strengths": [
+                "独立交付产品的经验",
+                "全栈开发技能",
+                "标准化流程构建能力"
+              ]
+            },
+            {
+              "can_complete": false,
+              "confidence": 0.3,
+              "estimated_time": "不适用",
+              "reason": "文案撰写Agent仅能生成内容，无法建立完整的生产流程和审核机制",
+              "resource_id": "agent_content",
+              "resource_name": "文案撰写 Agent",
+              "resource_type": "agent",
+              "strengths": [
+                "擅长生成各类营销文案",
+                "能够快速产出内容"
+              ]
+            },
+            {
+              "can_complete": false,
+              "confidence": 0.3,
+              "estimated_time": "不适用",
+              "reason": "数据分析Agent缺乏营销内容流程设计和审核机制构建能力",
+              "resource_id": "agent_data",
+              "resource_name": "数据分析 Agent",
+              "resource_type": "agent",
+              "strengths": [
+                "数据清洗",
+                "报表生成",
+                "数据可视化",
+                "统计分析"
+              ]
+            }
+          ],
+          "recommendation": {
+            "cost_hint": "需要评估薪资",
+            "decision": "human",
+            "reason": "建议招聘 张伟（全栈工程师） 类型人才，置信度 70%",
+            "resource": {
+              "can_complete": true,
+              "confidence": 0.7,
+              "estimated_time": "2-3个月",
+              "reason": "张伟具备全栈开发技能和独立交付产品的经验，但缺乏营销内容生产流程的专业知识",
+              "resource_id": "candidate_a",
+              "resource_name": "张伟（全栈工程师）",
+              "resource_type": "human",
+              "strengths": [
+                "独立交付产品的经验",
+                "全栈开发技能",
+                "标准化流程构建能力"
+              ]
+            }
+          },
+          "task_id": "t3",
+          "task_name": "营销内容生产流程建立",
+          "task_type": "operational"
+        },
+        {
+          "evaluations": [
+            {
+              "can_complete": true,
+              "confidence": 0.7,
+              "estimated_time": "2-3周",
+              "reason": "李娜具备AI产品经理经验和从0到1产品落地能力，但缺乏战略规划方面的直接经验",
+              "resource_id": "candidate_b",
+              "resource_name": "李娜（产品经理）",
+              "resource_type": "human",
+              "strengths": [
+                "需求分析能力",
+                "AI产品设计经验",
+                "从0到1产品落地经验"
+              ]
+            },
+            {
+              "can_complete": false,
+              "confidence": 0.3,
+              "estimated_time": "不适用",
+              "reason": "文案撰写Agent缺乏战略规划和数字化转型领域的专业知识",
+              "resource_id": "agent_content",
+              "resource_name": "文案撰写 Agent",
+              "resource_type": "agent",
+              "strengths": [
+                "文案撰写能力",
+                "内容创作效率"
+              ]
+            }
+          ],
+          "recommendation": {
+            "cost_hint": "需要评估薪资",
+            "decision": "human",
+            "reason": "建议招聘 李娜（产品经理） 类型人才，置信度 70%",
+            "resource": {
+              "can_complete": true,
+              "confidence": 0.7,
+              "estimated_time": "2-3周",
+              "reason": "李娜具备AI产品经理经验和从0到1产品落地能力，但缺乏战略规划方面的直接经验",
+              "resource_id": "candidate_b",
+              "resource_name": "李娜（产品经理）",
+              "resource_type": "human",
+              "strengths": [
+                "需求分析能力",
+                "AI产品设计经验",
+                "从0到1产品落地经验"
+              ]
+            }
+          },
+          "task_id": "t4",
+          "task_name": "数字化转型策略规划",
+          "task_type": "strategic"
+        },
+        {
+          "evaluations": [
+            {
+              "can_complete": true,
+              "confidence": 0.7,
+              "estimated_time": "2-3个月",
+              "reason": "张伟具备全栈开发经验和跨领域技术能力，但缺乏跨部门协作管理经验",
+              "resource_id": "candidate_a",
+              "resource_name": "张伟（全栈工程师）",
+              "resource_type": "human",
+              "strengths": [
+                "技术背景全面，能理解各部门需求",
+                "有独立交付产品的经验，具备项目推进能力"
+              ]
+            },
+            {
+              "can_complete": false,
+              "confidence": 0.3,
+              "estimated_time": "不适用",
+              "reason": "数据分析Agent缺乏跨部门协作机制建立所需的管理和人际协调能力",
+              "resource_id": "agent_data",
+              "resource_name": "数据分析 Agent",
+              "resource_type": "agent",
+              "strengths": [
+                "数据清洗",
+                "报表生成",
+                "数据可视化",
+                "统计分析"
+              ]
+            },
+            {
+              "can_complete": false,
+              "confidence": 0.2,
+              "estimated_time": "不适用",
+              "reason": "文案撰写Agent缺乏跨部门协作机制建立所需的管理和流程设计能力",
+              "resource_id": "agent_content",
+              "resource_name": "文案撰写 Agent",
+              "resource_type": "agent",
+              "strengths": [
+                "擅长文案撰写",
+                "能够生成清晰的文档"
+              ]
+            }
+          ],
+          "recommendation": {
+            "cost_hint": "需要评估薪资",
+            "decision": "human",
+            "reason": "建议招聘 张伟（全栈工程师） 类型人才，置信度 70%",
+            "resource": {
+              "can_complete": true,
+              "confidence": 0.7,
+              "estimated_time": "2-3个月",
+              "reason": "张伟具备全栈开发经验和跨领域技术能力，但缺乏跨部门协作管理经验",
+              "resource_id": "candidate_a",
+              "resource_name": "张伟（全栈工程师）",
+              "resource_type": "human",
+              "strengths": [
+                "技术背景全面，能理解各部门需求",
+                "有独立交付产品的经验，具备项目推进能力"
+              ]
+            }
+          },
+          "task_id": "t5",
+          "task_name": "跨部门协作机制建立",
+          "task_type": "operational"
+        }
+      ]
+    },
+    "jd_report": {
+      "average_water_score": 85,
+      "job_count": 4,
+      "job_designs": [
+        {
+          "core_responsibilities": [
+            "负责智能客服系统的需求分析、功能设计和迭代优化",
+            "设计和开发经营数据看板，确保数据准确性和可视化效果",
+            "规划并实施营销内容生产系统，提高内容产出效率",
+            "协调技术、营销和客服团队，确保各系统顺利落地和长期运行"
+          ],
+          "experience_range": {
+            "max": 4,
+            "min": 2,
+            "unit": "年"
+          },
+          "job_id": "jd_f65d7ba23a39",
+          "job_title": "电商平台技术产品经理",
+          "nice_to_have_skills": [
+            "客服系统开发经验",
+            "营销自动化工具使用经验",
+            "SQL和基础编程知识"
+          ],
+          "red_flags_removed": [
+            "移除了'一起做三件事'的模糊表述",
+            "移除了夸大的'数字化转型'概念，聚焦具体功能"
+          ],
+          "required_skills": [
+            "电商平台产品设计经验",
+            "数据分析与可视化能力",
+            "项目管理经验",
+            "需求分析和文档撰写能力"
+          ],
+          "salary_range": {
+            "max": 28000,
+            "min": 18000,
+            "unit": "元/月"
+          },
+          "task_id": "t1",
+          "task_name": "智能客服系统开发",
+          "water_analysis": "与原始描述相比，明确了具体项目内容，澄清了职责范围，移除了模糊表述",
+          "water_score": 85,
+          "work_type": "full-time"
+        },
+        {
+          "core_responsibilities": [
+            "建立并维护电商平台的营销内容生产流程",
+            "定期产出符合平台调性的营销内容",
+            "与客服和数据分析团队协作，确保内容支持业务目标",
+            "优化内容生产效率，确保每月按时完成内容产出"
+          ],
+          "experience_range": {
+            "max": 3,
+            "min": 1,
+            "unit": "年"
+          },
+          "job_id": "jd_a6349b432138",
+          "job_title": "电商平台内容运营专员",
+          "nice_to_have_skills": [
+            "AI辅助内容生产工具使用经验",
+            "用户画像分析能力",
+            "SEO/SEM基础知识"
+          ],
+          "red_flags_removed": [
+            "移除了'一年内完成并长期运行'的模糊时间要求",
+            "移除了'数字化转型项目'等夸大头衔"
+          ],
+          "required_skills": [
+            "内容策划与创作能力",
+            "电商平台运营经验",
+            "基础数据分析能力"
+          ],
+          "salary_range": {
+            "max": 20000,
+            "min": 12000,
+            "unit": "元/月"
+          },
+          "task_id": "t3",
+          "task_name": "营销内容生产流程建立",
+          "water_analysis": "与原始描述相比，明确了具体职责范围，去除了'智能客服'和'数据看板'等不相关要求，聚焦于内容生产核心任务",
+          "water_score": 85,
+          "work_type": "full-time"
+        },
+        {
+          "core_responsibilities": [
+            "负责电商平台智能客服系统的规划与实施",
+            "开发并维护经营数据看板，提供数据支持决策",
+            "规划并执行每月营销内容生产流程",
+            "协调技术、营销和客服团队确保项目顺利推进",
+            "制定并执行一年期数字化转型策略"
+          ],
+          "experience_range": {
+            "max": 4,
+            "min": 2,
+            "unit": "年"
+          },
+          "job_id": "jd_f3b7481f1e79",
+          "job_title": "电商数字化转型项目经理",
+          "nice_to_have_skills": [
+            "智能客服系统实施经验",
+            "数据可视化工具使用能力",
+            "内容营销策划经验"
+          ],
+          "red_flags_removed": [
+            "移除了'今年要一起做三件事'的模糊表述",
+            "移除了不具体的'预算水平：medium'描述"
+          ],
+          "required_skills": [
+            "项目管理经验",
+            "电商平台运营知识",
+            "数据分析能力",
+            "跨部门协作能力"
+          ],
+          "salary_range": {
+            "max": 28000,
+            "min": 18000,
+            "unit": "元/月"
+          },
+          "task_id": "t4",
+          "task_name": "数字化转型策略规划",
+          "water_analysis": "与原始描述相比，明确了具体项目内容，去除了'一起做三件事'的模糊表述，添加了具体的项目管理职责",
+          "water_score": 85,
+          "work_type": "full-time"
+        },
+        {
+          "core_responsibilities": [
+            "建立并维护电商平台跨部门协作机制，确保技术、营销和客服团队有效沟通",
+            "协调智能客服、经营数据看板和营销内容生产系统的实施进度",
+            "每月监督营销内容生产计划的执行，确保按时交付",
+            "收集并分析各部门反馈，持续优化协作流程"
+          ],
+          "experience_range": {
+            "max": 4,
+            "min": 2,
+            "unit": "年"
+          },
+          "job_id": "jd_9de73324bd33",
+          "job_title": "电商平台运营协调专员",
+          "nice_to_have_skills": [
+            "客服系统实施经验",
+            "数据可视化工具使用能力",
+            "内容营销策划经验",
+            "敏捷项目管理认证"
+          ],
+          "red_flags_removed": [
+            "移除了'一年内完成并长期运行'的不明确时间要求",
+            "移除了'medium'模糊预算描述"
+          ],
+          "required_skills": [
+            "项目管理基础能力",
+            "跨部门沟通协调经验",
+            "电商平台运营知识",
+            "基础数据分析能力"
+          ],
+          "salary_range": {
+            "max": 20000,
+            "min": 12000,
+            "unit": "元/月"
+          },
+          "task_id": "t5",
+          "task_name": "跨部门协作机制建立",
+          "water_analysis": "与原始描述相比，明确了具体协作职责，去除了'数字化转型'等模糊表述，将三件事转化为具体可执行的任务",
+          "water_score": 85,
+          "work_type": "full-time"
+        }
+      ],
+      "needs_hiring": true,
+      "water_interpretation": "JD 描述与实际需求高度一致，信息可信度高"
+    },
+    "requirement": {
+      "budget_hint": "medium",
+      "core_description": "电商平台分三期实施智能客服、经营数据看板和营销内容生产系统，一年内完成并长期运行",
+      "duration": "ongoing",
+      "project_name": "电商平台数字化转型项目",
+      "tasks_hint": [
+        "智能客服系统开发",
+        "经营数据看板设计与实现",
+        "营销内容生产流程建立"
+      ],
+      "team_context": "电商平台运营团队，需要技术、营销和客服协作",
+      "urgency": "medium"
+    },
+    "summary": {
+      "agent_tasks": 1,
+      "human_tasks": 4,
+      "job_count": 4,
+      "needs_hiring": true,
+      "task_count": 5,
+      "verdict": "建议混合方案：1 个任务用 Agent，4 个任务需要人类",
+      "verdict_type": "hybrid",
+      "water_score": 85
+    },
+    "tasks": [
+      {
+        "description": "设计和开发智能客服系统，包括自然语言处理、知识库构建和多渠道接入功能",
+        "estimated_hours": 120,
+        "id": "t1",
+        "is_recurring": false,
+        "name": "智能客服系统开发",
+        "requires_judgment": true,
+        "type": "technical"
+      },
+      {
+        "description": "创建数据可视化看板，整合销售、用户、商品等多维度数据，提供实时分析功能",
+        "estimated_hours": 80,
+        "id": "t2",
+        "is_recurring": false,
+        "name": "经营数据看板设计与实现",
+        "requires_judgment": true,
+        "type": "technical"
+      },
+      {
+        "description": "构建标准化营销内容生产流程，包括内容模板设计、审核机制和质量控制体系",
+        "estimated_hours": 60,
+        "id": "t3",
+        "is_recurring": true,
+        "name": "营销内容生产流程建立",
+        "requires_judgment": true,
+        "type": "operational"
+      },
+      {
+        "description": "制定分阶段实施计划，明确各阶段目标、资源需求和成功指标",
+        "estimated_hours": 40,
+        "id": "t4",
+        "is_recurring": false,
+        "name": "数字化转型策略规划",
+        "requires_judgment": true,
+        "type": "strategic"
+      },
+      {
+        "description": "建立技术、营销和客服团队的协作流程，确保项目顺利推进和长期运营",
+        "estimated_hours": 30,
+        "id": "t5",
+        "is_recurring": true,
+        "name": "跨部门协作机制建立",
+        "requires_judgment": true,
+        "type": "operational"
+      }
+    ]
+  },
+  "error": null,
+  "turn_count_reported": null,
+  "requirement_after_clarify": {
+    "budget_hint": "medium",
+    "core_description": "电商平台分三期实施智能客服、经营数据看板和营销内容生产系统，一年内完成并长期运行",
+    "duration": "ongoing",
+    "project_name": "电商平台数字化转型项目",
+    "tasks_hint": [
+      "智能客服系统开发",
+      "经营数据看板设计与实现",
+      "营销内容生产流程建立"
+    ],
+    "team_context": "电商平台运营团队，需要技术、营销和客服协作",
+    "urgency": "medium"
+  },
+  "app_accounting": {
+    "agent_runs": [
+      {
+        "agent_name": "job_design",
+        "task_id": "t5",
+        "input_tokens": null,
+        "output_tokens": null,
+        "time_ms": null,
+        "llm_cost_usd": null
+      },
+      {
+        "agent_name": "job_design",
+        "task_id": "t4",
+        "input_tokens": null,
+        "output_tokens": null,
+        "time_ms": null,
+        "llm_cost_usd": null
+      },
+      {
+        "agent_name": "job_design",
+        "task_id": "t3",
+        "input_tokens": null,
+        "output_tokens": null,
+        "time_ms": null,
+        "llm_cost_usd": null
+      },
+      {
+        "agent_name": "job_design",
+        "task_id": "t1",
+        "input_tokens": null,
+        "output_tokens": null,
+        "time_ms": null,
+        "llm_cost_usd": null
+      }
+    ],
+    "reported_input_tokens": null,
+    "reported_output_tokens": null,
+    "reported_time_ms": null,
+    "reported_cost_usd": null,
+    "analysis_traces": 0
+  },
+  "score": {
+    "case_id": "g20",
+    "category": "mixed-multi-domain",
+    "structural_score": 0.6667,
+    "components": {
+      "requirement": 1.0,
+      "task_count": 1.0,
+      "must_include": 0.6666666666666666,
+      "must_not_include": null,
+      "decisions": 0.0
+    },
+    "details": {
+      "requirement": [
+        {
+          "check": "core_description_keywords_any",
+          "expected": [
+            "客服",
+            "看板",
+            "营销"
+          ],
+          "actual": "电商平台分三期实施智能客服、经营数据看板和营销内容生产系统，一年内完成并长期运行",
+          "passed": true,
+          "matched": "客服"
+        }
+      ],
+      "task_count": {
+        "check": "count_range",
+        "expected": [
+          3,
+          6
+        ],
+        "actual": 5,
+        "passed": true
+      },
+      "must_include": [
+        {
+          "check": "must_include",
+          "expected": {
+            "name_keywords_any": [
+              "客服",
+              "话术",
+              "咨询"
+            ]
+          },
+          "passed": true,
+          "matched_task": "智能客服系统开发",
+          "closest": {
+            "name_keyword": "客服"
+          }
+        },
+        {
+          "check": "must_include",
+          "expected": {
+            "name_keywords_any": [
+              "看板",
+              "数据",
+              "指标"
+            ]
+          },
+          "passed": true,
+          "matched_task": "经营数据看板设计与实现",
+          "closest": {
+            "name_keyword": "看板"
+          }
+        },
+        {
+          "check": "must_include",
+          "expected": {
+            "name_keywords_any": [
+              "营销",
+              "内容",
+              "文案"
+            ],
+            "type": "creative",
+            "routing": "agent"
+          },
+          "passed": false,
+          "matched_task": null,
+          "closest": {
+            "name_keyword": "营销",
+            "type": {
+              "expected": "creative",
+              "actual": "operational"
+            }
+          }
+        }
+      ],
+      "must_not_include": {
+        "check": "must_not_include_keywords",
+        "expected": [],
+        "passed": null,
+        "note": "nothing asserted — component skipped"
+      },
+      "decisions": {
+        "check": "decisions",
+        "expected": {
+          "agent_min": 2,
+          "human_min": 1,
+          "human_max": 3
+        },
+        "actual": {
+          "agent": 1,
+          "human": 4,
+          "hybrid": 0,
+          "none": 0
+        },
+        "passed": false,
+        "failures": [
+          {
+            "bound": "agent_min",
+            "expected": 2,
+            "actual": 1
+          },
+          {
+            "bound": "human_max",
+            "expected": 3,
+            "actual": 4
+          }
+        ]
+      }
+    }
+  },
+  "decision_counts": {
+    "agent": 1,
+    "human": 4,
+    "hybrid": 0,
+    "none": 0
+  },
+  "judge": {
+    "score": 3,
+    "rationale": "任务t4和t5与雇主明确提出的三个目标(智能客服、数据看板、营销内容)重叠，且t2路由给Agent不合理，数据分析需要人类数据分析师。",
+    "repaired": false,
+    "error": null,
+    "raw": "{\"score\": 3, \"rationale\": \"任务t4和t5与雇主明确提出的三个目标(智能客服、数据看板、营销内容)重叠，且t2路由给Agent不合理，数据分析需要人类数据分析师。\"}"
+  },
+  "llm_calls": [
+    {
+      "case_id": "g20",
+      "phase": "pipeline",
+      "stage": "clarify",
+      "model": "glm-4-plus",
+      "input_tokens": 247,
+      "output_tokens": 15,
+      "total_tokens": 262,
+      "time_ms": 525,
+      "attempts": 1
+    },
+    {
+      "case_id": "g20",
+      "phase": "pipeline",
+      "stage": "clarify",
+      "model": "glm-4-plus",
+      "input_tokens": 275,
+      "output_tokens": 16,
+      "total_tokens": 291,
+      "time_ms": 524,
+      "attempts": 1
+    },
+    {
+      "case_id": "g20",
+      "phase": "pipeline",
+      "stage": "clarify",
+      "model": "glm-4-plus",
+      "input_tokens": 307,
+      "output_tokens": 132,
+      "total_tokens": 439,
+      "time_ms": 2190,
+      "attempts": 1
+    },
+    {
+      "case_id": "g20",
+      "phase": "pipeline",
+      "stage": "decompose",
+      "model": "glm-4-plus",
+      "input_tokens": 286,
+      "output_tokens": 407,
+      "total_tokens": 693,
+      "time_ms": 7360,
+      "attempts": 1
+    },
+    {
+      "case_id": "g20",
+      "phase": "pipeline",
+      "stage": "evaluate",
+      "model": "glm-4-plus",
+      "input_tokens": 161,
+      "output_tokens": 82,
+      "total_tokens": 243,
+      "time_ms": 1806,
+      "attempts": 1
+    },
+    {
+      "case_id": "g20",
+      "phase": "pipeline",
+      "stage": "evaluate",
+      "model": "glm-4-plus",
+      "input_tokens": 179,
+      "output_tokens": 82,
+      "total_tokens": 261,
+      "time_ms": 1578,
+      "attempts": 1
+    },
+    {
+      "case_id": "g20",
+      "phase": "pipeline",
+      "stage": "evaluate",
+      "model": "glm-4-plus",
+      "input_tokens": 165,
+      "output_tokens": 80,
+      "total_tokens": 245,
+      "time_ms": 1599,
+      "attempts": 1
+    },
+    {
+      "case_id": "g20",
+      "phase": "pipeline",
+      "stage": "evaluate",
+      "model": "glm-4-plus",
+      "input_tokens": 183,
+      "output_tokens": 93,
+      "total_tokens": 276,
+      "time_ms": 2507,
+      "attempts": 1
+    },
+    {
+      "case_id": "g20",
+      "phase": "pipeline",
+      "stage": "evaluate",
+      "model": "glm-4-plus",
+      "input_tokens": 161,
+      "output_tokens": 72,
+      "total_tokens": 233,
+      "time_ms": 1240,
+      "attempts": 1
+    },
+    {
+      "case_id": "g20",
+      "phase": "pipeline",
+      "stage": "evaluate",
+      "model": "glm-4-plus",
+      "input_tokens": 159,
+      "output_tokens": 69,
+      "total_tokens": 228,
+      "time_ms": 1447,
+      "attempts": 1
+    },
+    {
+      "case_id": "g20",
+      "phase": "pipeline",
+      "stage": "evaluate",
+      "model": "glm-4-plus",
+      "input_tokens": 180,
+      "output_tokens": 84,
+      "total_tokens": 264,
+      "time_ms": 2031,
+      "attempts": 1
+    },
+    {
+      "case_id": "g20",
+      "phase": "pipeline",
+      "stage": "evaluate",
+      "model": "glm-4-plus",
+      "input_tokens": 178,
+      "output_tokens": 86,
+      "total_tokens": 264,
+      "time_ms": 1745,
+      "attempts": 1
+    },
+    {
+      "case_id": "g20",
+      "phase": "pipeline",
+      "stage": "evaluate",
+      "model": "glm-4-plus",
+      "input_tokens": 157,
+      "output_tokens": 62,
+      "total_tokens": 219,
+      "time_ms": 1144,
+      "attempts": 1
+    },
+    {
+      "case_id": "g20",
+      "phase": "pipeline",
+      "stage": "evaluate",
+      "model": "glm-4-plus",
+      "input_tokens": 161,
+      "output_tokens": 69,
+      "total_tokens": 230,
+      "time_ms": 1196,
+      "attempts": 1
+    },
+    {
+      "case_id": "g20",
+      "phase": "pipeline",
+      "stage": "evaluate",
+      "model": "glm-4-plus",
+      "input_tokens": 159,
+      "output_tokens": 72,
+      "total_tokens": 231,
+      "time_ms": 4159,
+      "attempts": 1
+    },
+    {
+      "case_id": "g20",
+      "phase": "pipeline",
+      "stage": "evaluate",
+      "model": "glm-4-plus",
+      "input_tokens": 180,
+      "output_tokens": 86,
+      "total_tokens": 266,
+      "time_ms": 1745,
+      "attempts": 1
+    },
+    {
+      "case_id": "g20",
+      "phase": "pipeline",
+      "stage": "job_design",
+      "model": "glm-4-plus",
+      "input_tokens": 501,
+      "output_tokens": 285,
+      "total_tokens": 786,
+      "time_ms": 6106,
+      "attempts": 1
+    },
+    {
+      "case_id": "g20",
+      "phase": "pipeline",
+      "stage": "job_design",
+      "model": "glm-4-plus",
+      "input_tokens": 503,
+      "output_tokens": 284,
+      "total_tokens": 787,
+      "time_ms": 5536,
+      "attempts": 1
+    },
+    {
+      "case_id": "g20",
+      "phase": "pipeline",
+      "stage": "job_design",
+      "model": "glm-4-plus",
+      "input_tokens": 501,
+      "output_tokens": 288,
+      "total_tokens": 789,
+      "time_ms": 5355,
+      "attempts": 1
+    },
+    {
+      "case_id": "g20",
+      "phase": "pipeline",
+      "stage": "job_design",
+      "model": "glm-4-plus",
+      "input_tokens": 503,
+      "output_tokens": 299,
+      "total_tokens": 802,
+      "time_ms": 5504,
+      "attempts": 1
+    },
+    {
+      "case_id": "g20",
+      "phase": "judge",
+      "stage": "other",
+      "model": "glm-4-plus",
+      "input_tokens": 1157,
+      "output_tokens": 52,
+      "total_tokens": 1209,
+      "time_ms": 1139,
+      "attempts": 1
+    }
+  ],
+  "usage": {
+    "pipeline": {
+      "calls": 20,
+      "input_tokens": 5146,
+      "output_tokens": 2663,
+      "total_tokens": 7809,
+      "time_ms": 55297,
+      "est_cost_usd": 0.054585
+    },
+    "judge": {
+      "calls": 1,
+      "input_tokens": 1157,
+      "output_tokens": 52,
+      "total_tokens": 1209,
+      "time_ms": 1139,
+      "est_cost_usd": 0.008451
+    },
+    "by_stage": {
+      "clarify": {
+        "calls": 3,
+        "input_tokens": 829,
+        "output_tokens": 163
+      },
+      "decompose": {
+        "calls": 1,
+        "input_tokens": 286,
+        "output_tokens": 407
+      },
+      "evaluate": {
+        "calls": 12,
+        "input_tokens": 2023,
+        "output_tokens": 937
+      },
+      "job_design": {
+        "calls": 4,
+        "input_tokens": 2008,
+        "output_tokens": 1156
+      }
+    }
+  },
+  "wall_time_s": 56.64
+}

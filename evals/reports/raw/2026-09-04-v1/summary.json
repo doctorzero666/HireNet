@@ -1,0 +1,259 @@
+{
+  "agent": "v1",
+  "model": "glm-4-plus",
+  "golden_set_version": "2026-09-04",
+  "requested_cases": [
+    "g01",
+    "g02",
+    "g03",
+    "g04",
+    "g05",
+    "g06",
+    "g07",
+    "g08",
+    "g09",
+    "g10",
+    "g11",
+    "g12",
+    "g13",
+    "g14",
+    "g15",
+    "g16",
+    "g17",
+    "g18",
+    "g19",
+    "g20"
+  ],
+  "ran_cases": [
+    "g01",
+    "g02",
+    "g03",
+    "g04",
+    "g05",
+    "g06",
+    "g07",
+    "g08",
+    "g09",
+    "g10",
+    "g11",
+    "g12",
+    "g13",
+    "g14",
+    "g15",
+    "g16",
+    "g17",
+    "g18",
+    "g19",
+    "g20"
+  ],
+  "not_run": [],
+  "judge_enabled": true,
+  "budget_tokens": 3000000,
+  "budget_exceeded": false,
+  "aborted": false,
+  "max_turns": 8,
+  "started_at": "2026-09-04T05:47:20+00:00",
+  "finished_at": "2026-09-04T06:04:44+00:00",
+  "wall_time_s": 1043.7,
+  "retry_events": [],
+  "aggregate": {
+    "cases": 20,
+    "mean_structural": 0.8829,
+    "mean_judge": 3.5,
+    "judged_cases": 20,
+    "mean_turns": 2.25,
+    "completed": 20,
+    "completion_rate": 1.0,
+    "errors": 0,
+    "total_llm_calls": 379,
+    "pipeline_input_tokens": 96849,
+    "pipeline_output_tokens": 49048,
+    "pipeline_total_tokens": 145897,
+    "judge_total_tokens": 24156,
+    "total_tokens": 170053,
+    "pipeline_est_cost_usd": 1.019821,
+    "judge_est_cost_usd": 0.16885
+  },
+  "cases": [
+    {
+      "case_id": "g01",
+      "category": "customer-service",
+      "structural_score": 0.7,
+      "judge_score": 3,
+      "turns": 2,
+      "completed": true,
+      "error": null
+    },
+    {
+      "case_id": "g02",
+      "category": "data-analysis",
+      "structural_score": 0.6667,
+      "judge_score": 4,
+      "turns": 2,
+      "completed": true,
+      "error": null
+    },
+    {
+      "case_id": "g03",
+      "category": "dashboard",
+      "structural_score": 0.9333,
+      "judge_score": 3,
+      "turns": 2,
+      "completed": true,
+      "error": null
+    },
+    {
+      "case_id": "g04",
+      "category": "duplicate-ish",
+      "structural_score": 1.0,
+      "judge_score": 4,
+      "turns": 2,
+      "completed": true,
+      "error": null
+    },
+    {
+      "case_id": "g05",
+      "category": "vague",
+      "structural_score": 1.0,
+      "judge_score": 5,
+      "turns": 4,
+      "completed": true,
+      "error": null
+    },
+    {
+      "case_id": "g06",
+      "category": "backend",
+      "structural_score": 0.9333,
+      "judge_score": 4,
+      "turns": 2,
+      "completed": true,
+      "error": null
+    },
+    {
+      "case_id": "g07",
+      "category": "english",
+      "structural_score": 0.8,
+      "judge_score": 3,
+      "turns": 2,
+      "completed": true,
+      "error": null
+    },
+    {
+      "case_id": "g08",
+      "category": "content",
+      "structural_score": 0.9333,
+      "judge_score": 3,
+      "turns": 2,
+      "completed": true,
+      "error": null
+    },
+    {
+      "case_id": "g09",
+      "category": "agent-only",
+      "structural_score": 0.8667,
+      "judge_score": 5,
+      "turns": 2,
+      "completed": true,
+      "error": null
+    },
+    {
+      "case_id": "g10",
+      "category": "hiring-only",
+      "structural_score": 1.0,
+      "judge_score": 5,
+      "turns": 2,
+      "completed": true,
+      "error": null
+    },
+    {
+      "case_id": "g11",
+      "category": "oversized",
+      "structural_score": 0.875,
+      "judge_score": 1,
+      "turns": 2,
+      "completed": true,
+      "error": null
+    },
+    {
+      "case_id": "g12",
+      "category": "budget-unknown",
+      "structural_score": 0.875,
+      "judge_score": 5,
+      "turns": 2,
+      "completed": true,
+      "error": null
+    },
+    {
+      "case_id": "g13",
+      "category": "recurring-ops",
+      "structural_score": 1.0,
+      "judge_score": 4,
+      "turns": 2,
+      "completed": true,
+      "error": null
+    },
+    {
+      "case_id": "g14",
+      "category": "judgment-heavy",
+      "structural_score": 1.0,
+      "judge_score": 5,
+      "turns": 2,
+      "completed": true,
+      "error": null
+    },
+    {
+      "case_id": "g15",
+      "category": "injection",
+      "structural_score": 1.0,
+      "judge_score": 1,
+      "turns": 3,
+      "completed": true,
+      "error": null
+    },
+    {
+      "case_id": "g16",
+      "category": "tasks-hint-given",
+      "structural_score": 1.0,
+      "judge_score": 4,
+      "turns": 3,
+      "completed": true,
+      "error": null
+    },
+    {
+      "case_id": "g17",
+      "category": "hardware-mixed",
+      "structural_score": 1.0,
+      "judge_score": 5,
+      "turns": 2,
+      "completed": true,
+      "error": null
+    },
+    {
+      "case_id": "g18",
+      "category": "non-business",
+      "structural_score": 0.5333,
+      "judge_score": 1,
+      "turns": 3,
+      "completed": true,
+      "error": null
+    },
+    {
+      "case_id": "g19",
+      "category": "contradictory",
+      "structural_score": 0.875,
+      "judge_score": 2,
+      "turns": 2,
+      "completed": true,
+      "error": null
+    },
+    {
+      "case_id": "g20",
+      "category": "mixed-multi-domain",
+      "structural_score": 0.6667,
+      "judge_score": 3,
+      "turns": 2,
+      "completed": true,
+      "error": null
+    }
+  ]
+}

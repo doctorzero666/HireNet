@@ -1,0 +1,873 @@
+{
+  "case_id": "g12",
+  "category": "budget-unknown",
+  "agent": "v2",
+  "started_at": "2026-09-04T06:15:07+00:00",
+  "session_id": "20f99d0808e097fa",
+  "http": {
+    "start": 200,
+    "reply": [
+      200,
+      200
+    ],
+    "decide": 200
+  },
+  "turns": 2,
+  "completed": true,
+  "hit_turn_cap": false,
+  "transcript": [
+    {
+      "role": "employer",
+      "text": "我们想找人做一套会员积分系统，薪资面议，预算还没批下来。"
+    },
+    {
+      "role": "pipeline",
+      "text": "这个会员积分系统是一次性项目还是需要长期维护和更新？"
+    },
+    {
+      "role": "employer",
+      "text": "预算还在走审批，现在真说不了，薪资面议。"
+    },
+    {
+      "role": "pipeline",
+      "text": "\n这个会员积分系统是针对特定业务场景的一次性开发，还是需要长期运营和持续优化的系统？"
+    },
+    {
+      "role": "employer",
+      "text": "如果预算批了，希望两个月内做完。"
+    },
+    {
+      "role": "pipeline",
+      "text": "\n[REQUIREMENT_COMPLETE]\n{\n  \"project_name\": \"会员积分系统开发\",\n  \"core_description\": \"开发一套会员积分系统，两个月内完成\",\n  \"tasks_hint\": [\"系统设计与开发\", \"积分规则配置\", \"会员管理功能实现\", \"数据统计与分析\"],\n  \"duration\": \"one-time\",\n  \"team_context\": \"预算待审批，薪资面议，两个月内完成\",\n  \"urgency\": \"medium\",\n  \"budget_hint\": \"unknown\"\n}"
+    }
+  ],
+  "response": {
+    "decisions": {
+      "decisions": [
+        {
+          "estimated_hours": 40,
+          "evaluations": [
+            {
+              "can_complete": true,
+              "confidence": 0.85,
+              "estimated_time": "2-3周",
+              "reason": "张伟具备全栈开发经验和所需技术栈，能够独立完成系统架构设计",
+              "resource_id": "candidate_a",
+              "resource_name": "张伟（全栈工程师）",
+              "resource_type": "human",
+              "strengths": [
+                "全栈开发经验",
+                "熟悉React、Node.js和TypeScript",
+                "有独立交付产品的经验"
+              ]
+            },
+            {
+              "can_complete": true,
+              "confidence": 0.8,
+              "estimated_time": "3-5天",
+              "reason": "代码生成Agent具备前端、后端和数据库设计能力，但缺乏系统架构的宏观判断经验。",
+              "resource_id": "agent_code",
+              "resource_name": "代码生成 Agent",
+              "resource_type": "agent",
+              "strengths": [
+                "前端开发能力",
+                "后端开发能力",
+                "数据库结构设计",
+                "API接口设计"
+              ]
+            }
+          ],
+          "is_recurring": false,
+          "recommendation": {
+            "cost_hint": "需要评估薪资",
+            "decision": "human",
+            "reason": "建议招聘 张伟（全栈工程师） 类型人才，置信度 85%",
+            "resource": {
+              "can_complete": true,
+              "confidence": 0.85,
+              "estimated_time": "2-3周",
+              "reason": "张伟具备全栈开发经验和所需技术栈，能够独立完成系统架构设计",
+              "resource_id": "candidate_a",
+              "resource_name": "张伟（全栈工程师）",
+              "resource_type": "human",
+              "strengths": [
+                "全栈开发经验",
+                "熟悉React、Node.js和TypeScript",
+                "有独立交付产品的经验"
+              ]
+            }
+          },
+          "requires_judgment": true,
+          "task_description": "设计系统整体架构，包括数据库结构、API接口、前端界面布局和后端服务架构",
+          "task_id": "t1",
+          "task_name": "会员积分系统架构设计",
+          "task_type": "technical"
+        },
+        {
+          "estimated_hours": 32,
+          "evaluations": [
+            {
+              "can_complete": true,
+              "confidence": 0.85,
+              "estimated_time": "2-3天",
+              "reason": "代码生成Agent具备前后端开发能力，可完成积分规则配置模块的开发",
+              "resource_id": "agent_code",
+              "resource_name": "代码生成 Agent",
+              "resource_type": "agent",
+              "strengths": [
+                "前端开发能力",
+                "后端开发能力",
+                "代码审查能力"
+              ]
+            },
+            {
+              "can_complete": true,
+              "confidence": 0.85,
+              "estimated_time": "2-3周",
+              "reason": "张伟具备全栈开发能力和相关技术栈，能够独立完成积分规则配置模块开发。",
+              "resource_id": "candidate_a",
+              "resource_name": "张伟（全栈工程师）",
+              "resource_type": "human",
+              "strengths": [
+                "全栈开发经验丰富",
+                "熟悉React、Node.js和TypeScript",
+                "有独立交付产品的经验"
+              ]
+            }
+          ],
+          "is_recurring": false,
+          "recommendation": {
+            "cost_hint": "$0.05",
+            "decision": "agent",
+            "reason": "推荐使用 代码生成 Agent，置信度 85%",
+            "resource": {
+              "can_complete": true,
+              "confidence": 0.85,
+              "estimated_time": "2-3天",
+              "reason": "代码生成Agent具备前后端开发能力，可完成积分规则配置模块的开发",
+              "resource_id": "agent_code",
+              "resource_name": "代码生成 Agent",
+              "resource_type": "agent",
+              "strengths": [
+                "前端开发能力",
+                "后端开发能力",
+                "代码审查能力"
+              ]
+            }
+          },
+          "requires_judgment": true,
+          "task_description": "开发积分规则配置功能，包括积分获取规则、积分使用规则、积分有效期设置等",
+          "task_id": "t2",
+          "task_name": "积分规则配置模块开发",
+          "task_type": "technical"
+        },
+        {
+          "estimated_hours": 48,
+          "evaluations": [
+            {
+              "can_complete": true,
+              "confidence": 0.85,
+              "estimated_time": "2-3周",
+              "reason": "代码生成 Agent 具备前后端开发能力，能够实现会员管理功能的核心模块",
+              "resource_id": "agent_code",
+              "resource_name": "代码生成 Agent",
+              "resource_type": "agent",
+              "strengths": [
+                "前端开发能力",
+                "后端开发能力",
+                "代码审查能力"
+              ]
+            },
+            {
+              "can_complete": true,
+              "confidence": 0.85,
+              "estimated_time": "2-3周",
+              "reason": "张伟具备全栈开发能力和相关技术栈，能够独立完成会员管理功能的实现。",
+              "resource_id": "candidate_a",
+              "resource_name": "张伟（全栈工程师）",
+              "resource_type": "human",
+              "strengths": [
+                "全栈开发经验丰富",
+                "熟悉React、Node.js、TypeScript等技术栈",
+                "有独立交付产品的经验"
+              ]
+            }
+          ],
+          "is_recurring": false,
+          "recommendation": {
+            "cost_hint": "$0.05",
+            "decision": "agent",
+            "reason": "推荐使用 代码生成 Agent，置信度 85%",
+            "resource": {
+              "can_complete": true,
+              "confidence": 0.85,
+              "estimated_time": "2-3周",
+              "reason": "代码生成 Agent 具备前后端开发能力，能够实现会员管理功能的核心模块",
+              "resource_id": "agent_code",
+              "resource_name": "代码生成 Agent",
+              "resource_type": "agent",
+              "strengths": [
+                "前端开发能力",
+                "后端开发能力",
+                "代码审查能力"
+              ]
+            }
+          },
+          "requires_judgment": true,
+          "task_description": "实现会员信息管理、会员等级管理、会员权益管理等功能",
+          "task_id": "t3",
+          "task_name": "会员管理功能实现",
+          "task_type": "technical"
+        },
+        {
+          "estimated_hours": 24,
+          "evaluations": [
+            {
+              "can_complete": true,
+              "confidence": 0.8,
+              "estimated_time": "2-3周",
+              "reason": "代码生成 Agent 具备前后端开发能力，能够实现数据统计与分析模块的核心功能",
+              "resource_id": "agent_code",
+              "resource_name": "代码生成 Agent",
+              "resource_type": "agent",
+              "strengths": [
+                "全栈开发能力",
+                "代码审查能力"
+              ]
+            },
+            {
+              "can_complete": true,
+              "confidence": 0.8,
+              "estimated_time": "4-6周",
+              "reason": "张伟具备全栈开发能力和相关技术栈，但缺乏数据分析和统计的专业经验",
+              "resource_id": "candidate_a",
+              "resource_name": "张伟（全栈工程师）",
+              "resource_type": "human",
+              "strengths": [
+                "全栈开发能力",
+                "独立交付经验",
+                "TypeScript和Python技能"
+              ]
+            }
+          ],
+          "is_recurring": false,
+          "recommendation": {
+            "cost_hint": "$0.05",
+            "decision": "agent",
+            "reason": "推荐使用 代码生成 Agent，置信度 80%",
+            "resource": {
+              "can_complete": true,
+              "confidence": 0.8,
+              "estimated_time": "2-3周",
+              "reason": "代码生成 Agent 具备前后端开发能力，能够实现数据统计与分析模块的核心功能",
+              "resource_id": "agent_code",
+              "resource_name": "代码生成 Agent",
+              "resource_type": "agent",
+              "strengths": [
+                "全栈开发能力",
+                "代码审查能力"
+              ]
+            }
+          },
+          "requires_judgment": true,
+          "task_description": "开发积分数据统计、会员行为分析、报表生成等功能",
+          "task_id": "t4",
+          "task_name": "数据统计与分析模块开发",
+          "task_type": "technical"
+        },
+        {
+          "estimated_hours": 32,
+          "evaluations": [
+            {
+              "can_complete": true,
+              "confidence": 0.8,
+              "estimated_time": "2-3周",
+              "reason": "张伟具备全栈开发技能和独立交付经验，但缺乏明确的测试和部署专项经验。",
+              "resource_id": "candidate_a",
+              "resource_name": "张伟（全栈工程师）",
+              "resource_type": "human",
+              "strengths": [
+                "全栈开发技能覆盖前后端",
+                "有独立交付产品的经验",
+                "熟悉Docker等部署工具"
+              ]
+            },
+            {
+              "can_complete": false,
+              "confidence": 0.3,
+              "estimated_time": "无法估算",
+              "reason": "代码生成Agent缺乏系统测试、性能测试和安全测试的专业能力",
+              "resource_id": "agent_code",
+              "resource_name": "代码生成 Agent",
+              "resource_type": "agent",
+              "strengths": [
+                "代码编写能力",
+                "代码审查能力"
+              ]
+            }
+          ],
+          "is_recurring": false,
+          "recommendation": {
+            "cost_hint": "需要评估薪资",
+            "decision": "human",
+            "reason": "建议招聘 张伟（全栈工程师） 类型人才，置信度 80%",
+            "resource": {
+              "can_complete": true,
+              "confidence": 0.8,
+              "estimated_time": "2-3周",
+              "reason": "张伟具备全栈开发技能和独立交付经验，但缺乏明确的测试和部署专项经验。",
+              "resource_id": "candidate_a",
+              "resource_name": "张伟（全栈工程师）",
+              "resource_type": "human",
+              "strengths": [
+                "全栈开发技能覆盖前后端",
+                "有独立交付产品的经验",
+                "熟悉Docker等部署工具"
+              ]
+            }
+          },
+          "requires_judgment": true,
+          "task_description": "进行系统功能测试、性能测试、安全测试，并完成系统部署上线",
+          "task_id": "t5",
+          "task_name": "系统测试与部署",
+          "task_type": "technical"
+        }
+      ]
+    },
+    "jd_report": {
+      "average_water_score": 85,
+      "job_count": 2,
+      "job_designs": [
+        {
+          "core_responsibilities": [
+            "设计会员积分系统整体架构，包括数据库结构、API接口和前后端服务架构",
+            "在两个月内完成会员积分系统的开发与实施",
+            "确保系统满足业务需求并按时交付"
+          ],
+          "experience_range": {
+            "max": 5,
+            "min": 2,
+            "unit": "年"
+          },
+          "job_id": "jd_84e8a1d3414e",
+          "job_title": "会员积分系统开发工程师",
+          "nice_to_have_skills": [
+            "会员系统开发经验",
+            "微服务架构经验",
+            "高并发系统设计经验"
+          ],
+          "red_flags_removed": [
+            "薪资面议",
+            "预算待审批",
+            "预算水平：unknown"
+          ],
+          "required_skills": [
+            "系统架构设计能力",
+            "数据库设计与优化",
+            "API开发经验",
+            "前后端开发技术栈"
+          ],
+          "salary_range": {
+            "max": 35000,
+            "min": 20000,
+            "unit": "元/月"
+          },
+          "task_id": "t1",
+          "task_name": "会员积分系统架构设计",
+          "water_analysis": "与原始描述相比，明确了具体项目内容和交付时间，移除了'薪资面议'和'预算待审批'等模糊表述，添加了具体的技术要求",
+          "water_score": 85,
+          "work_type": "contract"
+        },
+        {
+          "core_responsibilities": [
+            "开发一套完整的会员积分系统，确保在两个月内完成",
+            "进行系统功能测试、性能测试和安全测试",
+            "完成系统部署上线工作"
+          ],
+          "experience_range": {
+            "max": 4,
+            "min": 2,
+            "unit": "年"
+          },
+          "job_id": "jd_0bf1ea947377",
+          "job_title": "会员积分系统开发工程师",
+          "nice_to_have_skills": [
+            "熟悉会员管理相关业务逻辑",
+            "有高并发系统开发经验"
+          ],
+          "red_flags_removed": [
+            "薪资面议",
+            "预算还没批下来"
+          ],
+          "required_skills": [
+            "会员积分系统开发经验",
+            "系统测试与部署能力",
+            "独立完成项目的能力"
+          ],
+          "salary_range": {
+            "max": 35000,
+            "min": 20000,
+            "unit": "元/月"
+          },
+          "task_id": "t5",
+          "task_name": "系统测试与部署",
+          "water_analysis": "与原始描述相比，明确了具体项目内容和时间要求，移除了模糊的'薪资面议'和'预算还没批下来'等不确定信息",
+          "water_score": 85,
+          "work_type": "contract"
+        }
+      ],
+      "needs_hiring": true,
+      "water_interpretation": "JD 描述与实际需求高度一致，信息可信度高"
+    },
+    "requirement": {
+      "budget_hint": "unknown",
+      "core_description": "开发一套会员积分系统，两个月内完成",
+      "duration": "one-time",
+      "project_name": "会员积分系统开发",
+      "tasks_hint": [
+        "系统设计与开发",
+        "积分规则配置",
+        "会员管理功能实现",
+        "数据统计与分析"
+      ],
+      "team_context": "预算待审批，薪资面议，两个月内完成",
+      "urgency": "medium"
+    },
+    "summary": {
+      "agent_tasks": 3,
+      "human_tasks": 2,
+      "job_count": 2,
+      "needs_hiring": true,
+      "task_count": 5,
+      "verdict": "建议混合方案：3 个任务用 Agent，2 个任务需要人类",
+      "verdict_type": "hybrid",
+      "water_score": 85
+    },
+    "tasks": [
+      {
+        "description": "设计系统整体架构，包括数据库结构、API接口、前端界面布局和后端服务架构",
+        "estimated_hours": 40,
+        "id": "t1",
+        "is_recurring": false,
+        "name": "会员积分系统架构设计",
+        "requires_judgment": true,
+        "type": "technical"
+      },
+      {
+        "description": "开发积分规则配置功能，包括积分获取规则、积分使用规则、积分有效期设置等",
+        "estimated_hours": 32,
+        "id": "t2",
+        "is_recurring": false,
+        "name": "积分规则配置模块开发",
+        "requires_judgment": true,
+        "type": "technical"
+      },
+      {
+        "description": "实现会员信息管理、会员等级管理、会员权益管理等功能",
+        "estimated_hours": 48,
+        "id": "t3",
+        "is_recurring": false,
+        "name": "会员管理功能实现",
+        "requires_judgment": true,
+        "type": "technical"
+      },
+      {
+        "description": "开发积分数据统计、会员行为分析、报表生成等功能",
+        "estimated_hours": 24,
+        "id": "t4",
+        "is_recurring": false,
+        "name": "数据统计与分析模块开发",
+        "requires_judgment": true,
+        "type": "technical"
+      },
+      {
+        "description": "进行系统功能测试、性能测试、安全测试，并完成系统部署上线",
+        "estimated_hours": 32,
+        "id": "t5",
+        "is_recurring": false,
+        "name": "系统测试与部署",
+        "requires_judgment": true,
+        "type": "technical"
+      }
+    ]
+  },
+  "error": null,
+  "turn_count_reported": 3,
+  "requirement_after_clarify": {
+    "budget_hint": "unknown",
+    "core_description": "开发一套会员积分系统，两个月内完成",
+    "duration": "one-time",
+    "project_name": "会员积分系统开发",
+    "tasks_hint": [
+      "系统设计与开发",
+      "积分规则配置",
+      "会员管理功能实现",
+      "数据统计与分析"
+    ],
+    "team_context": "预算待审批，薪资面议，两个月内完成",
+    "urgency": "medium"
+  },
+  "app_accounting": {
+    "agent_runs": [
+      {
+        "agent_name": "job_design",
+        "task_id": "t5",
+        "input_tokens": 2788,
+        "output_tokens": 1358,
+        "time_ms": 28705,
+        "llm_cost_usd": "0.02898054"
+      },
+      {
+        "agent_name": "job_design",
+        "task_id": "t1",
+        "input_tokens": 2788,
+        "output_tokens": 1358,
+        "time_ms": 28705,
+        "llm_cost_usd": "0.02898054"
+      }
+    ],
+    "reported_input_tokens": 2788,
+    "reported_output_tokens": 1358,
+    "reported_time_ms": 28705,
+    "reported_cost_usd": "0.02898054",
+    "analysis_traces": 15
+  },
+  "score": {
+    "case_id": "g12",
+    "category": "budget-unknown",
+    "structural_score": 0.875,
+    "components": {
+      "requirement": 1.0,
+      "task_count": 1.0,
+      "must_include": 0.5,
+      "must_not_include": null,
+      "decisions": 1.0
+    },
+    "details": {
+      "requirement": [
+        {
+          "check": "core_description_keywords_any",
+          "expected": [
+            "会员",
+            "积分"
+          ],
+          "actual": "开发一套会员积分系统，两个月内完成",
+          "passed": true,
+          "matched": "会员"
+        },
+        {
+          "check": "budget_hint",
+          "expected": "unknown",
+          "actual": "unknown",
+          "passed": true
+        }
+      ],
+      "task_count": {
+        "check": "count_range",
+        "expected": [
+          3,
+          5
+        ],
+        "actual": 5,
+        "passed": true
+      },
+      "must_include": [
+        {
+          "check": "must_include",
+          "expected": {
+            "name_keywords_any": [
+              "积分",
+              "规则",
+              "等级"
+            ]
+          },
+          "passed": true,
+          "matched_task": "会员积分系统架构设计",
+          "closest": {
+            "name_keyword": "积分"
+          }
+        },
+        {
+          "check": "must_include",
+          "expected": {
+            "name_keywords_any": [
+              "订单",
+              "对接",
+              "集成",
+              "抵扣"
+            ],
+            "type": "technical"
+          },
+          "passed": false,
+          "matched_task": null,
+          "closest": {
+            "name_keyword": null
+          }
+        }
+      ],
+      "must_not_include": {
+        "check": "must_not_include_keywords",
+        "expected": [],
+        "passed": null,
+        "note": "nothing asserted — component skipped"
+      },
+      "decisions": {
+        "check": "decisions",
+        "expected": {
+          "human_max": 4
+        },
+        "actual": {
+          "agent": 3,
+          "human": 2,
+          "hybrid": 0,
+          "none": 0
+        },
+        "passed": true,
+        "failures": []
+      }
+    }
+  },
+  "decision_counts": {
+    "agent": 3,
+    "human": 2,
+    "hybrid": 0,
+    "none": 0
+  },
+  "judge": {
+    "score": 4,
+    "rationale": "预算正确标记为unknown，但任务t2和t3应合并为积分规则设计，与订单系统集成分离。",
+    "repaired": false,
+    "error": null,
+    "raw": "{\"score\": 4, \"rationale\": \"预算正确标记为unknown，但任务t2和t3应合并为积分规则设计，与订单系统集成分离。\"}"
+  },
+  "llm_calls": [
+    {
+      "case_id": "g12",
+      "phase": "pipeline",
+      "stage": "clarify",
+      "model": "glm-4-plus",
+      "input_tokens": 239,
+      "output_tokens": 15,
+      "total_tokens": 254,
+      "time_ms": 586,
+      "attempts": 1
+    },
+    {
+      "case_id": "g12",
+      "phase": "pipeline",
+      "stage": "clarify",
+      "model": "glm-4-plus",
+      "input_tokens": 275,
+      "output_tokens": 25,
+      "total_tokens": 300,
+      "time_ms": 648,
+      "attempts": 1
+    },
+    {
+      "case_id": "g12",
+      "phase": "pipeline",
+      "stage": "clarify",
+      "model": "glm-4-plus",
+      "input_tokens": 316,
+      "output_tokens": 105,
+      "total_tokens": 421,
+      "time_ms": 1910,
+      "attempts": 1
+    },
+    {
+      "case_id": "g12",
+      "phase": "pipeline",
+      "stage": "decompose",
+      "model": "glm-4-plus",
+      "input_tokens": 272,
+      "output_tokens": 397,
+      "total_tokens": 669,
+      "time_ms": 6414,
+      "attempts": 1
+    },
+    {
+      "case_id": "g12",
+      "phase": "pipeline",
+      "stage": "evaluate",
+      "model": "glm-4-plus",
+      "input_tokens": 164,
+      "output_tokens": 87,
+      "total_tokens": 251,
+      "time_ms": 2002,
+      "attempts": 1
+    },
+    {
+      "case_id": "g12",
+      "phase": "pipeline",
+      "stage": "evaluate",
+      "model": "glm-4-plus",
+      "input_tokens": 182,
+      "output_tokens": 85,
+      "total_tokens": 267,
+      "time_ms": 1475,
+      "attempts": 1
+    },
+    {
+      "case_id": "g12",
+      "phase": "pipeline",
+      "stage": "evaluate",
+      "model": "glm-4-plus",
+      "input_tokens": 163,
+      "output_tokens": 77,
+      "total_tokens": 240,
+      "time_ms": 1766,
+      "attempts": 1
+    },
+    {
+      "case_id": "g12",
+      "phase": "pipeline",
+      "stage": "evaluate",
+      "model": "glm-4-plus",
+      "input_tokens": 181,
+      "output_tokens": 88,
+      "total_tokens": 269,
+      "time_ms": 1531,
+      "attempts": 1
+    },
+    {
+      "case_id": "g12",
+      "phase": "pipeline",
+      "stage": "evaluate",
+      "model": "glm-4-plus",
+      "input_tokens": 156,
+      "output_tokens": 79,
+      "total_tokens": 235,
+      "time_ms": 1971,
+      "attempts": 1
+    },
+    {
+      "case_id": "g12",
+      "phase": "pipeline",
+      "stage": "evaluate",
+      "model": "glm-4-plus",
+      "input_tokens": 174,
+      "output_tokens": 89,
+      "total_tokens": 263,
+      "time_ms": 2716,
+      "attempts": 1
+    },
+    {
+      "case_id": "g12",
+      "phase": "pipeline",
+      "stage": "evaluate",
+      "model": "glm-4-plus",
+      "input_tokens": 156,
+      "output_tokens": 75,
+      "total_tokens": 231,
+      "time_ms": 1867,
+      "attempts": 1
+    },
+    {
+      "case_id": "g12",
+      "phase": "pipeline",
+      "stage": "evaluate",
+      "model": "glm-4-plus",
+      "input_tokens": 174,
+      "output_tokens": 81,
+      "total_tokens": 255,
+      "time_ms": 2200,
+      "attempts": 1
+    },
+    {
+      "case_id": "g12",
+      "phase": "pipeline",
+      "stage": "evaluate",
+      "model": "glm-4-plus",
+      "input_tokens": 159,
+      "output_tokens": 66,
+      "total_tokens": 225,
+      "time_ms": 1589,
+      "attempts": 1
+    },
+    {
+      "case_id": "g12",
+      "phase": "pipeline",
+      "stage": "evaluate",
+      "model": "glm-4-plus",
+      "input_tokens": 177,
+      "output_tokens": 89,
+      "total_tokens": 266,
+      "time_ms": 2030,
+      "attempts": 1
+    },
+    {
+      "case_id": "g12",
+      "phase": "pipeline",
+      "stage": "job_design",
+      "model": "glm-4-plus",
+      "input_tokens": 502,
+      "output_tokens": 270,
+      "total_tokens": 772,
+      "time_ms": 4441,
+      "attempts": 1
+    },
+    {
+      "case_id": "g12",
+      "phase": "pipeline",
+      "stage": "job_design",
+      "model": "glm-4-plus",
+      "input_tokens": 497,
+      "output_tokens": 244,
+      "total_tokens": 741,
+      "time_ms": 4433,
+      "attempts": 1
+    },
+    {
+      "case_id": "g12",
+      "phase": "judge",
+      "stage": "other",
+      "model": "glm-4-plus",
+      "input_tokens": 1112,
+      "output_tokens": 38,
+      "total_tokens": 1150,
+      "time_ms": 921,
+      "attempts": 1
+    }
+  ],
+  "usage": {
+    "pipeline": {
+      "calls": 16,
+      "input_tokens": 3787,
+      "output_tokens": 1872,
+      "total_tokens": 5659,
+      "time_ms": 37579,
+      "est_cost_usd": 0.039556
+    },
+    "judge": {
+      "calls": 1,
+      "input_tokens": 1112,
+      "output_tokens": 38,
+      "total_tokens": 1150,
+      "time_ms": 921,
+      "est_cost_usd": 0.008039
+    },
+    "by_stage": {
+      "clarify": {
+        "calls": 3,
+        "input_tokens": 830,
+        "output_tokens": 145
+      },
+      "decompose": {
+        "calls": 1,
+        "input_tokens": 272,
+        "output_tokens": 397
+      },
+      "evaluate": {
+        "calls": 10,
+        "input_tokens": 1686,
+        "output_tokens": 816
+      },
+      "job_design": {
+        "calls": 2,
+        "input_tokens": 999,
+        "output_tokens": 514
+      }
+    }
+  },
+  "wall_time_s": 38.92
+}

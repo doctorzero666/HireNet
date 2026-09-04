@@ -1,0 +1,999 @@
+{
+  "case_id": "g06",
+  "category": "backend",
+  "agent": "v1",
+  "started_at": "2026-09-04T05:51:39+00:00",
+  "session_id": "d7c83de6a64a6dc9",
+  "http": {
+    "start": 200,
+    "reply": [
+      200,
+      200
+    ],
+    "decide": 200
+  },
+  "turns": 2,
+  "completed": true,
+  "hit_turn_cap": false,
+  "transcript": [
+    {
+      "role": "employer",
+      "text": "我们要给内部工具搭建一个后端服务，支持员工提交和审批各类申请，计划三个月内做完。"
+    },
+    {
+      "role": "pipeline",
+      "text": "这个项目听起来是一个内部审批系统的后端开发。为了更好地理解需求，我想确认一下：\n\n1. 这个审批系统主要处理哪些类型的申请？（例如：请假、报销、采购等）\n2. 现在是否有现有的系统或流程需要迁移或参考？"
+    },
+    {
+      "role": "employer",
+      "text": "预算 15 万左右，走内部项目立项。"
+    },
+    {
+      "role": "pipeline",
+      "text": "\n\n1. 这个审批系统需要支持多少种不同类型的申请流程？每种流程是否需要不同的审批规则和层级？"
+    },
+    {
+      "role": "employer",
+      "text": "三个月内交付这一版，之后交给 IT 部门自己维护。"
+    },
+    {
+      "role": "pipeline",
+      "text": "\n[REQUIREMENT_COMPLETE]\n```json\n{\n  \"project_name\": \"内部审批系统后端服务\",\n  \"core_description\": \"为内部员工提供各类申请提交和审批功能的后端服务，三个月内完成开发并交付给IT部门维护\",\n  \"tasks_hint\": [\"设计审批流程引擎\", \"实现用户认证和权限管理\", \"开发申请提交和审批API\", \"构建数据存储和查询功能\"],\n  \"duration\": \"one-time\",\n  \"team_context\": \"企业内部项目，由开发团队负责实施，完成后移交给IT部门维护\",\n  \"urgency\": \"medium\",\n  \"budget_hint\": \"medium\"\n}\n```"
+    }
+  ],
+  "response": {
+    "decisions": {
+      "decisions": [
+        {
+          "evaluations": [
+            {
+              "can_complete": true,
+              "confidence": 0.8,
+              "estimated_time": "2-3周",
+              "reason": "张伟具备全栈开发经验和多种技术栈，能够胜任系统架构设计任务。",
+              "resource_id": "candidate_a",
+              "resource_name": "张伟（全栈工程师）",
+              "resource_type": "human",
+              "strengths": [
+                "全栈开发经验丰富",
+                "掌握多种技术栈",
+                "有独立交付产品的经验"
+              ]
+            },
+            {
+              "can_complete": false,
+              "confidence": 0.3,
+              "estimated_time": "无法准确估算",
+              "reason": "代码生成Agent缺乏系统架构设计的专业知识和经验",
+              "resource_id": "agent_code",
+              "resource_name": "代码生成 Agent",
+              "resource_type": "agent",
+              "strengths": [
+                "代码编写能力",
+                "代码审查能力"
+              ]
+            }
+          ],
+          "recommendation": {
+            "cost_hint": "需要评估薪资",
+            "decision": "human",
+            "reason": "建议招聘 张伟（全栈工程师） 类型人才，置信度 80%",
+            "resource": {
+              "can_complete": true,
+              "confidence": 0.8,
+              "estimated_time": "2-3周",
+              "reason": "张伟具备全栈开发经验和多种技术栈，能够胜任系统架构设计任务。",
+              "resource_id": "candidate_a",
+              "resource_name": "张伟（全栈工程师）",
+              "resource_type": "human",
+              "strengths": [
+                "全栈开发经验丰富",
+                "掌握多种技术栈",
+                "有独立交付产品的经验"
+              ]
+            }
+          },
+          "task_id": "t1",
+          "task_name": "系统架构设计",
+          "task_type": "technical"
+        },
+        {
+          "evaluations": [
+            {
+              "can_complete": true,
+              "confidence": 0.8,
+              "estimated_time": "2-3周",
+              "reason": "代码生成Agent具备前后端开发和脚本编写能力，可构建审批流程引擎的核心功能",
+              "resource_id": "agent_code",
+              "resource_name": "代码生成 Agent",
+              "resource_type": "agent",
+              "strengths": [
+                "全栈开发能力",
+                "可配置化实现经验",
+                "条件逻辑处理能力"
+              ]
+            },
+            {
+              "can_complete": true,
+              "confidence": 0.8,
+              "estimated_time": "2-3个月",
+              "reason": "张伟具备全栈开发能力和相关技术栈，但审批流程引擎开发需要特定领域经验",
+              "resource_id": "candidate_a",
+              "resource_name": "张伟（全栈工程师）",
+              "resource_type": "human",
+              "strengths": [
+                "全栈开发能力",
+                "独立交付经验",
+                "多种编程语言和框架技能"
+              ]
+            }
+          ],
+          "recommendation": {
+            "cost_hint": "$0.05",
+            "decision": "agent",
+            "reason": "推荐使用 代码生成 Agent，置信度 80%",
+            "resource": {
+              "can_complete": true,
+              "confidence": 0.8,
+              "estimated_time": "2-3周",
+              "reason": "代码生成Agent具备前后端开发和脚本编写能力，可构建审批流程引擎的核心功能",
+              "resource_id": "agent_code",
+              "resource_name": "代码生成 Agent",
+              "resource_type": "agent",
+              "strengths": [
+                "全栈开发能力",
+                "可配置化实现经验",
+                "条件逻辑处理能力"
+              ]
+            }
+          },
+          "task_id": "t2",
+          "task_name": "审批流程引擎开发",
+          "task_type": "technical"
+        },
+        {
+          "evaluations": [
+            {
+              "can_complete": true,
+              "confidence": 0.9,
+              "estimated_time": "2-3周",
+              "reason": "张伟具备全栈开发经验和相关技术栈，能够独立完成用户认证与权限管理功能",
+              "resource_id": "candidate_a",
+              "resource_name": "张伟（全栈工程师）",
+              "resource_type": "human",
+              "strengths": [
+                "全栈开发经验丰富",
+                "掌握React、Node.js、TypeScript等关键技术",
+                "有独立交付产品的经验"
+              ]
+            },
+            {
+              "can_complete": true,
+              "confidence": 0.85,
+              "estimated_time": "2-3天",
+              "reason": "代码生成Agent具备前后端开发和代码审查能力，能够实现用户认证与权限管理功能",
+              "resource_id": "agent_code",
+              "resource_name": "代码生成 Agent",
+              "resource_type": "agent",
+              "strengths": [
+                "前端开发能力",
+                "后端开发能力",
+                "代码审查能力"
+              ]
+            }
+          ],
+          "recommendation": {
+            "cost_hint": "需要评估薪资",
+            "decision": "human",
+            "reason": "建议招聘 张伟（全栈工程师） 类型人才，置信度 90%",
+            "resource": {
+              "can_complete": true,
+              "confidence": 0.9,
+              "estimated_time": "2-3周",
+              "reason": "张伟具备全栈开发经验和相关技术栈，能够独立完成用户认证与权限管理功能",
+              "resource_id": "candidate_a",
+              "resource_name": "张伟（全栈工程师）",
+              "resource_type": "human",
+              "strengths": [
+                "全栈开发经验丰富",
+                "掌握React、Node.js、TypeScript等关键技术",
+                "有独立交付产品的经验"
+              ]
+            }
+          },
+          "task_id": "t3",
+          "task_name": "用户认证与权限管理",
+          "task_type": "technical"
+        },
+        {
+          "evaluations": [
+            {
+              "can_complete": true,
+              "confidence": 0.9,
+              "estimated_time": "2-3周",
+              "reason": "张伟具备全栈开发经验和所需技术栈，能够独立完成RESTful API开发任务。",
+              "resource_id": "candidate_a",
+              "resource_name": "张伟（全栈工程师）",
+              "resource_type": "human",
+              "strengths": [
+                "React、Node.js、TypeScript等全栈技术栈熟练",
+                "3年全栈开发经验，有独立交付产品的能力"
+              ]
+            },
+            {
+              "can_complete": true,
+              "confidence": 0.85,
+              "estimated_time": "3-5天",
+              "reason": "代码生成Agent具备前后端开发能力，能够完成RESTful API开发任务",
+              "resource_id": "agent_code",
+              "resource_name": "代码生成 Agent",
+              "resource_type": "agent",
+              "strengths": [
+                "全栈开发能力",
+                "代码审查能力"
+              ]
+            }
+          ],
+          "recommendation": {
+            "cost_hint": "需要评估薪资",
+            "decision": "human",
+            "reason": "建议招聘 张伟（全栈工程师） 类型人才，置信度 90%",
+            "resource": {
+              "can_complete": true,
+              "confidence": 0.9,
+              "estimated_time": "2-3周",
+              "reason": "张伟具备全栈开发经验和所需技术栈，能够独立完成RESTful API开发任务。",
+              "resource_id": "candidate_a",
+              "resource_name": "张伟（全栈工程师）",
+              "resource_type": "human",
+              "strengths": [
+                "React、Node.js、TypeScript等全栈技术栈熟练",
+                "3年全栈开发经验，有独立交付产品的能力"
+              ]
+            }
+          },
+          "task_id": "t4",
+          "task_name": "申请与审批API开发",
+          "task_type": "technical"
+        },
+        {
+          "evaluations": [
+            {
+              "can_complete": true,
+              "confidence": 0.7,
+              "estimated_time": "2-3周",
+              "reason": "张伟具备全栈开发技能，但缺乏专门的测试和文档编写经验",
+              "resource_id": "candidate_a",
+              "resource_name": "张伟（全栈工程师）",
+              "resource_type": "human",
+              "strengths": [
+                "熟悉多种技术栈",
+                "有独立交付产品的经验"
+              ]
+            },
+            {
+              "can_complete": false,
+              "confidence": 0.3,
+              "estimated_time": "无法估算",
+              "reason": "代码生成Agent缺乏系统测试和文档编写的能力",
+              "resource_id": "agent_code",
+              "resource_name": "代码生成 Agent",
+              "resource_type": "agent",
+              "strengths": [
+                "代码生成",
+                "代码审查"
+              ]
+            }
+          ],
+          "recommendation": {
+            "cost_hint": "需要评估薪资",
+            "decision": "human",
+            "reason": "建议招聘 张伟（全栈工程师） 类型人才，置信度 70%",
+            "resource": {
+              "can_complete": true,
+              "confidence": 0.7,
+              "estimated_time": "2-3周",
+              "reason": "张伟具备全栈开发技能，但缺乏专门的测试和文档编写经验",
+              "resource_id": "candidate_a",
+              "resource_name": "张伟（全栈工程师）",
+              "resource_type": "human",
+              "strengths": [
+                "熟悉多种技术栈",
+                "有独立交付产品的经验"
+              ]
+            }
+          },
+          "task_id": "t5",
+          "task_name": "系统测试与文档编写",
+          "task_type": "technical"
+        }
+      ]
+    },
+    "jd_report": {
+      "average_water_score": 85,
+      "job_count": 4,
+      "job_designs": [
+        {
+          "core_responsibilities": [
+            "设计和实现内部审批系统的后端服务架构",
+            "开发员工申请提交和审批功能的API接口",
+            "确保系统在三个月内完成开发并交付",
+            "编写技术文档，为IT部门维护提供支持"
+          ],
+          "experience_range": {
+            "max": 4,
+            "min": 2,
+            "unit": "年"
+          },
+          "job_id": "jd_0513f2bea4c3",
+          "job_title": "后端开发工程师",
+          "nice_to_have_skills": [
+            "企业级应用开发经验",
+            "审批工作流引擎使用经验",
+            "微服务架构经验",
+            "Docker容器化部署经验"
+          ],
+          "red_flags_removed": [
+            "移除了'各类申请'的模糊表述",
+            "移除了不明确的'搭建'一词，替换为具体的'设计和实现'"
+          ],
+          "required_skills": [
+            "后端开发经验（Java/Python/Node.js等）",
+            "RESTful API设计与实现",
+            "数据库设计与优化",
+            "系统架构设计能力"
+          ],
+          "salary_range": {
+            "max": 28000,
+            "min": 18000,
+            "unit": "元/月"
+          },
+          "task_id": "t1",
+          "task_name": "系统架构设计",
+          "water_analysis": "与原始描述相比，明确了项目性质为一次性开发，移除了'各类申请'的模糊表述，具体化了技术栈要求，澄清了交付对象和维护责任",
+          "water_score": 85,
+          "work_type": "contract"
+        },
+        {
+          "core_responsibilities": [
+            "设计和实现内部审批系统的用户认证与权限管理模块",
+            "开发支持员工提交和审批各类申请的后端API",
+            "确保系统在三个月内完成开发并交付IT部门维护",
+            "编写技术文档和API文档"
+          ],
+          "experience_range": {
+            "max": 4,
+            "min": 2,
+            "unit": "年"
+          },
+          "job_id": "jd_4711e1181f06",
+          "job_title": "后端开发工程师 - 内部审批系统",
+          "nice_to_have_skills": [
+            "企业级应用开发经验",
+            "微服务架构经验",
+            "敏捷开发经验"
+          ],
+          "red_flags_removed": [
+            "移除了'搭建一个后端服务'的模糊描述",
+            "移除了'计划三个月内做完'但未明确交付标准的表述"
+          ],
+          "required_skills": [
+            "后端开发经验（Java/Python/Node.js等）",
+            "RESTful API设计与实现",
+            "数据库设计与SQL",
+            "用户认证与权限管理实现"
+          ],
+          "salary_range": {
+            "max": 28000,
+            "min": 18000,
+            "unit": "元/月"
+          },
+          "task_id": "t3",
+          "task_name": "用户认证与权限管理",
+          "water_analysis": "与原始描述相比，明确了具体项目内容和交付时间，移除了模糊的'各类申请'描述，增加了具体的技术要求",
+          "water_score": 85,
+          "work_type": "contract"
+        },
+        {
+          "core_responsibilities": [
+            "开发内部审批系统的后端API，支持员工提交各类申请",
+            "实现审批流程和权限控制功能",
+            "确保系统在三个月内完成开发并交付",
+            "编写API文档和必要的测试用例",
+            "与前端团队协作完成系统集成"
+          ],
+          "experience_range": {
+            "max": 4,
+            "min": 2,
+            "unit": "年"
+          },
+          "job_id": "jd_3c6ce8e10d66",
+          "job_title": "后端开发工程师",
+          "nice_to_have_skills": [
+            "有企业内部系统开发经验",
+            "熟悉微服务架构",
+            "了解身份认证和权限管理框架",
+            "有敏捷开发经验"
+          ],
+          "red_flags_removed": [
+            "移除了'计划三个月内做完'的模糊时间压力，改为合理的项目周期预期"
+          ],
+          "required_skills": [
+            "熟练掌握至少一种后端编程语言（Java/Python/Node.js等）",
+            "熟悉RESTful API设计原则",
+            "了解数据库设计和SQL查询",
+            "具备良好的问题解决能力"
+          ],
+          "salary_range": {
+            "max": 28000,
+            "min": 18000,
+            "unit": "元/月"
+          },
+          "task_id": "t4",
+          "task_name": "申请与审批API开发",
+          "water_analysis": "与原始描述相比，明确了具体开发任务和技术要求，移除了模糊的时间压力表述，添加了必要的技能要求",
+          "water_score": 85,
+          "work_type": "contract"
+        },
+        {
+          "core_responsibilities": [
+            "设计和实现内部审批系统的后端API服务",
+            "开发员工提交和审批各类申请的功能模块",
+            "编写系统测试用例并执行测试",
+            "编写技术文档和API文档",
+            "在三个月内完成开发并交付给IT部门"
+          ],
+          "experience_range": {
+            "max": 4,
+            "min": 2,
+            "unit": "年"
+          },
+          "job_id": "jd_addbaeb7aac5",
+          "job_title": "后端开发工程师",
+          "nice_to_have_skills": [
+            "企业内部系统开发经验",
+            "审批流程设计经验",
+            "技术文档编写经验"
+          ],
+          "red_flags_removed": [
+            "移除了'搭建一个后端服务'的模糊表述，明确了具体功能需求",
+            "移除了'各类申请'的模糊描述，明确了是审批系统"
+          ],
+          "required_skills": [
+            "后端开发经验（Java/Python/Node.js等）",
+            "RESTful API设计经验",
+            "数据库设计和SQL经验",
+            "单元测试和集成测试经验"
+          ],
+          "salary_range": {
+            "max": 28000,
+            "min": 18000,
+            "unit": "元/月"
+          },
+          "task_id": "t5",
+          "task_name": "系统测试与文档编写",
+          "water_analysis": "与原始描述相比，明确了具体的技术栈和交付要求，澄清了项目性质为一次性开发而非长期维护",
+          "water_score": 85,
+          "work_type": "contract"
+        }
+      ],
+      "needs_hiring": true,
+      "water_interpretation": "JD 描述与实际需求高度一致，信息可信度高"
+    },
+    "requirement": {
+      "budget_hint": "medium",
+      "core_description": "为内部员工提供各类申请提交和审批功能的后端服务，三个月内完成开发并交付给IT部门维护",
+      "duration": "one-time",
+      "project_name": "内部审批系统后端服务",
+      "tasks_hint": [
+        "设计审批流程引擎",
+        "实现用户认证和权限管理",
+        "开发申请提交和审批API",
+        "构建数据存储和查询功能"
+      ],
+      "team_context": "企业内部项目，由开发团队负责实施，完成后移交给IT部门维护",
+      "urgency": "medium"
+    },
+    "summary": {
+      "agent_tasks": 1,
+      "human_tasks": 4,
+      "job_count": 4,
+      "needs_hiring": true,
+      "task_count": 5,
+      "verdict": "建议混合方案：1 个任务用 Agent，4 个任务需要人类",
+      "verdict_type": "hybrid",
+      "water_score": 85
+    },
+    "tasks": [
+      {
+        "description": "设计内部审批系统的整体架构，包括数据库设计、API接口规范、微服务划分等",
+        "estimated_hours": 16,
+        "id": "t1",
+        "is_recurring": false,
+        "name": "系统架构设计",
+        "requires_judgment": true,
+        "type": "technical"
+      },
+      {
+        "description": "实现可配置的审批流程引擎，支持多种审批类型、多级审批和条件分支",
+        "estimated_hours": 24,
+        "id": "t2",
+        "is_recurring": false,
+        "name": "审批流程引擎开发",
+        "requires_judgment": true,
+        "type": "technical"
+      },
+      {
+        "description": "实现用户身份认证、角色管理和权限控制功能，确保系统安全",
+        "estimated_hours": 20,
+        "id": "t3",
+        "is_recurring": false,
+        "name": "用户认证与权限管理",
+        "requires_judgment": true,
+        "type": "technical"
+      },
+      {
+        "description": "开发申请提交、审批流转、状态查询等核心功能的RESTful API",
+        "estimated_hours": 28,
+        "id": "t4",
+        "is_recurring": false,
+        "name": "申请与审批API开发",
+        "requires_judgment": true,
+        "type": "technical"
+      },
+      {
+        "description": "进行系统功能测试、性能测试，并编写技术文档和用户手册",
+        "estimated_hours": 16,
+        "id": "t5",
+        "is_recurring": false,
+        "name": "系统测试与文档编写",
+        "requires_judgment": true,
+        "type": "technical"
+      }
+    ]
+  },
+  "error": null,
+  "turn_count_reported": null,
+  "requirement_after_clarify": {
+    "budget_hint": "medium",
+    "core_description": "为内部员工提供各类申请提交和审批功能的后端服务，三个月内完成开发并交付给IT部门维护",
+    "duration": "one-time",
+    "project_name": "内部审批系统后端服务",
+    "tasks_hint": [
+      "设计审批流程引擎",
+      "实现用户认证和权限管理",
+      "开发申请提交和审批API",
+      "构建数据存储和查询功能"
+    ],
+    "team_context": "企业内部项目，由开发团队负责实施，完成后移交给IT部门维护",
+    "urgency": "medium"
+  },
+  "app_accounting": {
+    "agent_runs": [
+      {
+        "agent_name": "job_design",
+        "task_id": "t5",
+        "input_tokens": null,
+        "output_tokens": null,
+        "time_ms": null,
+        "llm_cost_usd": null
+      },
+      {
+        "agent_name": "job_design",
+        "task_id": "t4",
+        "input_tokens": null,
+        "output_tokens": null,
+        "time_ms": null,
+        "llm_cost_usd": null
+      },
+      {
+        "agent_name": "job_design",
+        "task_id": "t3",
+        "input_tokens": null,
+        "output_tokens": null,
+        "time_ms": null,
+        "llm_cost_usd": null
+      },
+      {
+        "agent_name": "job_design",
+        "task_id": "t1",
+        "input_tokens": null,
+        "output_tokens": null,
+        "time_ms": null,
+        "llm_cost_usd": null
+      }
+    ],
+    "reported_input_tokens": null,
+    "reported_output_tokens": null,
+    "reported_time_ms": null,
+    "reported_cost_usd": null,
+    "analysis_traces": 0
+  },
+  "score": {
+    "case_id": "g06",
+    "category": "backend",
+    "structural_score": 0.9333,
+    "components": {
+      "requirement": 1.0,
+      "task_count": 1.0,
+      "must_include": 0.6666666666666666,
+      "must_not_include": 1.0,
+      "decisions": 1.0
+    },
+    "details": {
+      "requirement": [
+        {
+          "check": "core_description_keywords_any",
+          "expected": [
+            "后端",
+            "内部工具",
+            "审批"
+          ],
+          "actual": "为内部员工提供各类申请提交和审批功能的后端服务，三个月内完成开发并交付给IT部门维护",
+          "passed": true,
+          "matched": "后端"
+        },
+        {
+          "check": "duration",
+          "expected": "one-time",
+          "actual": "one-time",
+          "passed": true
+        }
+      ],
+      "task_count": {
+        "check": "count_range",
+        "expected": [
+          3,
+          5
+        ],
+        "actual": 5,
+        "passed": true
+      },
+      "must_include": [
+        {
+          "check": "must_include",
+          "expected": {
+            "name_keywords_any": [
+              "数据模型",
+              "数据库",
+              "表结构",
+              "建模",
+              "schema"
+            ],
+            "type": "technical"
+          },
+          "passed": false,
+          "matched_task": null,
+          "closest": {
+            "name_keyword": null
+          }
+        },
+        {
+          "check": "must_include",
+          "expected": {
+            "name_keywords_any": [
+              "接口",
+              "API",
+              "服务端"
+            ],
+            "type": "technical"
+          },
+          "passed": true,
+          "matched_task": "申请与审批API开发",
+          "closest": {
+            "name_keyword": "API",
+            "type": {
+              "expected": "technical",
+              "actual": "technical"
+            }
+          }
+        },
+        {
+          "check": "must_include",
+          "expected": {
+            "name_keywords_any": [
+              "权限",
+              "审计",
+              "日志",
+              "认证",
+              "鉴权"
+            ]
+          },
+          "passed": true,
+          "matched_task": "用户认证与权限管理",
+          "closest": {
+            "name_keyword": "权限"
+          }
+        }
+      ],
+      "must_not_include": {
+        "check": "must_not_include_keywords",
+        "expected": [
+          "营销",
+          "硬件采购"
+        ],
+        "passed": true,
+        "violations": []
+      },
+      "decisions": {
+        "check": "decisions",
+        "expected": {
+          "human_max": 4
+        },
+        "actual": {
+          "agent": 1,
+          "human": 4,
+          "hybrid": 0,
+          "none": 0
+        },
+        "passed": true,
+        "failures": []
+      }
+    }
+  },
+  "decision_counts": {
+    "agent": 1,
+    "human": 4,
+    "hybrid": 0,
+    "none": 0
+  },
+  "judge": {
+    "score": 4,
+    "rationale": "任务覆盖了架构设计、审批流程、权限管理、API开发和测试等核心功能，权限管理任务体现了权限/审计要求，但缺少明确的审计日志任务，工时估计在3个月1人加外包的条件下基本合理。",
+    "repaired": false,
+    "error": null,
+    "raw": "{\"score\": 4, \"rationale\": \"任务覆盖了架构设计、审批流程、权限管理、API开发和测试等核心功能，权限管理任务体现了权限/审计要求，但缺少明确的审计日志任务，工时估计在3个月1人加外包的条件下基本合理。\"}"
+  },
+  "llm_calls": [
+    {
+      "case_id": "g06",
+      "phase": "pipeline",
+      "stage": "clarify",
+      "model": "glm-4-plus",
+      "input_tokens": 244,
+      "output_tokens": 57,
+      "total_tokens": 301,
+      "time_ms": 1324,
+      "attempts": 1
+    },
+    {
+      "case_id": "g06",
+      "phase": "pipeline",
+      "stage": "clarify",
+      "model": "glm-4-plus",
+      "input_tokens": 319,
+      "output_tokens": 26,
+      "total_tokens": 345,
+      "time_ms": 2113,
+      "attempts": 1
+    },
+    {
+      "case_id": "g06",
+      "phase": "pipeline",
+      "stage": "clarify",
+      "model": "glm-4-plus",
+      "input_tokens": 367,
+      "output_tokens": 140,
+      "total_tokens": 507,
+      "time_ms": 2579,
+      "attempts": 1
+    },
+    {
+      "case_id": "g06",
+      "phase": "pipeline",
+      "stage": "decompose",
+      "model": "glm-4-plus",
+      "input_tokens": 305,
+      "output_tokens": 398,
+      "total_tokens": 703,
+      "time_ms": 8242,
+      "attempts": 1
+    },
+    {
+      "case_id": "g06",
+      "phase": "pipeline",
+      "stage": "evaluate",
+      "model": "glm-4-plus",
+      "input_tokens": 161,
+      "output_tokens": 64,
+      "total_tokens": 225,
+      "time_ms": 1540,
+      "attempts": 1
+    },
+    {
+      "case_id": "g06",
+      "phase": "pipeline",
+      "stage": "evaluate",
+      "model": "glm-4-plus",
+      "input_tokens": 179,
+      "output_tokens": 82,
+      "total_tokens": 261,
+      "time_ms": 1793,
+      "attempts": 1
+    },
+    {
+      "case_id": "g06",
+      "phase": "pipeline",
+      "stage": "evaluate",
+      "model": "glm-4-plus",
+      "input_tokens": 162,
+      "output_tokens": 82,
+      "total_tokens": 244,
+      "time_ms": 1948,
+      "attempts": 1
+    },
+    {
+      "case_id": "g06",
+      "phase": "pipeline",
+      "stage": "evaluate",
+      "model": "glm-4-plus",
+      "input_tokens": 180,
+      "output_tokens": 84,
+      "total_tokens": 264,
+      "time_ms": 1624,
+      "attempts": 1
+    },
+    {
+      "case_id": "g06",
+      "phase": "pipeline",
+      "stage": "evaluate",
+      "model": "glm-4-plus",
+      "input_tokens": 158,
+      "output_tokens": 80,
+      "total_tokens": 238,
+      "time_ms": 2039,
+      "attempts": 1
+    },
+    {
+      "case_id": "g06",
+      "phase": "pipeline",
+      "stage": "evaluate",
+      "model": "glm-4-plus",
+      "input_tokens": 176,
+      "output_tokens": 91,
+      "total_tokens": 267,
+      "time_ms": 3320,
+      "attempts": 1
+    },
+    {
+      "case_id": "g06",
+      "phase": "pipeline",
+      "stage": "evaluate",
+      "model": "glm-4-plus",
+      "input_tokens": 159,
+      "output_tokens": 72,
+      "total_tokens": 231,
+      "time_ms": 1596,
+      "attempts": 1
+    },
+    {
+      "case_id": "g06",
+      "phase": "pipeline",
+      "stage": "evaluate",
+      "model": "glm-4-plus",
+      "input_tokens": 177,
+      "output_tokens": 93,
+      "total_tokens": 270,
+      "time_ms": 2086,
+      "attempts": 1
+    },
+    {
+      "case_id": "g06",
+      "phase": "pipeline",
+      "stage": "evaluate",
+      "model": "glm-4-plus",
+      "input_tokens": 159,
+      "output_tokens": 61,
+      "total_tokens": 220,
+      "time_ms": 1323,
+      "attempts": 1
+    },
+    {
+      "case_id": "g06",
+      "phase": "pipeline",
+      "stage": "evaluate",
+      "model": "glm-4-plus",
+      "input_tokens": 177,
+      "output_tokens": 74,
+      "total_tokens": 251,
+      "time_ms": 2447,
+      "attempts": 1
+    },
+    {
+      "case_id": "g06",
+      "phase": "pipeline",
+      "stage": "job_design",
+      "model": "glm-4-plus",
+      "input_tokens": 506,
+      "output_tokens": 307,
+      "total_tokens": 813,
+      "time_ms": 4747,
+      "attempts": 1
+    },
+    {
+      "case_id": "g06",
+      "phase": "pipeline",
+      "stage": "job_design",
+      "model": "glm-4-plus",
+      "input_tokens": 508,
+      "output_tokens": 298,
+      "total_tokens": 806,
+      "time_ms": 4473,
+      "attempts": 1
+    },
+    {
+      "case_id": "g06",
+      "phase": "pipeline",
+      "stage": "job_design",
+      "model": "glm-4-plus",
+      "input_tokens": 508,
+      "output_tokens": 305,
+      "total_tokens": 813,
+      "time_ms": 4934,
+      "attempts": 1
+    },
+    {
+      "case_id": "g06",
+      "phase": "pipeline",
+      "stage": "job_design",
+      "model": "glm-4-plus",
+      "input_tokens": 508,
+      "output_tokens": 307,
+      "total_tokens": 815,
+      "time_ms": 5636,
+      "attempts": 1
+    },
+    {
+      "case_id": "g06",
+      "phase": "judge",
+      "stage": "other",
+      "model": "glm-4-plus",
+      "input_tokens": 1165,
+      "output_tokens": 63,
+      "total_tokens": 1228,
+      "time_ms": 1659,
+      "attempts": 1
+    }
+  ],
+  "usage": {
+    "pipeline": {
+      "calls": 18,
+      "input_tokens": 4953,
+      "output_tokens": 2621,
+      "total_tokens": 7574,
+      "time_ms": 53764,
+      "est_cost_usd": 0.052942
+    },
+    "judge": {
+      "calls": 1,
+      "input_tokens": 1165,
+      "output_tokens": 63,
+      "total_tokens": 1228,
+      "time_ms": 1659,
+      "est_cost_usd": 0.008584
+    },
+    "by_stage": {
+      "clarify": {
+        "calls": 3,
+        "input_tokens": 930,
+        "output_tokens": 223
+      },
+      "decompose": {
+        "calls": 1,
+        "input_tokens": 305,
+        "output_tokens": 398
+      },
+      "evaluate": {
+        "calls": 10,
+        "input_tokens": 1688,
+        "output_tokens": 783
+      },
+      "job_design": {
+        "calls": 4,
+        "input_tokens": 2030,
+        "output_tokens": 1217
+      }
+    }
+  },
+  "wall_time_s": 55.58
+}

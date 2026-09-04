@@ -1,0 +1,882 @@
+{
+  "case_id": "g11",
+  "category": "oversized",
+  "agent": "v2",
+  "started_at": "2026-09-04T06:14:21+00:00",
+  "session_id": "bb5e70715c819f2b",
+  "http": {
+    "start": 200,
+    "reply": [
+      200,
+      200
+    ],
+    "decide": 200
+  },
+  "turns": 2,
+  "completed": true,
+  "hit_turn_cap": false,
+  "transcript": [
+    {
+      "role": "employer",
+      "text": "我要在一周内上线一个完整的电商平台，包含 App、网站、支付、风控、智能客服、数据看板和会员积分体系，预算 3000 元。"
+    },
+    {
+      "role": "pipeline",
+      "text": "这个项目目标非常宏大但预算和时间都非常有限。我需要了解一些关键信息来澄清真实需求。\n\n请问您希望这个电商平台实现哪些核心功能？是希望有一个最小可行产品(MVP)版本，还是需要包含所有提到的功能模块？"
+    },
+    {
+      "role": "employer",
+      "text": "预算就是 3000 元，不能再加了。"
+    },
+    {
+      "role": "pipeline",
+      "text": "\n感谢确认预算。考虑到3000元预算和一周时间限制，我需要了解：\n\n您提到的\"完整电商平台\"是指一个可以实际运营的系统，还是一个用于演示或概念验证的版本？这将帮助我们确定项目范围和优先级。"
+    },
+    {
+      "role": "employer",
+      "text": "一周，下周一必须上线，不能延期。"
+    },
+    {
+      "role": "pipeline",
+      "text": "\n[REQUIREMENT_COMPLETE]\n{\n  \"project_name\": \"极速电商平台\",\n  \"core_description\": \"在3000元预算和一周时限内上线包含基础电商功能的平台\",\n  \"tasks_hint\": [\"搭建基础商品展示页面\", \"实现简单购物车功能\", \"集成基础支付接口\", \"创建会员积分系统基础框架\"],\n  \"duration\": \"one-time\",\n  \"team_context\": \"资源极度有限，需要在极短时间内完成电商平台开发\",\n  \"urgency\": \"high\",\n  \"budget_hint\": \"low\"\n}"
+    }
+  ],
+  "response": {
+    "decisions": {
+      "decisions": [
+        {
+          "estimated_hours": 16,
+          "evaluations": [
+            {
+              "can_complete": true,
+              "confidence": 0.85,
+              "estimated_time": "5-6天",
+              "reason": "张伟具备全栈开发技能和独立交付经验，能够胜任电商平台架构搭建任务。",
+              "resource_id": "candidate_a",
+              "resource_name": "张伟（全栈工程师）",
+              "resource_type": "human",
+              "strengths": [
+                "全栈技能覆盖前后端需求",
+                "有独立交付产品的经验",
+                "熟悉Docker等部署技术"
+              ]
+            },
+            {
+              "can_complete": true,
+              "confidence": 0.8,
+              "estimated_time": "5-7天",
+              "reason": "代码生成Agent具备前端、后端和数据库设计能力，但缺乏实际部署和预算控制经验",
+              "resource_id": "agent_code",
+              "resource_name": "代码生成 Agent",
+              "resource_type": "agent",
+              "strengths": [
+                "前端框架选择",
+                "后端API设计",
+                "数据库结构规划"
+              ]
+            }
+          ],
+          "is_recurring": false,
+          "recommendation": {
+            "cost_hint": "需要评估薪资",
+            "decision": "human",
+            "reason": "建议招聘 张伟（全栈工程师） 类型人才，置信度 85%",
+            "resource": {
+              "can_complete": true,
+              "confidence": 0.85,
+              "estimated_time": "5-6天",
+              "reason": "张伟具备全栈开发技能和独立交付经验，能够胜任电商平台架构搭建任务。",
+              "resource_id": "candidate_a",
+              "resource_name": "张伟（全栈工程师）",
+              "resource_type": "human",
+              "strengths": [
+                "全栈技能覆盖前后端需求",
+                "有独立交付产品的经验",
+                "熟悉Docker等部署技术"
+              ]
+            }
+          },
+          "requires_judgment": true,
+          "task_description": "在3000元预算和一周时限内，搭建基础电商平台的技术架构，包括前端框架选择、后端API设计和数据库结构规划",
+          "task_id": "t1",
+          "task_name": "基础电商平台架构搭建",
+          "task_type": "technical"
+        },
+        {
+          "estimated_hours": 12,
+          "evaluations": [
+            {
+              "can_complete": true,
+              "confidence": 0.9,
+              "estimated_time": "2-3天",
+              "reason": "代码生成 Agent 具备前端开发能力，能够实现商品展示页面的核心功能",
+              "resource_id": "agent_code",
+              "resource_name": "代码生成 Agent",
+              "resource_type": "agent",
+              "strengths": [
+                "前端开发能力",
+                "代码审查能力"
+              ]
+            },
+            {
+              "can_complete": true,
+              "confidence": 0.9,
+              "estimated_time": "2-3周",
+              "reason": "张伟具备全栈开发技能和3年经验，能够独立完成商品展示页面的前后端开发",
+              "resource_id": "candidate_a",
+              "resource_name": "张伟（全栈工程师）",
+              "resource_type": "human",
+              "strengths": [
+                "React和Node.js技能匹配前端和后端需求",
+                "3年全栈开发经验确保独立交付能力"
+              ]
+            }
+          ],
+          "is_recurring": false,
+          "recommendation": {
+            "cost_hint": "$0.05",
+            "decision": "agent",
+            "reason": "推荐使用 代码生成 Agent，置信度 90%",
+            "resource": {
+              "can_complete": true,
+              "confidence": 0.9,
+              "estimated_time": "2-3天",
+              "reason": "代码生成 Agent 具备前端开发能力，能够实现商品展示页面的核心功能",
+              "resource_id": "agent_code",
+              "resource_name": "代码生成 Agent",
+              "resource_type": "agent",
+              "strengths": [
+                "前端开发能力",
+                "代码审查能力"
+              ]
+            }
+          },
+          "requires_judgment": true,
+          "task_description": "实现基础商品展示页面，包括商品列表、详情页和分类浏览功能，确保界面简洁易用",
+          "task_id": "t2",
+          "task_name": "商品展示页面开发",
+          "task_type": "technical"
+        },
+        {
+          "estimated_hours": 8,
+          "evaluations": [
+            {
+              "can_complete": true,
+              "confidence": 0.9,
+              "estimated_time": "2-4小时",
+              "reason": "代码生成 Agent 具备前端和后端开发能力，能够实现购物车的基础功能",
+              "resource_id": "agent_code",
+              "resource_name": "代码生成 Agent",
+              "resource_type": "agent",
+              "strengths": [
+                "前端开发能力",
+                "后端开发能力",
+                "代码审查能力"
+              ]
+            },
+            {
+              "can_complete": true,
+              "confidence": 0.9,
+              "estimated_time": "2-3天",
+              "reason": "张伟具备全栈开发能力和相关技术栈，能够独立完成购物车功能开发。",
+              "resource_id": "candidate_a",
+              "resource_name": "张伟（全栈工程师）",
+              "resource_type": "human",
+              "strengths": [
+                "React前端开发经验",
+                "Node.js后端开发能力",
+                "TypeScript类型安全支持",
+                "Docker容器化部署经验"
+              ]
+            }
+          ],
+          "is_recurring": false,
+          "recommendation": {
+            "cost_hint": "$0.05",
+            "decision": "agent",
+            "reason": "推荐使用 代码生成 Agent，置信度 90%",
+            "resource": {
+              "can_complete": true,
+              "confidence": 0.9,
+              "estimated_time": "2-4小时",
+              "reason": "代码生成 Agent 具备前端和后端开发能力，能够实现购物车的基础功能",
+              "resource_id": "agent_code",
+              "resource_name": "代码生成 Agent",
+              "resource_type": "agent",
+              "strengths": [
+                "前端开发能力",
+                "后端开发能力",
+                "代码审查能力"
+              ]
+            }
+          },
+          "requires_judgment": true,
+          "task_description": "开发简单购物车功能，支持商品添加、数量修改、删除和价格计算等基础操作",
+          "task_id": "t3",
+          "task_name": "购物车功能实现",
+          "task_type": "technical"
+        },
+        {
+          "estimated_hours": 10,
+          "evaluations": [
+            {
+              "can_complete": true,
+              "confidence": 0.85,
+              "estimated_time": "2-4周",
+              "reason": "代码生成Agent具备前后端开发和脚本编写能力，可完成支付接口集成，但需额外关注安全性和成本控制",
+              "resource_id": "agent_code",
+              "resource_name": "代码生成 Agent",
+              "resource_type": "agent",
+              "strengths": [
+                "前端开发能力",
+                "后端开发能力",
+                "脚本编写能力",
+                "代码审查能力"
+              ]
+            },
+            {
+              "can_complete": true,
+              "confidence": 0.85,
+              "estimated_time": "2-3周",
+              "reason": "张伟具备全栈开发经验和相关技术栈，能够独立完成支付接口集成任务。",
+              "resource_id": "candidate_a",
+              "resource_name": "张伟（全栈工程师）",
+              "resource_type": "human",
+              "strengths": [
+                "React和Node.js经验丰富",
+                "TypeScript和Python技能支持多语言开发",
+                "Docker经验确保部署可靠性"
+              ]
+            }
+          ],
+          "is_recurring": false,
+          "recommendation": {
+            "cost_hint": "$0.05",
+            "decision": "agent",
+            "reason": "推荐使用 代码生成 Agent，置信度 85%",
+            "resource": {
+              "can_complete": true,
+              "confidence": 0.85,
+              "estimated_time": "2-4周",
+              "reason": "代码生成Agent具备前后端开发和脚本编写能力，可完成支付接口集成，但需额外关注安全性和成本控制",
+              "resource_id": "agent_code",
+              "resource_name": "代码生成 Agent",
+              "resource_type": "agent",
+              "strengths": [
+                "前端开发能力",
+                "后端开发能力",
+                "脚本编写能力",
+                "代码审查能力"
+              ]
+            }
+          },
+          "requires_judgment": true,
+          "task_description": "集成基础支付接口，确保交易安全性和可靠性，同时控制开发成本在预算范围内",
+          "task_id": "t4",
+          "task_name": "支付接口集成",
+          "task_type": "technical"
+        },
+        {
+          "estimated_hours": 6,
+          "evaluations": [
+            {
+              "can_complete": true,
+              "confidence": 0.9,
+              "estimated_time": "2-3周",
+              "reason": "张伟具备全栈开发能力和相关技术栈经验，能够独立完成会员积分系统框架的开发。",
+              "resource_id": "candidate_a",
+              "resource_name": "张伟（全栈工程师）",
+              "resource_type": "human",
+              "strengths": [
+                "React和Node.js技能匹配前后端需求",
+                "3年全栈开发经验确保独立交付能力",
+                "TypeScript和Docker技术提升系统质量和可维护性"
+              ]
+            },
+            {
+              "can_complete": true,
+              "confidence": 0.85,
+              "estimated_time": "3-5天",
+              "reason": "代码生成Agent具备前端开发能力，能够创建会员积分系统的基础框架界面",
+              "resource_id": "agent_code",
+              "resource_name": "代码生成 Agent",
+              "resource_type": "agent",
+              "strengths": [
+                "前端开发能力",
+                "代码审查能力"
+              ]
+            }
+          ],
+          "is_recurring": false,
+          "recommendation": {
+            "cost_hint": "需要评估薪资",
+            "decision": "human",
+            "reason": "建议招聘 张伟（全栈工程师） 类型人才，置信度 90%",
+            "resource": {
+              "can_complete": true,
+              "confidence": 0.9,
+              "estimated_time": "2-3周",
+              "reason": "张伟具备全栈开发能力和相关技术栈经验，能够独立完成会员积分系统框架的开发。",
+              "resource_id": "candidate_a",
+              "resource_name": "张伟（全栈工程师）",
+              "resource_type": "human",
+              "strengths": [
+                "React和Node.js技能匹配前后端需求",
+                "3年全栈开发经验确保独立交付能力",
+                "TypeScript和Docker技术提升系统质量和可维护性"
+              ]
+            }
+          },
+          "requires_judgment": true,
+          "task_description": "创建会员积分系统基础框架，包括会员注册、积分获取规则和积分使用功能的前端界面",
+          "task_id": "t5",
+          "task_name": "会员积分系统框架",
+          "task_type": "technical"
+        }
+      ]
+    },
+    "jd_report": {
+      "average_water_score": 20,
+      "job_count": 2,
+      "job_designs": [
+        {
+          "core_responsibilities": [
+            "在3000元预算和一周时限内搭建基础电商平台技术架构",
+            "选择合适的前端框架并实现基础页面",
+            "设计后端API接口和数据库结构",
+            "实现基础的电商功能：商品展示、购物车、订单处理",
+            "集成简单的支付功能"
+          ],
+          "experience_range": {
+            "max": 5,
+            "min": 2,
+            "unit": "年"
+          },
+          "job_id": "jd_1171a0dd9658",
+          "job_title": "电商平台短期开发工程师",
+          "nice_to_have_skills": [
+            "移动端适配经验",
+            "低成本解决方案设计能力",
+            "敏捷开发经验"
+          ],
+          "red_flags_removed": [
+            "移除了一周内完整开发App、网站、支付、风控、智能客服、数据看板和会员积分体系的不切实际要求",
+            "移除了3000元预算下雇佣全职人员的错误期望",
+            "移除了'完整电商平台'的夸大描述，改为'基础电商平台'"
+          ],
+          "required_skills": [
+            "Web开发全栈能力",
+            "电商平台基础架构经验",
+            "快速开发和问题解决能力"
+          ],
+          "salary_range": {
+            "max": 5000,
+            "min": 3000,
+            "unit": "元/项目"
+          },
+          "task_id": "t1",
+          "task_name": "基础电商平台架构搭建",
+          "water_analysis": "与原始描述相比，完全重构了不切实际的期望，明确了项目性质为短期合同工作，大幅降低了薪资预期，移除了不切实际的功能要求",
+          "water_score": 20,
+          "work_type": "contract"
+        },
+        {
+          "core_responsibilities": [
+            "开发会员积分系统基础框架的前端界面",
+            "实现会员注册功能界面",
+            "设计积分获取规则的前端展示",
+            "开发积分使用功能的前端界面"
+          ],
+          "experience_range": {
+            "max": 3,
+            "min": 1,
+            "unit": "年"
+          },
+          "job_id": "jd_20c18422a186",
+          "job_title": "电商平台前端开发（短期项目）",
+          "nice_to_have_skills": [
+            "电商系统开发经验",
+            "积分系统设计经验",
+            "移动端适配经验"
+          ],
+          "red_flags_removed": [
+            "移除'一周内上线完整电商平台'的不切实际要求",
+            "移除'3000元预算开发全功能平台'的明显不合理预算",
+            "移除'包含App、网站、支付、风控、智能客服、数据看板'等超出预算和时间的功能"
+          ],
+          "required_skills": [
+            "HTML/CSS/JavaScript基础",
+            "响应式网页设计",
+            "前端框架（如React/Vue/Angular）",
+            "UI/UX设计基础"
+          ],
+          "salary_range": {
+            "max": 400,
+            "min": 200,
+            "unit": "元/小时"
+          },
+          "task_id": "t5",
+          "task_name": "会员积分系统框架",
+          "water_analysis": "与原始描述相比，移除了'完整电商平台'、'App、网站、支付、风控、智能客服、数据看板'等夸大要求，聚焦于仅6小时的会员积分系统前端开发任务",
+          "water_score": 20,
+          "work_type": "contract"
+        }
+      ],
+      "needs_hiring": true,
+      "water_interpretation": "原始需求描述严重失真，建议重新沟通确认"
+    },
+    "requirement": {
+      "budget_hint": "low",
+      "core_description": "在3000元预算和一周时限内上线包含基础电商功能的平台",
+      "duration": "one-time",
+      "project_name": "极速电商平台",
+      "tasks_hint": [
+        "搭建基础商品展示页面",
+        "实现简单购物车功能",
+        "集成基础支付接口",
+        "创建会员积分系统基础框架"
+      ],
+      "team_context": "资源极度有限，需要在极短时间内完成电商平台开发",
+      "urgency": "high"
+    },
+    "summary": {
+      "agent_tasks": 3,
+      "human_tasks": 2,
+      "job_count": 2,
+      "needs_hiring": true,
+      "task_count": 5,
+      "verdict": "建议混合方案：3 个任务用 Agent，2 个任务需要人类",
+      "verdict_type": "hybrid",
+      "water_score": 20
+    },
+    "tasks": [
+      {
+        "description": "在3000元预算和一周时限内，搭建基础电商平台的技术架构，包括前端框架选择、后端API设计和数据库结构规划",
+        "estimated_hours": 16,
+        "id": "t1",
+        "is_recurring": false,
+        "name": "基础电商平台架构搭建",
+        "requires_judgment": true,
+        "type": "technical"
+      },
+      {
+        "description": "实现基础商品展示页面，包括商品列表、详情页和分类浏览功能，确保界面简洁易用",
+        "estimated_hours": 12,
+        "id": "t2",
+        "is_recurring": false,
+        "name": "商品展示页面开发",
+        "requires_judgment": true,
+        "type": "technical"
+      },
+      {
+        "description": "开发简单购物车功能，支持商品添加、数量修改、删除和价格计算等基础操作",
+        "estimated_hours": 8,
+        "id": "t3",
+        "is_recurring": false,
+        "name": "购物车功能实现",
+        "requires_judgment": true,
+        "type": "technical"
+      },
+      {
+        "description": "集成基础支付接口，确保交易安全性和可靠性，同时控制开发成本在预算范围内",
+        "estimated_hours": 10,
+        "id": "t4",
+        "is_recurring": false,
+        "name": "支付接口集成",
+        "requires_judgment": true,
+        "type": "technical"
+      },
+      {
+        "description": "创建会员积分系统基础框架，包括会员注册、积分获取规则和积分使用功能的前端界面",
+        "estimated_hours": 6,
+        "id": "t5",
+        "is_recurring": false,
+        "name": "会员积分系统框架",
+        "requires_judgment": true,
+        "type": "technical"
+      }
+    ]
+  },
+  "error": null,
+  "turn_count_reported": 3,
+  "requirement_after_clarify": {
+    "budget_hint": "low",
+    "core_description": "在3000元预算和一周时限内上线包含基础电商功能的平台",
+    "duration": "one-time",
+    "project_name": "极速电商平台",
+    "tasks_hint": [
+      "搭建基础商品展示页面",
+      "实现简单购物车功能",
+      "集成基础支付接口",
+      "创建会员积分系统基础框架"
+    ],
+    "team_context": "资源极度有限，需要在极短时间内完成电商平台开发",
+    "urgency": "high"
+  },
+  "app_accounting": {
+    "agent_runs": [
+      {
+        "agent_name": "job_design",
+        "task_id": "t5",
+        "input_tokens": 2996,
+        "output_tokens": 1496,
+        "time_ms": 29353,
+        "llm_cost_usd": "0.03139908"
+      },
+      {
+        "agent_name": "job_design",
+        "task_id": "t1",
+        "input_tokens": 2996,
+        "output_tokens": 1496,
+        "time_ms": 29353,
+        "llm_cost_usd": "0.03139908"
+      }
+    ],
+    "reported_input_tokens": 2996,
+    "reported_output_tokens": 1496,
+    "reported_time_ms": 29353,
+    "reported_cost_usd": "0.03139908",
+    "analysis_traces": 15
+  },
+  "score": {
+    "case_id": "g11",
+    "category": "oversized",
+    "structural_score": 0.75,
+    "components": {
+      "requirement": 0.5,
+      "task_count": 1.0,
+      "must_include": 0.5,
+      "must_not_include": null,
+      "decisions": 1.0
+    },
+    "details": {
+      "requirement": [
+        {
+          "check": "core_description_keywords_any",
+          "expected": [
+            "电商平台",
+            "支付",
+            "风控"
+          ],
+          "actual": "在3000元预算和一周时限内上线包含基础电商功能的平台",
+          "passed": false,
+          "matched": null
+        },
+        {
+          "check": "budget_hint",
+          "expected": "low",
+          "actual": "low",
+          "passed": true
+        }
+      ],
+      "task_count": {
+        "check": "count_range",
+        "expected": [
+          3,
+          8
+        ],
+        "actual": 5,
+        "passed": true
+      },
+      "must_include": [
+        {
+          "check": "must_include",
+          "expected": {
+            "name_keywords_any": [
+              "支付",
+              "交易",
+              "结算"
+            ],
+            "type": "technical"
+          },
+          "passed": true,
+          "matched_task": "支付接口集成",
+          "closest": {
+            "name_keyword": "支付",
+            "type": {
+              "expected": "technical",
+              "actual": "technical"
+            }
+          }
+        },
+        {
+          "check": "must_include",
+          "expected": {
+            "name_keywords_any": [
+              "客服",
+              "咨询"
+            ]
+          },
+          "passed": false,
+          "matched_task": null,
+          "closest": {
+            "name_keyword": null
+          }
+        }
+      ],
+      "must_not_include": {
+        "check": "must_not_include_keywords",
+        "expected": [],
+        "passed": null,
+        "note": "nothing asserted — component skipped"
+      },
+      "decisions": {
+        "check": "decisions",
+        "expected": {
+          "human_min": 1
+        },
+        "actual": {
+          "agent": 3,
+          "human": 2,
+          "hybrid": 0,
+          "none": 0
+        },
+        "passed": true,
+        "failures": []
+      }
+    }
+  },
+  "decision_counts": {
+    "agent": 3,
+    "human": 2,
+    "hybrid": 0,
+    "none": 0
+  },
+  "judge": {
+    "score": 1,
+    "rationale": "流水线未告知雇主3000元/一周的电商项目不可行，任务列表未体现优先级排序，工时估计不合理（总计42小时远低于实际所需）",
+    "repaired": false,
+    "error": null,
+    "raw": "{\"score\": 1, \"rationale\": \"流水线未告知雇主3000元/一周的电商项目不可行，任务列表未体现优先级排序，工时估计不合理（总计42小时远低于实际所需）\"}"
+  },
+  "llm_calls": [
+    {
+      "case_id": "g11",
+      "phase": "pipeline",
+      "stage": "clarify",
+      "model": "glm-4-plus",
+      "input_tokens": 257,
+      "output_tokens": 52,
+      "total_tokens": 309,
+      "time_ms": 1100,
+      "attempts": 1
+    },
+    {
+      "case_id": "g11",
+      "phase": "pipeline",
+      "stage": "clarify",
+      "model": "glm-4-plus",
+      "input_tokens": 326,
+      "output_tokens": 51,
+      "total_tokens": 377,
+      "time_ms": 1076,
+      "attempts": 1
+    },
+    {
+      "case_id": "g11",
+      "phase": "pipeline",
+      "stage": "clarify",
+      "model": "glm-4-plus",
+      "input_tokens": 393,
+      "output_tokens": 115,
+      "total_tokens": 508,
+      "time_ms": 2022,
+      "attempts": 1
+    },
+    {
+      "case_id": "g11",
+      "phase": "pipeline",
+      "stage": "decompose",
+      "model": "glm-4-plus",
+      "input_tokens": 284,
+      "output_tokens": 418,
+      "total_tokens": 702,
+      "time_ms": 6489,
+      "attempts": 1
+    },
+    {
+      "case_id": "g11",
+      "phase": "pipeline",
+      "stage": "evaluate",
+      "model": "glm-4-plus",
+      "input_tokens": 171,
+      "output_tokens": 82,
+      "total_tokens": 253,
+      "time_ms": 2273,
+      "attempts": 1
+    },
+    {
+      "case_id": "g11",
+      "phase": "pipeline",
+      "stage": "evaluate",
+      "model": "glm-4-plus",
+      "input_tokens": 189,
+      "output_tokens": 87,
+      "total_tokens": 276,
+      "time_ms": 1628,
+      "attempts": 1
+    },
+    {
+      "case_id": "g11",
+      "phase": "pipeline",
+      "stage": "evaluate",
+      "model": "glm-4-plus",
+      "input_tokens": 165,
+      "output_tokens": 73,
+      "total_tokens": 238,
+      "time_ms": 2281,
+      "attempts": 1
+    },
+    {
+      "case_id": "g11",
+      "phase": "pipeline",
+      "stage": "evaluate",
+      "model": "glm-4-plus",
+      "input_tokens": 183,
+      "output_tokens": 92,
+      "total_tokens": 275,
+      "time_ms": 1808,
+      "attempts": 1
+    },
+    {
+      "case_id": "g11",
+      "phase": "pipeline",
+      "stage": "evaluate",
+      "model": "glm-4-plus",
+      "input_tokens": 163,
+      "output_tokens": 80,
+      "total_tokens": 243,
+      "time_ms": 1520,
+      "attempts": 1
+    },
+    {
+      "case_id": "g11",
+      "phase": "pipeline",
+      "stage": "evaluate",
+      "model": "glm-4-plus",
+      "input_tokens": 181,
+      "output_tokens": 92,
+      "total_tokens": 273,
+      "time_ms": 2077,
+      "attempts": 1
+    },
+    {
+      "case_id": "g11",
+      "phase": "pipeline",
+      "stage": "evaluate",
+      "model": "glm-4-plus",
+      "input_tokens": 160,
+      "output_tokens": 91,
+      "total_tokens": 251,
+      "time_ms": 2040,
+      "attempts": 1
+    },
+    {
+      "case_id": "g11",
+      "phase": "pipeline",
+      "stage": "evaluate",
+      "model": "glm-4-plus",
+      "input_tokens": 178,
+      "output_tokens": 90,
+      "total_tokens": 268,
+      "time_ms": 1724,
+      "attempts": 1
+    },
+    {
+      "case_id": "g11",
+      "phase": "pipeline",
+      "stage": "evaluate",
+      "model": "glm-4-plus",
+      "input_tokens": 164,
+      "output_tokens": 71,
+      "total_tokens": 235,
+      "time_ms": 1687,
+      "attempts": 1
+    },
+    {
+      "case_id": "g11",
+      "phase": "pipeline",
+      "stage": "evaluate",
+      "model": "glm-4-plus",
+      "input_tokens": 182,
+      "output_tokens": 102,
+      "total_tokens": 284,
+      "time_ms": 1627,
+      "attempts": 1
+    },
+    {
+      "case_id": "g11",
+      "phase": "pipeline",
+      "stage": "job_design",
+      "model": "glm-4-plus",
+      "input_tokens": 530,
+      "output_tokens": 333,
+      "total_tokens": 863,
+      "time_ms": 7955,
+      "attempts": 1
+    },
+    {
+      "case_id": "g11",
+      "phase": "pipeline",
+      "stage": "job_design",
+      "model": "glm-4-plus",
+      "input_tokens": 523,
+      "output_tokens": 337,
+      "total_tokens": 860,
+      "time_ms": 7130,
+      "attempts": 1
+    },
+    {
+      "case_id": "g11",
+      "phase": "judge",
+      "stage": "other",
+      "model": "glm-4-plus",
+      "input_tokens": 1175,
+      "output_tokens": 50,
+      "total_tokens": 1225,
+      "time_ms": 1100,
+      "attempts": 1
+    }
+  ],
+  "usage": {
+    "pipeline": {
+      "calls": 16,
+      "input_tokens": 4049,
+      "output_tokens": 2166,
+      "total_tokens": 6215,
+      "time_ms": 44437,
+      "est_cost_usd": 0.043443
+    },
+    "judge": {
+      "calls": 1,
+      "input_tokens": 1175,
+      "output_tokens": 50,
+      "total_tokens": 1225,
+      "time_ms": 1100,
+      "est_cost_usd": 0.008563
+    },
+    "by_stage": {
+      "clarify": {
+        "calls": 3,
+        "input_tokens": 976,
+        "output_tokens": 218
+      },
+      "decompose": {
+        "calls": 1,
+        "input_tokens": 284,
+        "output_tokens": 418
+      },
+      "evaluate": {
+        "calls": 10,
+        "input_tokens": 1736,
+        "output_tokens": 860
+      },
+      "job_design": {
+        "calls": 2,
+        "input_tokens": 1053,
+        "output_tokens": 670
+      }
+    }
+  },
+  "wall_time_s": 45.94
+}

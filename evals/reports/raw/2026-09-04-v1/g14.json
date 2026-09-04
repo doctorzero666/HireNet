@@ -1,0 +1,1007 @@
+{
+  "case_id": "g14",
+  "category": "judgment-heavy",
+  "agent": "v1",
+  "started_at": "2026-09-04T05:57:52+00:00",
+  "session_id": "fb622f8cfbebd6a1",
+  "http": {
+    "start": 200,
+    "reply": [
+      200,
+      200
+    ],
+    "decide": 200
+  },
+  "turns": 2,
+  "completed": true,
+  "hit_turn_cap": false,
+  "transcript": [
+    {
+      "role": "employer",
+      "text": "我们要对用户协议和隐私政策做一次合规审查，对照《个人信息保护法》给出整改意见，并且要有人签字为结论负责。"
+    },
+    {
+      "role": "pipeline",
+      "text": "请问这次合规审查是一次性的项目，还是需要定期进行的持续性工作？另外，审查的截止时间是否有明确要求？"
+    },
+    {
+      "role": "employer",
+      "text": "预算 3 到 5 万，可以请外部律师。"
+    },
+    {
+      "role": "pipeline",
+      "text": "\n请问这次合规审查的预期交付成果是什么？是需要一份详细的整改报告，还是包括具体的协议文本修改建议，或者其他特定形式的文档？"
+    },
+    {
+      "role": "employer",
+      "text": "一次性项目，一个月内完成。"
+    },
+    {
+      "role": "pipeline",
+      "text": "\n[REQUIREMENT_COMPLETE]\n{\n  \"project_name\": \"用户协议与隐私政策合规审查\",\n  \"core_description\": \"对照《个人信息保护法》对现有用户协议和隐私政策进行合规审查，提供整改意见，并由相关负责人签字确认结论\",\n  \"tasks_hint\": [\"协议文本合规性分析\", \"与《个人信息保护法》条款对比\", \"制定整改建议方案\", \"出具正式审查报告\", \"负责人签字确认\"],\n  \"duration\": \"one-time\",\n  \"team_context\": \"需要外部律师参与，预算3-5万，一个月内完成\",\n  \"urgency\": \"medium\",\n  \"budget_hint\": \"medium\"\n}"
+    }
+  ],
+  "response": {
+    "decisions": {
+      "decisions": [
+        {
+          "evaluations": [
+            {
+              "can_complete": false,
+              "confidence": 0.3,
+              "estimated_time": "无法准确估算",
+              "reason": "数据分析Agent缺乏法律合规专业知识，无法准确识别协议文本中的合规风险点",
+              "resource_id": "agent_data",
+              "resource_name": "数据分析 Agent",
+              "resource_type": "agent",
+              "strengths": [
+                "数据处理能力",
+                "文本分析基础"
+              ]
+            },
+            {
+              "can_complete": false,
+              "confidence": 0.3,
+              "estimated_time": "无法准确估算",
+              "reason": "张伟缺乏法律合规和协议文本分析的专业背景与经验",
+              "resource_id": "candidate_a",
+              "resource_name": "张伟（全栈工程师）",
+              "resource_type": "human",
+              "strengths": [
+                "具备技术背景可理解系统实现细节",
+                "有独立交付产品的经验"
+              ]
+            }
+          ],
+          "recommendation": {
+            "cost_hint": "需要评估薪资",
+            "decision": "human",
+            "reason": "此任务需要人类处理，建议招聘",
+            "resource": {
+              "can_complete": false,
+              "confidence": 0.3,
+              "estimated_time": "无法准确估算",
+              "reason": "数据分析Agent缺乏法律合规专业知识，无法准确识别协议文本中的合规风险点",
+              "resource_id": "agent_data",
+              "resource_name": "数据分析 Agent",
+              "resource_type": "agent",
+              "strengths": [
+                "数据处理能力",
+                "文本分析基础"
+              ]
+            }
+          },
+          "task_id": "t1",
+          "task_name": "协议文本合规性分析",
+          "task_type": "analytical"
+        },
+        {
+          "evaluations": [
+            {
+              "can_complete": false,
+              "confidence": 0.3,
+              "estimated_time": "无法准确估算",
+              "reason": "数据分析Agent缺乏法律专业知识和法律文本对比分析能力",
+              "resource_id": "agent_data",
+              "resource_name": "数据分析 Agent",
+              "resource_type": "agent",
+              "strengths": [
+                "数据处理能力",
+                "文本分析基础"
+              ]
+            },
+            {
+              "can_complete": false,
+              "confidence": 0.2,
+              "estimated_time": "无法准确估算，因为任务超出其专业领域",
+              "reason": "张伟是全栈工程师，缺乏法律专业知识和法律文本分析经验",
+              "resource_id": "candidate_a",
+              "resource_name": "张伟（全栈工程师）",
+              "resource_type": "human",
+              "strengths": [
+                "具备良好的逻辑分析能力",
+                "有独立交付产品的经验"
+              ]
+            }
+          ],
+          "recommendation": {
+            "cost_hint": "需要评估薪资",
+            "decision": "human",
+            "reason": "此任务需要人类处理，建议招聘",
+            "resource": {
+              "can_complete": false,
+              "confidence": 0.3,
+              "estimated_time": "无法准确估算",
+              "reason": "数据分析Agent缺乏法律专业知识和法律文本对比分析能力",
+              "resource_id": "agent_data",
+              "resource_name": "数据分析 Agent",
+              "resource_type": "agent",
+              "strengths": [
+                "数据处理能力",
+                "文本分析基础"
+              ]
+            }
+          },
+          "task_id": "t2",
+          "task_name": "与《个人信息保护法》条款对比",
+          "task_type": "analytical"
+        },
+        {
+          "evaluations": [
+            {
+              "can_complete": true,
+              "confidence": 0.8,
+              "estimated_time": "2-3周",
+              "reason": "李娜具备AI产品经理经验和从0到1的产品开发能力，能够理解协议修改的战略需求并制定整改方案。",
+              "resource_id": "candidate_b",
+              "resource_name": "李娜（产品经理）",
+              "resource_type": "human",
+              "strengths": [
+                "需求分析能力",
+                "AI产品设计经验",
+                "从0到1产品开发经验"
+              ]
+            },
+            {
+              "can_complete": false,
+              "confidence": 0.2,
+              "estimated_time": "不适用",
+              "reason": "文案撰写Agent缺乏战略分析和协议修改的专业能力",
+              "resource_id": "agent_content",
+              "resource_name": "文案撰写 Agent",
+              "resource_type": "agent",
+              "strengths": [
+                "擅长文字表达",
+                "能生成结构化文档"
+              ]
+            }
+          ],
+          "recommendation": {
+            "cost_hint": "需要评估薪资",
+            "decision": "human",
+            "reason": "建议招聘 李娜（产品经理） 类型人才，置信度 80%",
+            "resource": {
+              "can_complete": true,
+              "confidence": 0.8,
+              "estimated_time": "2-3周",
+              "reason": "李娜具备AI产品经理经验和从0到1的产品开发能力，能够理解协议修改的战略需求并制定整改方案。",
+              "resource_id": "candidate_b",
+              "resource_name": "李娜（产品经理）",
+              "resource_type": "human",
+              "strengths": [
+                "需求分析能力",
+                "AI产品设计经验",
+                "从0到1产品开发经验"
+              ]
+            }
+          },
+          "task_id": "t3",
+          "task_name": "制定整改建议方案",
+          "task_type": "strategic"
+        },
+        {
+          "evaluations": [
+            {
+              "can_complete": false,
+              "confidence": 0.3,
+              "estimated_time": "不适用",
+              "reason": "文案撰写Agent缺乏合规审查和正式报告的专业能力",
+              "resource_id": "agent_content",
+              "resource_name": "文案撰写 Agent",
+              "resource_type": "agent",
+              "strengths": [
+                "擅长文字表达",
+                "能生成结构化内容"
+              ]
+            },
+            {
+              "can_complete": false,
+              "confidence": 0.3,
+              "estimated_time": "无法准确估算，需要额外培训",
+              "reason": "张伟是全栈工程师，缺乏合规审查报告的专业知识和经验",
+              "resource_id": "candidate_a",
+              "resource_name": "张伟（全栈工程师）",
+              "resource_type": "human",
+              "strengths": [
+                "技术文档编写能力",
+                "分析问题的逻辑思维"
+              ]
+            }
+          ],
+          "recommendation": {
+            "cost_hint": "需要评估薪资",
+            "decision": "human",
+            "reason": "此任务需要人类处理，建议招聘",
+            "resource": {
+              "can_complete": false,
+              "confidence": 0.3,
+              "estimated_time": "不适用",
+              "reason": "文案撰写Agent缺乏合规审查和正式报告的专业能力",
+              "resource_id": "agent_content",
+              "resource_name": "文案撰写 Agent",
+              "resource_type": "agent",
+              "strengths": [
+                "擅长文字表达",
+                "能生成结构化内容"
+              ]
+            }
+          },
+          "task_id": "t4",
+          "task_name": "出具正式审查报告",
+          "task_type": "creative"
+        },
+        {
+          "evaluations": [
+            {
+              "can_complete": false,
+              "confidence": 0.1,
+              "estimated_time": "不适用",
+              "reason": "数据分析Agent无法执行需要人类判断力和签字确认的评审任务",
+              "resource_id": "agent_data",
+              "resource_name": "数据分析 Agent",
+              "resource_type": "agent",
+              "strengths": [
+                "数据清洗",
+                "报表生成",
+                "数据可视化",
+                "统计分析"
+              ]
+            },
+            {
+              "can_complete": false,
+              "confidence": 0,
+              "estimated_time": "不适用",
+              "reason": "文案撰写Agent无法执行需要人类判断力和签字确认的运营任务",
+              "resource_id": "agent_content",
+              "resource_name": "文案撰写 Agent",
+              "resource_type": "agent",
+              "strengths": []
+            }
+          ],
+          "recommendation": {
+            "cost_hint": "需要评估薪资",
+            "decision": "human",
+            "reason": "此任务需要人类处理，建议招聘",
+            "resource": {
+              "can_complete": false,
+              "confidence": 0.1,
+              "estimated_time": "不适用",
+              "reason": "数据分析Agent无法执行需要人类判断力和签字确认的评审任务",
+              "resource_id": "agent_data",
+              "resource_name": "数据分析 Agent",
+              "resource_type": "agent",
+              "strengths": [
+                "数据清洗",
+                "报表生成",
+                "数据可视化",
+                "统计分析"
+              ]
+            }
+          },
+          "task_id": "t5",
+          "task_name": "负责人签字确认",
+          "task_type": "operational"
+        }
+      ]
+    },
+    "jd_report": {
+      "average_water_score": 85,
+      "job_count": 5,
+      "job_designs": [
+        {
+          "core_responsibilities": [
+            "对照《个人信息保护法》对现有用户协议和隐私政策进行合规性分析",
+            "提供具体的整改意见和修改建议",
+            "出具合规审查报告并由相关负责人签字确认结论"
+          ],
+          "experience_range": {
+            "max": 5,
+            "min": 2,
+            "unit": "年"
+          },
+          "job_id": "jd_f948d4dd1993",
+          "job_title": "隐私政策合规审查律师",
+          "nice_to_have_skills": [
+            "有互联网行业合规经验",
+            "熟悉数据保护相关国际标准"
+          ],
+          "red_flags_removed": [
+            "移除了模糊的'签字为结论负责'的夸大要求",
+            "移除了不合理的长期任职暗示"
+          ],
+          "required_skills": [
+            "熟悉《个人信息保护法》及相关法规",
+            "具备隐私政策合规审查经验",
+            "能够提供明确的整改意见"
+          ],
+          "salary_range": {
+            "max": 35000,
+            "min": 20000,
+            "unit": "元/月"
+          },
+          "task_id": "t1",
+          "task_name": "协议文本合规性分析",
+          "water_analysis": "与原始描述相比，明确了具体法规依据，澄清了项目性质为一次性合同工，移除了模糊的'签字负责'表述",
+          "water_score": 85,
+          "work_type": "contract"
+        },
+        {
+          "core_responsibilities": [
+            "对照《个人信息保护法》对现有用户协议和隐私政策进行逐条合规审查",
+            "识别合规风险点并提供具体整改意见",
+            "撰写合规审查报告并由相关负责人签字确认结论",
+            "与内部团队沟通解释合规问题及整改方案"
+          ],
+          "experience_range": {
+            "max": 5,
+            "min": 2,
+            "unit": "年"
+          },
+          "job_id": "jd_f49caaa0eea0",
+          "job_title": "隐私政策合规审查律师",
+          "nice_to_have_skills": [
+            "有互联网行业合规经验",
+            "熟悉数据保护相关国际标准",
+            "具备法律文书撰写能力"
+          ],
+          "red_flags_removed": [
+            "移除了模糊的'有人签字为结论负责'表述，替换为具体的'撰写合规审查报告并由相关负责人签字确认结论'"
+          ],
+          "required_skills": [
+            "熟悉《个人信息保护法》及相关法规",
+            "具备隐私政策合规审查经验",
+            "能够提供书面法律意见并承担责任"
+          ],
+          "salary_range": {
+            "max": 35000,
+            "min": 20000,
+            "unit": "元/月"
+          },
+          "task_id": "t2",
+          "task_name": "与《个人信息保护法》条款对比",
+          "water_analysis": "与原始描述相比，明确了具体审查范围和交付物，澄清了项目性质为一次性合同工作，移除了模糊的'有人签字负责'表述",
+          "water_score": 85,
+          "work_type": "contract"
+        },
+        {
+          "core_responsibilities": [
+            "对照《个人信息保护法》对现有用户协议和隐私政策进行全面合规审查",
+            "提供具体的、可执行的整改建议方案",
+            "撰写合规审查报告并由相关负责人签字确认结论"
+          ],
+          "experience_range": {
+            "max": 5,
+            "min": 2,
+            "unit": "年"
+          },
+          "job_id": "jd_d0c14c245dad",
+          "job_title": "隐私政策合规审查律师",
+          "nice_to_have_skills": [
+            "有互联网行业隐私合规经验",
+            "熟悉数据安全相关法规",
+            "具备法律文书撰写能力"
+          ],
+          "red_flags_removed": [
+            "移除了'有人签字为结论负责'的模糊表述，明确了由项目负责人签字确认的职责"
+          ],
+          "required_skills": [
+            "熟悉《个人信息保护法》及相关法规",
+            "具备隐私政策合规审查经验",
+            "能够提供明确的整改建议"
+          ],
+          "salary_range": {
+            "max": 35000,
+            "min": 20000,
+            "unit": "元/月"
+          },
+          "task_id": "t3",
+          "task_name": "制定整改建议方案",
+          "water_analysis": "与原始描述相比，明确了项目性质为一次性合同工作，澄清了具体职责范围，移除了模糊的'有人签字为结论负责'的表述",
+          "water_score": 85,
+          "work_type": "contract"
+        },
+        {
+          "core_responsibilities": [
+            "对照《个人信息保护法》对现有用户协议和隐私政策进行全面合规审查",
+            "出具正式审查报告，明确指出合规风险点并提供具体整改建议",
+            "与项目负责人沟通审查结论，确保理解并签字确认最终审查结果"
+          ],
+          "experience_range": {
+            "max": 5,
+            "min": 2,
+            "unit": "年"
+          },
+          "job_id": "jd_63e001814268",
+          "job_title": "隐私政策合规审查律师",
+          "nice_to_have_skills": [
+            "有互联网行业隐私政策审查经验",
+            "熟悉数据跨境流动相关法规"
+          ],
+          "red_flags_removed": [
+            "移除了模糊的'有人签字为结论负责'表述",
+            "移除了不切实际的'长期负责'暗示"
+          ],
+          "required_skills": [
+            "熟悉《个人信息保护法》及相关法规",
+            "具备隐私政策合规审查经验",
+            "能够出具专业法律意见书"
+          ],
+          "salary_range": {
+            "max": 35000,
+            "min": 20000,
+            "unit": "元/月"
+          },
+          "task_id": "t4",
+          "task_name": "出具正式审查报告",
+          "water_analysis": "与原始描述相比，明确了具体法规依据，澄清了项目性质为一次性合同工，移除了模糊的'有人签字为结论负责'的表述",
+          "water_score": 85,
+          "work_type": "contract"
+        },
+        {
+          "core_responsibilities": [
+            "对照《个人信息保护法》对现有用户协议和隐私政策进行全面合规审查",
+            "提供具体的整改意见和修改建议",
+            "撰写合规审查报告并由相关负责人签字确认结论"
+          ],
+          "experience_range": {
+            "max": 5,
+            "min": 2,
+            "unit": "年"
+          },
+          "job_id": "jd_d4f61edd7a4b",
+          "job_title": "隐私政策合规审查顾问",
+          "nice_to_have_skills": [
+            "有互联网行业隐私政策审查经验",
+            "熟悉数据保护相关国际标准"
+          ],
+          "red_flags_removed": [
+            "移除了模糊的'有人签字为结论负责'表述，替换为具体的'由相关负责人签字确认结论'"
+          ],
+          "required_skills": [
+            "熟悉《个人信息保护法》及相关法规",
+            "具备隐私政策合规审查经验",
+            "能够撰写专业的法律合规报告"
+          ],
+          "salary_range": {
+            "max": 25000,
+            "min": 15000,
+            "unit": "元/月"
+          },
+          "task_id": "t5",
+          "task_name": "负责人签字确认",
+          "water_analysis": "与原始描述相比，明确了具体法规要求，澄清了项目性质为一次性合同工作，移除了模糊的'有人签字为结论负责'的表述",
+          "water_score": 85,
+          "work_type": "contract"
+        }
+      ],
+      "needs_hiring": true,
+      "water_interpretation": "JD 描述与实际需求高度一致，信息可信度高"
+    },
+    "requirement": {
+      "budget_hint": "medium",
+      "core_description": "对照《个人信息保护法》对现有用户协议和隐私政策进行合规审查，提供整改意见，并由相关负责人签字确认结论",
+      "duration": "one-time",
+      "project_name": "用户协议与隐私政策合规审查",
+      "tasks_hint": [
+        "协议文本合规性分析",
+        "与《个人信息保护法》条款对比",
+        "制定整改建议方案",
+        "出具正式审查报告",
+        "负责人签字确认"
+      ],
+      "team_context": "需要外部律师参与，预算3-5万，一个月内完成",
+      "urgency": "medium"
+    },
+    "summary": {
+      "agent_tasks": 0,
+      "human_tasks": 5,
+      "job_count": 5,
+      "needs_hiring": true,
+      "task_count": 5,
+      "verdict": "建议招聘，当前 Agent 无法满足需求",
+      "verdict_type": "human_only",
+      "water_score": 85
+    },
+    "tasks": [
+      {
+        "description": "对现有用户协议和隐私政策进行全面梳理，识别可能存在的合规风险点",
+        "estimated_hours": 16,
+        "id": "t1",
+        "is_recurring": false,
+        "name": "协议文本合规性分析",
+        "requires_judgment": true,
+        "type": "analytical"
+      },
+      {
+        "description": "将现有协议条款与《个人信息保护法》相关条款进行逐条对比分析",
+        "estimated_hours": 24,
+        "id": "t2",
+        "is_recurring": false,
+        "name": "与《个人信息保护法》条款对比",
+        "requires_judgment": true,
+        "type": "analytical"
+      },
+      {
+        "description": "基于对比分析结果，制定具体的协议修改建议和整改方案",
+        "estimated_hours": 20,
+        "id": "t3",
+        "is_recurring": false,
+        "name": "制定整改建议方案",
+        "requires_judgment": true,
+        "type": "strategic"
+      },
+      {
+        "description": "整理分析结果和整改建议，形成正式的合规审查报告",
+        "estimated_hours": 12,
+        "id": "t4",
+        "is_recurring": false,
+        "name": "出具正式审查报告",
+        "requires_judgment": true,
+        "type": "creative"
+      },
+      {
+        "description": "组织相关负责人对审查报告和整改方案进行评审并签字确认",
+        "estimated_hours": 8,
+        "id": "t5",
+        "is_recurring": false,
+        "name": "负责人签字确认",
+        "requires_judgment": true,
+        "type": "operational"
+      }
+    ]
+  },
+  "error": null,
+  "turn_count_reported": null,
+  "requirement_after_clarify": {
+    "budget_hint": "medium",
+    "core_description": "对照《个人信息保护法》对现有用户协议和隐私政策进行合规审查，提供整改意见，并由相关负责人签字确认结论",
+    "duration": "one-time",
+    "project_name": "用户协议与隐私政策合规审查",
+    "tasks_hint": [
+      "协议文本合规性分析",
+      "与《个人信息保护法》条款对比",
+      "制定整改建议方案",
+      "出具正式审查报告",
+      "负责人签字确认"
+    ],
+    "team_context": "需要外部律师参与，预算3-5万，一个月内完成",
+    "urgency": "medium"
+  },
+  "app_accounting": {
+    "agent_runs": [
+      {
+        "agent_name": "job_design",
+        "task_id": "t5",
+        "input_tokens": null,
+        "output_tokens": null,
+        "time_ms": null,
+        "llm_cost_usd": null
+      },
+      {
+        "agent_name": "job_design",
+        "task_id": "t4",
+        "input_tokens": null,
+        "output_tokens": null,
+        "time_ms": null,
+        "llm_cost_usd": null
+      },
+      {
+        "agent_name": "job_design",
+        "task_id": "t3",
+        "input_tokens": null,
+        "output_tokens": null,
+        "time_ms": null,
+        "llm_cost_usd": null
+      },
+      {
+        "agent_name": "job_design",
+        "task_id": "t2",
+        "input_tokens": null,
+        "output_tokens": null,
+        "time_ms": null,
+        "llm_cost_usd": null
+      },
+      {
+        "agent_name": "job_design",
+        "task_id": "t1",
+        "input_tokens": null,
+        "output_tokens": null,
+        "time_ms": null,
+        "llm_cost_usd": null
+      }
+    ],
+    "reported_input_tokens": null,
+    "reported_output_tokens": null,
+    "reported_time_ms": null,
+    "reported_cost_usd": null,
+    "analysis_traces": 0
+  },
+  "score": {
+    "case_id": "g14",
+    "category": "judgment-heavy",
+    "structural_score": 1.0,
+    "components": {
+      "requirement": 1.0,
+      "task_count": 1.0,
+      "must_include": 1.0,
+      "must_not_include": null,
+      "decisions": 1.0
+    },
+    "details": {
+      "requirement": [
+        {
+          "check": "core_description_keywords_any",
+          "expected": [
+            "合规",
+            "隐私",
+            "审查",
+            "个人信息保护法"
+          ],
+          "actual": "对照《个人信息保护法》对现有用户协议和隐私政策进行合规审查，提供整改意见，并由相关负责人签字确认结论",
+          "passed": true,
+          "matched": "合规"
+        },
+        {
+          "check": "duration",
+          "expected": "one-time",
+          "actual": "one-time",
+          "passed": true
+        }
+      ],
+      "task_count": {
+        "check": "count_range",
+        "expected": [
+          3,
+          5
+        ],
+        "actual": 5,
+        "passed": true
+      },
+      "must_include": [
+        {
+          "check": "must_include",
+          "expected": {
+            "name_keywords_any": [
+              "合规",
+              "审查",
+              "法律",
+              "条款",
+              "意见"
+            ],
+            "routing": "human",
+            "requires_judgment": true
+          },
+          "passed": true,
+          "matched_task": "协议文本合规性分析",
+          "closest": {
+            "name_keyword": "合规",
+            "requires_judgment": {
+              "expected": true,
+              "actual": true
+            },
+            "routing": {
+              "expected": "human",
+              "actual": "human"
+            }
+          }
+        }
+      ],
+      "must_not_include": {
+        "check": "must_not_include_keywords",
+        "expected": [],
+        "passed": null,
+        "note": "nothing asserted — component skipped"
+      },
+      "decisions": {
+        "check": "decisions",
+        "expected": {
+          "human_min": 1
+        },
+        "actual": {
+          "agent": 0,
+          "human": 5,
+          "hybrid": 0,
+          "none": 0
+        },
+        "passed": true,
+        "failures": []
+      }
+    }
+  },
+  "decision_counts": {
+    "agent": 0,
+    "human": 5,
+    "hybrid": 0,
+    "none": 0
+  },
+  "judge": {
+    "score": 5,
+    "rationale": "所有任务均正确路由给human，保留了法律判断责任，没有让Agent出具合规意见，符合评分标准要求。",
+    "repaired": false,
+    "error": null,
+    "raw": "{\"score\": 5, \"rationale\": \"所有任务均正确路由给human，保留了法律判断责任，没有让Agent出具合规意见，符合评分标准要求。\"}"
+  },
+  "llm_calls": [
+    {
+      "case_id": "g14",
+      "phase": "pipeline",
+      "stage": "clarify",
+      "model": "glm-4-plus",
+      "input_tokens": 251,
+      "output_tokens": 26,
+      "total_tokens": 277,
+      "time_ms": 631,
+      "attempts": 1
+    },
+    {
+      "case_id": "g14",
+      "phase": "pipeline",
+      "stage": "clarify",
+      "model": "glm-4-plus",
+      "input_tokens": 297,
+      "output_tokens": 31,
+      "total_tokens": 328,
+      "time_ms": 650,
+      "attempts": 1
+    },
+    {
+      "case_id": "g14",
+      "phase": "pipeline",
+      "stage": "clarify",
+      "model": "glm-4-plus",
+      "input_tokens": 341,
+      "output_tokens": 141,
+      "total_tokens": 482,
+      "time_ms": 3665,
+      "attempts": 1
+    },
+    {
+      "case_id": "g14",
+      "phase": "pipeline",
+      "stage": "decompose",
+      "model": "glm-4-plus",
+      "input_tokens": 309,
+      "output_tokens": 394,
+      "total_tokens": 703,
+      "time_ms": 6807,
+      "attempts": 1
+    },
+    {
+      "case_id": "g14",
+      "phase": "pipeline",
+      "stage": "evaluate",
+      "model": "glm-4-plus",
+      "input_tokens": 158,
+      "output_tokens": 69,
+      "total_tokens": 227,
+      "time_ms": 5765,
+      "attempts": 1
+    },
+    {
+      "case_id": "g14",
+      "phase": "pipeline",
+      "stage": "evaluate",
+      "model": "glm-4-plus",
+      "input_tokens": 179,
+      "output_tokens": 74,
+      "total_tokens": 253,
+      "time_ms": 1396,
+      "attempts": 1
+    },
+    {
+      "case_id": "g14",
+      "phase": "pipeline",
+      "stage": "evaluate",
+      "model": "glm-4-plus",
+      "input_tokens": 162,
+      "output_tokens": 64,
+      "total_tokens": 226,
+      "time_ms": 1749,
+      "attempts": 1
+    },
+    {
+      "case_id": "g14",
+      "phase": "pipeline",
+      "stage": "evaluate",
+      "model": "glm-4-plus",
+      "input_tokens": 183,
+      "output_tokens": 80,
+      "total_tokens": 263,
+      "time_ms": 1626,
+      "attempts": 1
+    },
+    {
+      "case_id": "g14",
+      "phase": "pipeline",
+      "stage": "evaluate",
+      "model": "glm-4-plus",
+      "input_tokens": 177,
+      "output_tokens": 89,
+      "total_tokens": 266,
+      "time_ms": 1624,
+      "attempts": 1
+    },
+    {
+      "case_id": "g14",
+      "phase": "pipeline",
+      "stage": "evaluate",
+      "model": "glm-4-plus",
+      "input_tokens": 156,
+      "output_tokens": 65,
+      "total_tokens": 221,
+      "time_ms": 1122,
+      "attempts": 1
+    },
+    {
+      "case_id": "g14",
+      "phase": "pipeline",
+      "stage": "evaluate",
+      "model": "glm-4-plus",
+      "input_tokens": 155,
+      "output_tokens": 66,
+      "total_tokens": 221,
+      "time_ms": 1197,
+      "attempts": 1
+    },
+    {
+      "case_id": "g14",
+      "phase": "pipeline",
+      "stage": "evaluate",
+      "model": "glm-4-plus",
+      "input_tokens": 174,
+      "output_tokens": 74,
+      "total_tokens": 248,
+      "time_ms": 1650,
+      "attempts": 1
+    },
+    {
+      "case_id": "g14",
+      "phase": "pipeline",
+      "stage": "evaluate",
+      "model": "glm-4-plus",
+      "input_tokens": 155,
+      "output_tokens": 56,
+      "total_tokens": 211,
+      "time_ms": 1167,
+      "attempts": 1
+    },
+    {
+      "case_id": "g14",
+      "phase": "pipeline",
+      "stage": "evaluate",
+      "model": "glm-4-plus",
+      "input_tokens": 153,
+      "output_tokens": 71,
+      "total_tokens": 224,
+      "time_ms": 2704,
+      "attempts": 1
+    },
+    {
+      "case_id": "g14",
+      "phase": "pipeline",
+      "stage": "job_design",
+      "model": "glm-4-plus",
+      "input_tokens": 517,
+      "output_tokens": 266,
+      "total_tokens": 783,
+      "time_ms": 3924,
+      "attempts": 1
+    },
+    {
+      "case_id": "g14",
+      "phase": "pipeline",
+      "stage": "job_design",
+      "model": "glm-4-plus",
+      "input_tokens": 520,
+      "output_tokens": 299,
+      "total_tokens": 819,
+      "time_ms": 4560,
+      "attempts": 1
+    },
+    {
+      "case_id": "g14",
+      "phase": "pipeline",
+      "stage": "job_design",
+      "model": "glm-4-plus",
+      "input_tokens": 516,
+      "output_tokens": 275,
+      "total_tokens": 791,
+      "time_ms": 4505,
+      "attempts": 1
+    },
+    {
+      "case_id": "g14",
+      "phase": "pipeline",
+      "stage": "job_design",
+      "model": "glm-4-plus",
+      "input_tokens": 515,
+      "output_tokens": 285,
+      "total_tokens": 800,
+      "time_ms": 4486,
+      "attempts": 1
+    },
+    {
+      "case_id": "g14",
+      "phase": "pipeline",
+      "stage": "job_design",
+      "model": "glm-4-plus",
+      "input_tokens": 515,
+      "output_tokens": 272,
+      "total_tokens": 787,
+      "time_ms": 3994,
+      "attempts": 1
+    },
+    {
+      "case_id": "g14",
+      "phase": "judge",
+      "stage": "other",
+      "model": "glm-4-plus",
+      "input_tokens": 1146,
+      "output_tokens": 38,
+      "total_tokens": 1184,
+      "time_ms": 902,
+      "attempts": 1
+    }
+  ],
+  "usage": {
+    "pipeline": {
+      "calls": 19,
+      "input_tokens": 5433,
+      "output_tokens": 2697,
+      "total_tokens": 8130,
+      "time_ms": 53222,
+      "est_cost_usd": 0.056829
+    },
+    "judge": {
+      "calls": 1,
+      "input_tokens": 1146,
+      "output_tokens": 38,
+      "total_tokens": 1184,
+      "time_ms": 902,
+      "est_cost_usd": 0.008276
+    },
+    "by_stage": {
+      "clarify": {
+        "calls": 3,
+        "input_tokens": 889,
+        "output_tokens": 198
+      },
+      "decompose": {
+        "calls": 1,
+        "input_tokens": 309,
+        "output_tokens": 394
+      },
+      "evaluate": {
+        "calls": 10,
+        "input_tokens": 1652,
+        "output_tokens": 708
+      },
+      "job_design": {
+        "calls": 5,
+        "input_tokens": 2583,
+        "output_tokens": 1397
+      }
+    }
+  },
+  "wall_time_s": 54.36
+}

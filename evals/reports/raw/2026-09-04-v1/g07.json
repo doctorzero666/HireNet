@@ -1,0 +1,1010 @@
+{
+  "case_id": "g07",
+  "category": "english",
+  "agent": "v1",
+  "started_at": "2026-09-04T05:52:34+00:00",
+  "session_id": "8db4dd59f8006010",
+  "http": {
+    "start": 200,
+    "reply": [
+      200,
+      200
+    ],
+    "decide": 200
+  },
+  "turns": 2,
+  "completed": true,
+  "hit_turn_cap": false,
+  "transcript": [
+    {
+      "role": "employer",
+      "text": "We want to build a talent marketplace where AI agents and human freelancers can both take on work. We need a backend API and a frontend UI, and we would like the first version live this quarter."
+    },
+    {
+      "role": "pipeline",
+      "text": "Could you clarify what types of work or tasks will be available on this marketplace? This will help determine if this is a standardized platform or one requiring significant customization."
+    },
+    {
+      "role": "employer",
+      "text": "Budget is around USD 60k for the first version."
+    },
+    {
+      "role": "pipeline",
+      "text": "\nWho are the primary users of this marketplace - are they looking for specific types of services (like software development, design, content creation), or will it be a general platform for various types of work?"
+    },
+    {
+      "role": "employer",
+      "text": "We need a demo-able version in 10 weeks. It is a one-off build, not a long-term retainer."
+    },
+    {
+      "role": "pipeline",
+      "text": "\n[REQUIREMENT_COMPLETE]\n{\n  \"project_name\": \"AI & Human Talent Marketplace\",\n  \"core_description\": \"A platform where AI agents and human freelancers can bid on and complete work tasks, with both backend API and frontend UI components\",\n  \"tasks_hint\": [\"User authentication system\", \"Task posting and bidding interface\", \"Payment processing integration\", \"AI agent-human freelancer matching algorithm\"],\n  \"duration\": \"one-time\",\n  \"team_context\": \"Building a new talent marketplace platform with limited budget and tight deadline\",\n  \"urgency\": \"high\",\n  \"budget_hint\": \"medium\"\n}"
+    }
+  ],
+  "response": {
+    "decisions": {
+      "decisions": [
+        {
+          "evaluations": [
+            {
+              "can_complete": true,
+              "confidence": 0.9,
+              "estimated_time": "2-3周",
+              "reason": "张伟具备全栈开发能力和相关技术栈，能够独立完成用户认证系统开发。",
+              "resource_id": "candidate_a",
+              "resource_name": "张伟（全栈工程师）",
+              "resource_type": "human",
+              "strengths": [
+                "React前端开发能力",
+                "Node.js后端开发能力",
+                "TypeScript类型安全支持",
+                "Docker容器化部署经验"
+              ]
+            },
+            {
+              "can_complete": true,
+              "confidence": 0.85,
+              "estimated_time": "2-3天",
+              "reason": "代码生成 Agent 具备前后端开发能力，能够实现用户认证系统的核心功能",
+              "resource_id": "agent_code",
+              "resource_name": "代码生成 Agent",
+              "resource_type": "agent",
+              "strengths": [
+                "前端开发能力",
+                "后端开发能力",
+                "代码审查能力"
+              ]
+            }
+          ],
+          "recommendation": {
+            "cost_hint": "需要评估薪资",
+            "decision": "human",
+            "reason": "建议招聘 张伟（全栈工程师） 类型人才，置信度 90%",
+            "resource": {
+              "can_complete": true,
+              "confidence": 0.9,
+              "estimated_time": "2-3周",
+              "reason": "张伟具备全栈开发能力和相关技术栈，能够独立完成用户认证系统开发。",
+              "resource_id": "candidate_a",
+              "resource_name": "张伟（全栈工程师）",
+              "resource_type": "human",
+              "strengths": [
+                "React前端开发能力",
+                "Node.js后端开发能力",
+                "TypeScript类型安全支持",
+                "Docker容器化部署经验"
+              ]
+            }
+          },
+          "task_id": "t1",
+          "task_name": "用户认证系统开发",
+          "task_type": "technical"
+        },
+        {
+          "evaluations": [
+            {
+              "can_complete": true,
+              "confidence": 0.9,
+              "estimated_time": "2-3周",
+              "reason": "张伟具备全栈开发技能和3年经验，能够独立完成任务发布与竞标界面的前后端开发",
+              "resource_id": "candidate_a",
+              "resource_name": "张伟（全栈工程师）",
+              "resource_type": "human",
+              "strengths": [
+                "React和Node.js技能匹配前后端需求",
+                "3年全栈开发经验表明能够独立交付产品",
+                "TypeScript和Docker技能有助于构建高质量系统"
+              ]
+            },
+            {
+              "can_complete": true,
+              "confidence": 0.85,
+              "estimated_time": "2-3周",
+              "reason": "代码生成 Agent 具备前后端开发能力，能够实现任务发布与竞标界面的核心功能",
+              "resource_id": "agent_code",
+              "resource_name": "代码生成 Agent",
+              "resource_type": "agent",
+              "strengths": [
+                "全栈开发能力",
+                "代码审查能力",
+                "任务状态管理经验"
+              ]
+            }
+          ],
+          "recommendation": {
+            "cost_hint": "需要评估薪资",
+            "decision": "human",
+            "reason": "建议招聘 张伟（全栈工程师） 类型人才，置信度 90%",
+            "resource": {
+              "can_complete": true,
+              "confidence": 0.9,
+              "estimated_time": "2-3周",
+              "reason": "张伟具备全栈开发技能和3年经验，能够独立完成任务发布与竞标界面的前后端开发",
+              "resource_id": "candidate_a",
+              "resource_name": "张伟（全栈工程师）",
+              "resource_type": "human",
+              "strengths": [
+                "React和Node.js技能匹配前后端需求",
+                "3年全栈开发经验表明能够独立交付产品",
+                "TypeScript和Docker技能有助于构建高质量系统"
+              ]
+            }
+          },
+          "task_id": "t2",
+          "task_name": "任务发布与竞标界面开发",
+          "task_type": "technical"
+        },
+        {
+          "evaluations": [
+            {
+              "can_complete": true,
+              "confidence": 0.85,
+              "estimated_time": "2-3周",
+              "reason": "张伟具备全栈开发经验和支付处理所需的技术栈",
+              "resource_id": "candidate_a",
+              "resource_name": "张伟（全栈工程师）",
+              "resource_type": "human",
+              "strengths": [
+                "React前端开发能力",
+                "Node.js后端集成经验",
+                "Docker容器化部署经验"
+              ]
+            },
+            {
+              "can_complete": true,
+              "confidence": 0.8,
+              "estimated_time": "2-3周",
+              "reason": "代码生成 Agent 具备前后端开发能力，能够实现支付网关集成和资金流转功能",
+              "resource_id": "agent_code",
+              "resource_name": "代码生成 Agent",
+              "resource_type": "agent",
+              "strengths": [
+                "前端开发能力",
+                "后端开发能力",
+                "代码审查能力"
+              ]
+            }
+          ],
+          "recommendation": {
+            "cost_hint": "需要评估薪资",
+            "decision": "human",
+            "reason": "建议招聘 张伟（全栈工程师） 类型人才，置信度 85%",
+            "resource": {
+              "can_complete": true,
+              "confidence": 0.85,
+              "estimated_time": "2-3周",
+              "reason": "张伟具备全栈开发经验和支付处理所需的技术栈",
+              "resource_id": "candidate_a",
+              "resource_name": "张伟（全栈工程师）",
+              "resource_type": "human",
+              "strengths": [
+                "React前端开发能力",
+                "Node.js后端集成经验",
+                "Docker容器化部署经验"
+              ]
+            }
+          },
+          "task_id": "t3",
+          "task_name": "支付处理集成",
+          "task_type": "technical"
+        },
+        {
+          "evaluations": [
+            {
+              "can_complete": true,
+              "confidence": 0.8,
+              "estimated_time": "2-3周",
+              "reason": "代码生成Agent具备前后端开发和算法开发能力，能够实现匹配算法的核心功能",
+              "resource_id": "agent_code",
+              "resource_name": "代码生成 Agent",
+              "resource_type": "agent",
+              "strengths": [
+                "全栈开发能力",
+                "算法实现经验",
+                "代码审查能力"
+              ]
+            },
+            {
+              "can_complete": true,
+              "confidence": 0.8,
+              "estimated_time": "2-3个月",
+              "reason": "张伟具备全栈开发技能和经验，能够独立完成匹配算法的开发",
+              "resource_id": "candidate_a",
+              "resource_name": "张伟（全栈工程师）",
+              "resource_type": "human",
+              "strengths": [
+                "全栈开发技能覆盖前后端",
+                "有独立交付产品的经验",
+                "熟悉多种编程语言和工具"
+              ]
+            }
+          ],
+          "recommendation": {
+            "cost_hint": "$0.05",
+            "decision": "agent",
+            "reason": "推荐使用 代码生成 Agent，置信度 80%",
+            "resource": {
+              "can_complete": true,
+              "confidence": 0.8,
+              "estimated_time": "2-3周",
+              "reason": "代码生成Agent具备前后端开发和算法开发能力，能够实现匹配算法的核心功能",
+              "resource_id": "agent_code",
+              "resource_name": "代码生成 Agent",
+              "resource_type": "agent",
+              "strengths": [
+                "全栈开发能力",
+                "算法实现经验",
+                "代码审查能力"
+              ]
+            }
+          },
+          "task_id": "t4",
+          "task_name": "AI代理与自由职业者匹配算法",
+          "task_type": "technical"
+        },
+        {
+          "evaluations": [
+            {
+              "can_complete": true,
+              "confidence": 0.7,
+              "estimated_time": "2-3个月",
+              "reason": "李娜具备AI产品从0到1的经验和需求分析能力，但缺乏平台级战略规划经验",
+              "resource_id": "candidate_b",
+              "resource_name": "李娜（产品经理）",
+              "resource_type": "human",
+              "strengths": [
+                "AI产品设计经验",
+                "需求分析能力",
+                "从0到1产品经验"
+              ]
+            },
+            {
+              "can_complete": false,
+              "confidence": 0.3,
+              "estimated_time": "不适用",
+              "reason": "文案撰写Agent缺乏战略规划和商业分析能力",
+              "resource_id": "agent_content",
+              "resource_name": "文案撰写 Agent",
+              "resource_type": "agent",
+              "strengths": [
+                "擅长文案创作",
+                "能生成营销内容"
+              ]
+            }
+          ],
+          "recommendation": {
+            "cost_hint": "需要评估薪资",
+            "decision": "human",
+            "reason": "建议招聘 李娜（产品经理） 类型人才，置信度 70%",
+            "resource": {
+              "can_complete": true,
+              "confidence": 0.7,
+              "estimated_time": "2-3个月",
+              "reason": "李娜具备AI产品从0到1的经验和需求分析能力，但缺乏平台级战略规划经验",
+              "resource_id": "candidate_b",
+              "resource_name": "李娜（产品经理）",
+              "resource_type": "human",
+              "strengths": [
+                "AI产品设计经验",
+                "需求分析能力",
+                "从0到1产品经验"
+              ]
+            }
+          },
+          "task_id": "t5",
+          "task_name": "平台整体策略规划",
+          "task_type": "strategic"
+        }
+      ]
+    },
+    "jd_report": {
+      "average_water_score": 85,
+      "job_count": 4,
+      "job_designs": [
+        {
+          "core_responsibilities": [
+            "开发用户认证系统，包括注册、登录、身份验证功能",
+            "实现AI代理和自由职业者的任务竞标功能",
+            "构建前端UI界面，确保用户体验流畅",
+            "开发后端API，支持任务管理和数据交互",
+            "确保系统安全性和数据保护"
+          ],
+          "experience_range": {
+            "max": 4,
+            "min": 2,
+            "unit": "年"
+          },
+          "job_id": "jd_6a7152cf2cbb",
+          "job_title": "全栈开发工程师",
+          "nice_to_have_skills": [
+            "AI集成经验",
+            "支付系统开发",
+            "微服务架构",
+            "云服务部署"
+          ],
+          "red_flags_removed": [
+            "移除了'本季度上线'的不切实际时间要求",
+            "移除了'AI代理和人类自由职业者'的模糊描述，具体化为用户认证和任务竞标功能"
+          ],
+          "required_skills": [
+            "JavaScript/TypeScript",
+            "React或Vue.js前端框架",
+            "Node.js后端开发",
+            "RESTful API设计",
+            "数据库设计与操作"
+          ],
+          "salary_range": {
+            "max": 28000,
+            "min": 18000,
+            "unit": "元/月"
+          },
+          "task_id": "t1",
+          "task_name": "用户认证系统开发",
+          "water_analysis": "与原始描述相比，明确了具体开发任务，细化了技能要求，调整了不切实际的期望时间框架",
+          "water_score": 85,
+          "work_type": "contract"
+        },
+        {
+          "core_responsibilities": [
+            "开发任务发布与竞标界面的前端组件",
+            "实现支持AI代理和人类自由职业者的后端API",
+            "确保前后端功能集成正常",
+            "在季度内完成第一版本上线"
+          ],
+          "experience_range": {
+            "max": 4,
+            "min": 2,
+            "unit": "年"
+          },
+          "job_id": "jd_63686322b0fe",
+          "job_title": "全栈开发工程师 - 人才市场平台",
+          "nice_to_have_skills": [
+            "AI集成经验",
+            "市场平台开发经验",
+            "响应式UI设计",
+            "支付系统集成"
+          ],
+          "red_flags_removed": [
+            "移除了'AI agents和human freelancers都能接工作'的模糊描述，具体化为任务发布与竞标功能",
+            "移除了'first version live this quarter'的不切实际时间要求，改为季度内完成第一版本"
+          ],
+          "required_skills": [
+            "JavaScript/TypeScript",
+            "React或Vue.js前端框架",
+            "Node.js后端开发",
+            "RESTful API设计",
+            "数据库设计与操作"
+          ],
+          "salary_range": {
+            "max": 28000,
+            "min": 18000,
+            "unit": "元/月"
+          },
+          "task_id": "t2",
+          "task_name": "任务发布与竞标界面开发",
+          "water_analysis": "与原始描述相比，明确了项目是一次性交付，澄清了具体开发任务，移除了不切实际的'季度内完成完整平台'的夸大要求",
+          "water_score": 85,
+          "work_type": "contract"
+        },
+        {
+          "core_responsibilities": [
+            "开发AI与人类自由职业者人才市场的后端API",
+            "实现前端用户界面，支持任务竞标和完成功能",
+            "集成支付处理系统，确保交易安全可靠",
+            "在季度内完成第一版本上线"
+          ],
+          "experience_range": {
+            "max": 4,
+            "min": 2,
+            "unit": "年"
+          },
+          "job_id": "jd_bed38fc70ff4",
+          "job_title": "全栈开发工程师",
+          "nice_to_have_skills": [
+            "AI系统开发经验",
+            "市场平台开发经验",
+            "微服务架构设计",
+            "TypeScript"
+          ],
+          "red_flags_removed": [
+            "移除了'AI agents'这一模糊概念，替换为具体的技术要求",
+            "移除了'would like'等不确定表述，明确了季度上线目标"
+          ],
+          "required_skills": [
+            "Node.js/Express后端开发",
+            "React/Vue前端开发",
+            "RESTful API设计",
+            "支付系统集成经验"
+          ],
+          "salary_range": {
+            "max": 28000,
+            "min": 18000,
+            "unit": "元/月"
+          },
+          "task_id": "t3",
+          "task_name": "支付处理集成",
+          "water_analysis": "与原始描述相比，明确了项目性质为一次性合同工作，具体化了技术栈要求，澄清了支付处理这一核心任务",
+          "water_score": 85,
+          "work_type": "contract"
+        },
+        {
+          "core_responsibilities": [
+            "设计和实现AI与人类自由职业者人才市场的后端API",
+            "开发用户友好的前端界面，支持任务发布、竞标和完成功能",
+            "确保平台在季度末前完成第一版本上线",
+            "在有限预算内优化开发资源分配"
+          ],
+          "experience_range": {
+            "max": 4,
+            "min": 2,
+            "unit": "年"
+          },
+          "job_id": "jd_92c5d943dc5d",
+          "job_title": "全栈开发工程师",
+          "nice_to_have_skills": [
+            "AI集成经验",
+            "市场平台开发经验",
+            "UI/UX设计基础",
+            "性能优化经验"
+          ],
+          "red_flags_removed": [
+            "移除了'AI agents和human freelancers都能接工作'的模糊描述，明确为人才市场平台",
+            "移除了'第一版本live this quarter'的不切实际时间要求，改为季度末前完成第一版本"
+          ],
+          "required_skills": [
+            "全栈开发能力（前端+后端）",
+            "RESTful API设计与实现",
+            "数据库设计与优化",
+            "敏捷开发经验"
+          ],
+          "salary_range": {
+            "max": 28000,
+            "min": 18000,
+            "unit": "元/月"
+          },
+          "task_id": "t5",
+          "task_name": "平台整体策略规划",
+          "water_analysis": "与原始描述相比，明确了项目性质为一次性合同工作，澄清了具体的技术要求，移除了不切实际的'季度内完成完整平台'的夸大期望",
+          "water_score": 85,
+          "work_type": "contract"
+        }
+      ],
+      "needs_hiring": true,
+      "water_interpretation": "JD 描述与实际需求高度一致，信息可信度高"
+    },
+    "requirement": {
+      "budget_hint": "medium",
+      "core_description": "A platform where AI agents and human freelancers can bid on and complete work tasks, with both backend API and frontend UI components",
+      "duration": "one-time",
+      "project_name": "AI & Human Talent Marketplace",
+      "tasks_hint": [
+        "User authentication system",
+        "Task posting and bidding interface",
+        "Payment processing integration",
+        "AI agent-human freelancer matching algorithm"
+      ],
+      "team_context": "Building a new talent marketplace platform with limited budget and tight deadline",
+      "urgency": "high"
+    },
+    "summary": {
+      "agent_tasks": 1,
+      "human_tasks": 4,
+      "job_count": 4,
+      "needs_hiring": true,
+      "task_count": 5,
+      "verdict": "建议混合方案：1 个任务用 Agent，4 个任务需要人类",
+      "verdict_type": "hybrid",
+      "water_score": 85
+    },
+    "tasks": [
+      {
+        "description": "实现用户注册、登录、身份验证功能，支持AI代理和自由职业者两种用户类型",
+        "estimated_hours": 40,
+        "id": "t1",
+        "is_recurring": false,
+        "name": "用户认证系统开发",
+        "requires_judgment": true,
+        "type": "technical"
+      },
+      {
+        "description": "创建任务发布、浏览、竞标功能的前端界面和后端API，支持任务状态管理",
+        "estimated_hours": 60,
+        "id": "t2",
+        "is_recurring": false,
+        "name": "任务发布与竞标界面开发",
+        "requires_judgment": true,
+        "type": "technical"
+      },
+      {
+        "description": "集成支付网关，实现任务完成后的资金流转和结算功能",
+        "estimated_hours": 30,
+        "id": "t3",
+        "is_recurring": false,
+        "name": "支付处理集成",
+        "requires_judgment": true,
+        "type": "technical"
+      },
+      {
+        "description": "开发匹配算法，根据任务需求、技能和AI能力推荐合适的人选",
+        "estimated_hours": 50,
+        "id": "t4",
+        "is_recurring": false,
+        "name": "AI代理与自由职业者匹配算法",
+        "requires_judgment": true,
+        "type": "technical"
+      },
+      {
+        "description": "制定平台运营策略、市场定位和商业模式，确保项目在有限预算和时间内实现价值",
+        "estimated_hours": 20,
+        "id": "t5",
+        "is_recurring": false,
+        "name": "平台整体策略规划",
+        "requires_judgment": true,
+        "type": "strategic"
+      }
+    ]
+  },
+  "error": null,
+  "turn_count_reported": null,
+  "requirement_after_clarify": {
+    "budget_hint": "medium",
+    "core_description": "A platform where AI agents and human freelancers can bid on and complete work tasks, with both backend API and frontend UI components",
+    "duration": "one-time",
+    "project_name": "AI & Human Talent Marketplace",
+    "tasks_hint": [
+      "User authentication system",
+      "Task posting and bidding interface",
+      "Payment processing integration",
+      "AI agent-human freelancer matching algorithm"
+    ],
+    "team_context": "Building a new talent marketplace platform with limited budget and tight deadline",
+    "urgency": "high"
+  },
+  "app_accounting": {
+    "agent_runs": [
+      {
+        "agent_name": "job_design",
+        "task_id": "t5",
+        "input_tokens": null,
+        "output_tokens": null,
+        "time_ms": null,
+        "llm_cost_usd": null
+      },
+      {
+        "agent_name": "job_design",
+        "task_id": "t3",
+        "input_tokens": null,
+        "output_tokens": null,
+        "time_ms": null,
+        "llm_cost_usd": null
+      },
+      {
+        "agent_name": "job_design",
+        "task_id": "t2",
+        "input_tokens": null,
+        "output_tokens": null,
+        "time_ms": null,
+        "llm_cost_usd": null
+      },
+      {
+        "agent_name": "job_design",
+        "task_id": "t1",
+        "input_tokens": null,
+        "output_tokens": null,
+        "time_ms": null,
+        "llm_cost_usd": null
+      }
+    ],
+    "reported_input_tokens": null,
+    "reported_output_tokens": null,
+    "reported_time_ms": null,
+    "reported_cost_usd": null,
+    "analysis_traces": 0
+  },
+  "score": {
+    "case_id": "g07",
+    "category": "english",
+    "structural_score": 0.8,
+    "components": {
+      "requirement": 1.0,
+      "task_count": 1.0,
+      "must_include": 0.0,
+      "must_not_include": 1.0,
+      "decisions": 1.0
+    },
+    "details": {
+      "requirement": [
+        {
+          "check": "core_description_keywords_any",
+          "expected": [
+            "marketplace",
+            "talent",
+            "AI agents",
+            "freelancers"
+          ],
+          "actual": "A platform where AI agents and human freelancers can bid on and complete work tasks, with both backend API and frontend UI components",
+          "passed": true,
+          "matched": "AI agents"
+        },
+        {
+          "check": "duration",
+          "expected": "one-time",
+          "actual": "one-time",
+          "passed": true
+        },
+        {
+          "check": "budget_hint",
+          "expected": "medium",
+          "actual": "medium",
+          "passed": true
+        }
+      ],
+      "task_count": {
+        "check": "count_range",
+        "expected": [
+          3,
+          6
+        ],
+        "actual": 5,
+        "passed": true
+      },
+      "must_include": [
+        {
+          "check": "must_include",
+          "expected": {
+            "name_keywords_any": [
+              "backend",
+              "API"
+            ],
+            "type": "technical"
+          },
+          "passed": false,
+          "matched_task": null,
+          "closest": {
+            "name_keyword": null
+          }
+        },
+        {
+          "check": "must_include",
+          "expected": {
+            "name_keywords_any": [
+              "frontend",
+              "UI",
+              "interface"
+            ],
+            "type": "technical"
+          },
+          "passed": false,
+          "matched_task": null,
+          "closest": {
+            "name_keyword": null
+          }
+        },
+        {
+          "check": "must_include",
+          "expected": {
+            "name_keywords_any": [
+              "payment",
+              "billing",
+              "transaction",
+              "record"
+            ]
+          },
+          "passed": false,
+          "matched_task": null,
+          "closest": {
+            "name_keyword": null
+          }
+        }
+      ],
+      "must_not_include": {
+        "check": "must_not_include_keywords",
+        "expected": [
+          "hardware",
+          "招聘"
+        ],
+        "passed": true,
+        "violations": []
+      },
+      "decisions": {
+        "check": "decisions",
+        "expected": {
+          "human_max": 5
+        },
+        "actual": {
+          "agent": 1,
+          "human": 4,
+          "hybrid": 0,
+          "none": 0
+        },
+        "passed": true,
+        "failures": []
+      }
+    }
+  },
+  "decision_counts": {
+    "agent": 1,
+    "human": 4,
+    "hybrid": 0,
+    "none": 0
+  },
+  "judge": {
+    "score": 3,
+    "rationale": "任务覆盖了发布任务、申请和支付功能，但t5策略规划任务与核心功能无关，且t4匹配算法路由给Agent不合理，这类算法开发需要人类工程师。",
+    "repaired": false,
+    "error": null,
+    "raw": "{\"score\": 3, \"rationale\": \"任务覆盖了发布任务、申请和支付功能，但t5策略规划任务与核心功能无关，且t4匹配算法路由给Agent不合理，这类算法开发需要人类工程师。\"}"
+  },
+  "llm_calls": [
+    {
+      "case_id": "g07",
+      "phase": "pipeline",
+      "stage": "clarify",
+      "model": "glm-4-plus",
+      "input_tokens": 262,
+      "output_tokens": 33,
+      "total_tokens": 295,
+      "time_ms": 1254,
+      "attempts": 1
+    },
+    {
+      "case_id": "g07",
+      "phase": "pipeline",
+      "stage": "clarify",
+      "model": "glm-4-plus",
+      "input_tokens": 314,
+      "output_tokens": 42,
+      "total_tokens": 356,
+      "time_ms": 871,
+      "attempts": 1
+    },
+    {
+      "case_id": "g07",
+      "phase": "pipeline",
+      "stage": "clarify",
+      "model": "glm-4-plus",
+      "input_tokens": 388,
+      "output_tokens": 127,
+      "total_tokens": 515,
+      "time_ms": 2154,
+      "attempts": 1
+    },
+    {
+      "case_id": "g07",
+      "phase": "pipeline",
+      "stage": "decompose",
+      "model": "glm-4-plus",
+      "input_tokens": 291,
+      "output_tokens": 411,
+      "total_tokens": 702,
+      "time_ms": 7071,
+      "attempts": 1
+    },
+    {
+      "case_id": "g07",
+      "phase": "pipeline",
+      "stage": "evaluate",
+      "model": "glm-4-plus",
+      "input_tokens": 163,
+      "output_tokens": 79,
+      "total_tokens": 242,
+      "time_ms": 1829,
+      "attempts": 1
+    },
+    {
+      "case_id": "g07",
+      "phase": "pipeline",
+      "stage": "evaluate",
+      "model": "glm-4-plus",
+      "input_tokens": 181,
+      "output_tokens": 92,
+      "total_tokens": 273,
+      "time_ms": 1888,
+      "attempts": 1
+    },
+    {
+      "case_id": "g07",
+      "phase": "pipeline",
+      "stage": "evaluate",
+      "model": "glm-4-plus",
+      "input_tokens": 167,
+      "output_tokens": 84,
+      "total_tokens": 251,
+      "time_ms": 2047,
+      "attempts": 1
+    },
+    {
+      "case_id": "g07",
+      "phase": "pipeline",
+      "stage": "evaluate",
+      "model": "glm-4-plus",
+      "input_tokens": 185,
+      "output_tokens": 106,
+      "total_tokens": 291,
+      "time_ms": 2004,
+      "attempts": 1
+    },
+    {
+      "case_id": "g07",
+      "phase": "pipeline",
+      "stage": "evaluate",
+      "model": "glm-4-plus",
+      "input_tokens": 156,
+      "output_tokens": 82,
+      "total_tokens": 238,
+      "time_ms": 2030,
+      "attempts": 1
+    },
+    {
+      "case_id": "g07",
+      "phase": "pipeline",
+      "stage": "evaluate",
+      "model": "glm-4-plus",
+      "input_tokens": 174,
+      "output_tokens": 79,
+      "total_tokens": 253,
+      "time_ms": 1725,
+      "attempts": 1
+    },
+    {
+      "case_id": "g07",
+      "phase": "pipeline",
+      "stage": "evaluate",
+      "model": "glm-4-plus",
+      "input_tokens": 163,
+      "output_tokens": 78,
+      "total_tokens": 241,
+      "time_ms": 1719,
+      "attempts": 1
+    },
+    {
+      "case_id": "g07",
+      "phase": "pipeline",
+      "stage": "evaluate",
+      "model": "glm-4-plus",
+      "input_tokens": 181,
+      "output_tokens": 85,
+      "total_tokens": 266,
+      "time_ms": 1683,
+      "attempts": 1
+    },
+    {
+      "case_id": "g07",
+      "phase": "pipeline",
+      "stage": "evaluate",
+      "model": "glm-4-plus",
+      "input_tokens": 183,
+      "output_tokens": 85,
+      "total_tokens": 268,
+      "time_ms": 1600,
+      "attempts": 1
+    },
+    {
+      "case_id": "g07",
+      "phase": "pipeline",
+      "stage": "evaluate",
+      "model": "glm-4-plus",
+      "input_tokens": 162,
+      "output_tokens": 63,
+      "total_tokens": 225,
+      "time_ms": 1334,
+      "attempts": 1
+    },
+    {
+      "case_id": "g07",
+      "phase": "pipeline",
+      "stage": "job_design",
+      "model": "glm-4-plus",
+      "input_tokens": 521,
+      "output_tokens": 317,
+      "total_tokens": 838,
+      "time_ms": 4296,
+      "attempts": 1
+    },
+    {
+      "case_id": "g07",
+      "phase": "pipeline",
+      "stage": "job_design",
+      "model": "glm-4-plus",
+      "input_tokens": 524,
+      "output_tokens": 327,
+      "total_tokens": 851,
+      "time_ms": 5221,
+      "attempts": 1
+    },
+    {
+      "case_id": "g07",
+      "phase": "pipeline",
+      "stage": "job_design",
+      "model": "glm-4-plus",
+      "input_tokens": 520,
+      "output_tokens": 294,
+      "total_tokens": 814,
+      "time_ms": 4605,
+      "attempts": 1
+    },
+    {
+      "case_id": "g07",
+      "phase": "pipeline",
+      "stage": "job_design",
+      "model": "glm-4-plus",
+      "input_tokens": 522,
+      "output_tokens": 332,
+      "total_tokens": 854,
+      "time_ms": 5207,
+      "attempts": 1
+    },
+    {
+      "case_id": "g07",
+      "phase": "judge",
+      "stage": "other",
+      "model": "glm-4-plus",
+      "input_tokens": 1201,
+      "output_tokens": 52,
+      "total_tokens": 1253,
+      "time_ms": 1440,
+      "attempts": 1
+    }
+  ],
+  "usage": {
+    "pipeline": {
+      "calls": 18,
+      "input_tokens": 5057,
+      "output_tokens": 2716,
+      "total_tokens": 7773,
+      "time_ms": 48538,
+      "est_cost_usd": 0.054333
+    },
+    "judge": {
+      "calls": 1,
+      "input_tokens": 1201,
+      "output_tokens": 52,
+      "total_tokens": 1253,
+      "time_ms": 1440,
+      "est_cost_usd": 0.008758
+    },
+    "by_stage": {
+      "clarify": {
+        "calls": 3,
+        "input_tokens": 964,
+        "output_tokens": 202
+      },
+      "decompose": {
+        "calls": 1,
+        "input_tokens": 291,
+        "output_tokens": 411
+      },
+      "evaluate": {
+        "calls": 10,
+        "input_tokens": 1715,
+        "output_tokens": 833
+      },
+      "job_design": {
+        "calls": 4,
+        "input_tokens": 2087,
+        "output_tokens": 1270
+      }
+    }
+  },
+  "wall_time_s": 50.23
+}

@@ -1,0 +1,908 @@
+{
+  "case_id": "g03",
+  "category": "dashboard",
+  "agent": "v1",
+  "started_at": "2026-09-04T05:49:11+00:00",
+  "session_id": "5c54b85f0c4d9871",
+  "http": {
+    "start": 200,
+    "reply": [
+      200,
+      200
+    ],
+    "decide": 200
+  },
+  "turns": 2,
+  "completed": true,
+  "hit_turn_cap": false,
+  "transcript": [
+    {
+      "role": "employer",
+      "text": "我需要一个实时业务数据看板，汇总销售额、客诉率和各渠道转化。"
+    },
+    {
+      "role": "pipeline",
+      "text": "我需要了解更多关于这个实时业务数据看板的具体需求。请问这个看板是用于内部管理团队使用，还是需要向客户或合作伙伴展示？这将帮助我判断项目的复杂度和使用场景。"
+    },
+    {
+      "role": "employer",
+      "text": "预算 8 到 10 万，可以分两期付。"
+    },
+    {
+      "role": "pipeline",
+      "text": "\n感谢提供预算信息。为了更好地理解需求，请问这个实时业务数据看板是希望一次性完成所有功能，还是可以先实现基础版本，后续再逐步添加更多功能？这将帮助我判断项目是一次性的还是分阶段的。"
+    },
+    {
+      "role": "employer",
+      "text": "希望季度末上线，上线之后长期使用。"
+    },
+    {
+      "role": "pipeline",
+      "text": "\n[REQUIREMENT_COMPLETE]\n{\n  \"project_name\": \"实时业务数据看板\",\n  \"core_description\": \"一个实时展示销售额、客诉率和各渠道转化数据的业务数据看板，计划季度末上线并长期使用\",\n  \"tasks_hint\": [\"数据收集与整合系统搭建\", \"可视化界面设计与开发\", \"实时数据更新机制实现\", \"用户权限管理设置\"],\n  \"duration\": \"ongoing\",\n  \"team_context\": \"需要业务数据分析支持，预算8-10万可分两期支付\",\n  \"urgency\": \"medium\",\n  \"budget_hint\": \"medium\"\n}"
+    }
+  ],
+  "response": {
+    "decisions": {
+      "decisions": [
+        {
+          "evaluations": [
+            {
+              "can_complete": true,
+              "confidence": 0.85,
+              "estimated_time": "2-3个月",
+              "reason": "张伟具备全栈开发能力和相关技术栈，能够独立完成数据收集与整合系统的搭建",
+              "resource_id": "candidate_a",
+              "resource_name": "张伟（全栈工程师）",
+              "resource_type": "human",
+              "strengths": [
+                "全栈开发经验丰富",
+                "掌握React、Node.js、Python等技术栈",
+                "有独立交付产品的经验"
+              ]
+            },
+            {
+              "can_complete": true,
+              "confidence": 0.8,
+              "estimated_time": "2-4周",
+              "reason": "代码生成Agent具备前后端开发和脚本编写能力，可构建数据收集系统，但缺乏对业务逻辑的深度理解",
+              "resource_id": "agent_code",
+              "resource_name": "代码生成 Agent",
+              "resource_type": "agent",
+              "strengths": [
+                "前端开发能力",
+                "后端开发能力",
+                "脚本编写能力",
+                "代码审查能力"
+              ]
+            }
+          ],
+          "recommendation": {
+            "cost_hint": "需要评估薪资",
+            "decision": "human",
+            "reason": "建议招聘 张伟（全栈工程师） 类型人才，置信度 85%",
+            "resource": {
+              "can_complete": true,
+              "confidence": 0.85,
+              "estimated_time": "2-3个月",
+              "reason": "张伟具备全栈开发能力和相关技术栈，能够独立完成数据收集与整合系统的搭建",
+              "resource_id": "candidate_a",
+              "resource_name": "张伟（全栈工程师）",
+              "resource_type": "human",
+              "strengths": [
+                "全栈开发经验丰富",
+                "掌握React、Node.js、Python等技术栈",
+                "有独立交付产品的经验"
+              ]
+            }
+          },
+          "task_id": "t1",
+          "task_name": "数据收集与整合系统搭建",
+          "task_type": "technical"
+        },
+        {
+          "evaluations": [
+            {
+              "can_complete": true,
+              "confidence": 0.85,
+              "estimated_time": "2-3周",
+              "reason": "代码生成 Agent 具备前端开发和图表组件开发能力，但缺乏设计美学判断力",
+              "resource_id": "agent_code",
+              "resource_name": "代码生成 Agent",
+              "resource_type": "agent",
+              "strengths": [
+                "前端开发能力",
+                "图表组件开发经验",
+                "代码审查能力"
+              ]
+            },
+            {
+              "can_complete": true,
+              "confidence": 0.85,
+              "estimated_time": "2-3周",
+              "reason": "张伟具备全栈开发能力和相关技术栈，能够独立完成可视化界面设计与开发任务。",
+              "resource_id": "candidate_a",
+              "resource_name": "张伟（全栈工程师）",
+              "resource_type": "human",
+              "strengths": [
+                "React和TypeScript技能适合前端开发",
+                "Node.js经验支持后端数据处理",
+                "3年全栈开发经验确保项目交付能力"
+              ]
+            }
+          ],
+          "recommendation": {
+            "cost_hint": "$0.05",
+            "decision": "agent",
+            "reason": "推荐使用 代码生成 Agent，置信度 85%",
+            "resource": {
+              "can_complete": true,
+              "confidence": 0.85,
+              "estimated_time": "2-3周",
+              "reason": "代码生成 Agent 具备前端开发和图表组件开发能力，但缺乏设计美学判断力",
+              "resource_id": "agent_code",
+              "resource_name": "代码生成 Agent",
+              "resource_type": "agent",
+              "strengths": [
+                "前端开发能力",
+                "图表组件开发经验",
+                "代码审查能力"
+              ]
+            }
+          },
+          "task_id": "t2",
+          "task_name": "可视化界面设计与开发",
+          "task_type": "technical"
+        },
+        {
+          "evaluations": [
+            {
+              "can_complete": true,
+              "confidence": 0.9,
+              "estimated_time": "2-3周",
+              "reason": "张伟具备全栈开发能力和相关技术栈，能够独立完成实时数据更新机制的设计与实现。",
+              "resource_id": "candidate_a",
+              "resource_name": "张伟（全栈工程师）",
+              "resource_type": "human",
+              "strengths": [
+                "React前端开发经验",
+                "Node.js后端开发能力",
+                "Docker容器化部署经验"
+              ]
+            },
+            {
+              "can_complete": true,
+              "confidence": 0.85,
+              "estimated_time": "2-3天",
+              "reason": "代码生成Agent具备前后端开发能力，可设计实时数据更新流程和异常处理机制",
+              "resource_id": "agent_code",
+              "resource_name": "代码生成 Agent",
+              "resource_type": "agent",
+              "strengths": [
+                "前端开发能力",
+                "后端开发能力",
+                "脚本编写能力",
+                "代码审查能力"
+              ]
+            }
+          ],
+          "recommendation": {
+            "cost_hint": "需要评估薪资",
+            "decision": "human",
+            "reason": "建议招聘 张伟（全栈工程师） 类型人才，置信度 90%",
+            "resource": {
+              "can_complete": true,
+              "confidence": 0.9,
+              "estimated_time": "2-3周",
+              "reason": "张伟具备全栈开发能力和相关技术栈，能够独立完成实时数据更新机制的设计与实现。",
+              "resource_id": "candidate_a",
+              "resource_name": "张伟（全栈工程师）",
+              "resource_type": "human",
+              "strengths": [
+                "React前端开发经验",
+                "Node.js后端开发能力",
+                "Docker容器化部署经验"
+              ]
+            }
+          },
+          "task_id": "t3",
+          "task_name": "实时数据更新机制实现",
+          "task_type": "technical"
+        },
+        {
+          "evaluations": [
+            {
+              "can_complete": true,
+              "confidence": 0.85,
+              "estimated_time": "2-3天",
+              "reason": "代码生成Agent具备前后端开发和代码审查能力，能够实现基于角色的访问控制系统",
+              "resource_id": "agent_code",
+              "resource_name": "代码生成 Agent",
+              "resource_type": "agent",
+              "strengths": [
+                "前端开发能力",
+                "后端开发能力",
+                "代码审查能力"
+              ]
+            },
+            {
+              "can_complete": true,
+              "confidence": 0.85,
+              "estimated_time": "2-3周",
+              "reason": "张伟具备全栈开发经验和相关技术栈，能够独立完成基于角色的访问控制系统设计实现。",
+              "resource_id": "candidate_a",
+              "resource_name": "张伟（全栈工程师）",
+              "resource_type": "human",
+              "strengths": [
+                "全栈开发经验",
+                "熟悉React、Node.js和TypeScript",
+                "有独立交付产品的经验"
+              ]
+            }
+          ],
+          "recommendation": {
+            "cost_hint": "$0.05",
+            "decision": "agent",
+            "reason": "推荐使用 代码生成 Agent，置信度 85%",
+            "resource": {
+              "can_complete": true,
+              "confidence": 0.85,
+              "estimated_time": "2-3天",
+              "reason": "代码生成Agent具备前后端开发和代码审查能力，能够实现基于角色的访问控制系统",
+              "resource_id": "agent_code",
+              "resource_name": "代码生成 Agent",
+              "resource_type": "agent",
+              "strengths": [
+                "前端开发能力",
+                "后端开发能力",
+                "代码审查能力"
+              ]
+            }
+          },
+          "task_id": "t4",
+          "task_name": "用户权限管理设置",
+          "task_type": "technical"
+        },
+        {
+          "evaluations": [
+            {
+              "can_complete": true,
+              "confidence": 0.8,
+              "estimated_time": "2-4周",
+              "reason": "数据分析Agent具备数据清洗、报表生成、数据可视化和统计分析能力，可支持建立数据分析流程和提供数据解读支持。",
+              "resource_id": "agent_data",
+              "resource_name": "数据分析 Agent",
+              "resource_type": "agent",
+              "strengths": [
+                "数据清洗能力",
+                "报表生成能力",
+                "数据可视化能力",
+                "统计分析能力"
+              ]
+            },
+            {
+              "can_complete": true,
+              "confidence": 0.8,
+              "estimated_time": "2-3个月",
+              "reason": "张伟具备全栈开发技能和数据分析相关经验，能够建立数据分析流程并提供支持。",
+              "resource_id": "candidate_a",
+              "resource_name": "张伟（全栈工程师）",
+              "resource_type": "human",
+              "strengths": [
+                "全栈开发技能覆盖前后端",
+                "有独立交付产品的经验",
+                "熟悉多种技术栈（React、Node.js、Python等）"
+              ]
+            },
+            {
+              "can_complete": true,
+              "confidence": 0.8,
+              "estimated_time": "2-3个月",
+              "reason": "李娜具备AI产品设计经验和用户研究能力，但缺乏专业数据分析背景",
+              "resource_id": "candidate_b",
+              "resource_name": "李娜（产品经理）",
+              "resource_type": "human",
+              "strengths": [
+                "需求分析能力",
+                "AI产品设计经验",
+                "从0到1产品经验"
+              ]
+            }
+          ],
+          "recommendation": {
+            "cost_hint": "$0.03",
+            "decision": "agent",
+            "reason": "推荐使用 数据分析 Agent，置信度 80%",
+            "resource": {
+              "can_complete": true,
+              "confidence": 0.8,
+              "estimated_time": "2-4周",
+              "reason": "数据分析Agent具备数据清洗、报表生成、数据可视化和统计分析能力，可支持建立数据分析流程和提供数据解读支持。",
+              "resource_id": "agent_data",
+              "resource_name": "数据分析 Agent",
+              "resource_type": "agent",
+              "strengths": [
+                "数据清洗能力",
+                "报表生成能力",
+                "数据可视化能力",
+                "统计分析能力"
+              ]
+            }
+          },
+          "task_id": "t5",
+          "task_name": "业务数据分析支持体系",
+          "task_type": "analytical"
+        }
+      ]
+    },
+    "jd_report": {
+      "average_water_score": 85,
+      "job_count": 2,
+      "job_designs": [
+        {
+          "core_responsibilities": [
+            "搭建实时数据收集与整合系统，支持销售额、客诉率和各渠道转化数据的实时展示",
+            "开发业务数据看板，确保数据准确性和更新频率",
+            "优化数据流程，确保系统长期稳定运行",
+            "根据业务需求调整看板展示内容和功能"
+          ],
+          "experience_range": {
+            "max": 4,
+            "min": 2,
+            "unit": "年"
+          },
+          "job_id": "jd_7473703ce3da",
+          "job_title": "数据看板开发工程师",
+          "nice_to_have_skills": [
+            "Python/R数据分析能力",
+            "实时数据处理经验",
+            "业务数据分析背景",
+            "数据仓库设计经验"
+          ],
+          "red_flags_removed": [
+            "移除了'需要业务数据分析支持'的模糊要求",
+            "移除了'预算8-10万可分两期支付'的财务细节"
+          ],
+          "required_skills": [
+            "数据可视化工具使用经验（如Tableau、Power BI等）",
+            "数据库查询与数据整合能力",
+            "前端开发基础（HTML/CSS/JavaScript）",
+            "ETL工具使用经验"
+          ],
+          "salary_range": {
+            "max": 28000,
+            "min": 18000,
+            "unit": "元/月"
+          },
+          "task_id": "t1",
+          "task_name": "数据收集与整合系统搭建",
+          "water_analysis": "与原始描述相比，明确了具体的数据指标和系统要求，添加了技术实现细节，移除了模糊的'业务数据分析支持'表述",
+          "water_score": 85,
+          "work_type": "contract"
+        },
+        {
+          "core_responsibilities": [
+            "实现实时数据更新机制，确保销售额、客诉率和各渠道转化数据的实时展示",
+            "开发业务数据看板，支持季度末上线并长期使用",
+            "设计数据可视化方案，确保业务数据清晰可理解"
+          ],
+          "experience_range": {
+            "max": 3,
+            "min": 1,
+            "unit": "年"
+          },
+          "job_id": "jd_64a694e534d4",
+          "job_title": "数据看板开发工程师",
+          "nice_to_have_skills": [
+            "实时数据处理经验",
+            "ETL工具使用经验",
+            "响应式设计能力"
+          ],
+          "red_flags_removed": [
+            "移除了模糊的'业务数据分析支持'要求",
+            "移除了不明确的'预算8-10万可分两期支付'作为岗位要求"
+          ],
+          "required_skills": [
+            "数据可视化工具使用（如Tableau、Power BI等）",
+            "数据库查询与数据处理能力",
+            "前端开发基础（HTML/CSS/JavaScript）"
+          ],
+          "salary_range": {
+            "max": 25000,
+            "min": 15000,
+            "unit": "元/月"
+          },
+          "task_id": "t3",
+          "task_name": "实时数据更新机制实现",
+          "water_analysis": "与原始描述相比，明确了具体开发任务和技术要求，移除了模糊的'业务数据分析支持'表述，聚焦于数据看板开发核心职责",
+          "water_score": 85,
+          "work_type": "contract"
+        }
+      ],
+      "needs_hiring": true,
+      "water_interpretation": "JD 描述与实际需求高度一致，信息可信度高"
+    },
+    "requirement": {
+      "budget_hint": "medium",
+      "core_description": "一个实时展示销售额、客诉率和各渠道转化数据的业务数据看板，计划季度末上线并长期使用",
+      "duration": "ongoing",
+      "project_name": "实时业务数据看板",
+      "tasks_hint": [
+        "数据收集与整合系统搭建",
+        "可视化界面设计与开发",
+        "实时数据更新机制实现",
+        "用户权限管理设置"
+      ],
+      "team_context": "需要业务数据分析支持，预算8-10万可分两期支付",
+      "urgency": "medium"
+    },
+    "summary": {
+      "agent_tasks": 3,
+      "human_tasks": 2,
+      "job_count": 2,
+      "needs_hiring": true,
+      "task_count": 5,
+      "verdict": "建议混合方案：3 个任务用 Agent，2 个任务需要人类",
+      "verdict_type": "hybrid",
+      "water_score": 85
+    },
+    "tasks": [
+      {
+        "description": "设计并实施数据收集系统，整合销售数据、客诉数据和各渠道转化数据，确保数据来源可靠且格式统一",
+        "estimated_hours": 40,
+        "id": "t1",
+        "is_recurring": false,
+        "name": "数据收集与整合系统搭建",
+        "requires_judgment": true,
+        "type": "technical"
+      },
+      {
+        "description": "设计直观易用的数据看板界面，开发图表展示组件，确保关键业务指标清晰可见",
+        "estimated_hours": 32,
+        "id": "t2",
+        "is_recurring": false,
+        "name": "可视化界面设计与开发",
+        "requires_judgment": true,
+        "type": "technical"
+      },
+      {
+        "description": "建立数据实时更新流程，确保看板数据及时刷新，设计异常数据处理机制",
+        "estimated_hours": 24,
+        "id": "t3",
+        "is_recurring": false,
+        "name": "实时数据更新机制实现",
+        "requires_judgment": true,
+        "type": "technical"
+      },
+      {
+        "description": "设计并实现基于角色的访问控制系统，确保不同层级用户只能查看其权限范围内的数据",
+        "estimated_hours": 16,
+        "id": "t4",
+        "is_recurring": false,
+        "name": "用户权限管理设置",
+        "requires_judgment": true,
+        "type": "technical"
+      },
+      {
+        "description": "建立数据分析流程，提供数据解读支持，确保业务团队能有效利用看板数据做出决策",
+        "estimated_hours": 20,
+        "id": "t5",
+        "is_recurring": true,
+        "name": "业务数据分析支持体系",
+        "requires_judgment": true,
+        "type": "analytical"
+      }
+    ]
+  },
+  "error": null,
+  "turn_count_reported": null,
+  "requirement_after_clarify": {
+    "budget_hint": "medium",
+    "core_description": "一个实时展示销售额、客诉率和各渠道转化数据的业务数据看板，计划季度末上线并长期使用",
+    "duration": "ongoing",
+    "project_name": "实时业务数据看板",
+    "tasks_hint": [
+      "数据收集与整合系统搭建",
+      "可视化界面设计与开发",
+      "实时数据更新机制实现",
+      "用户权限管理设置"
+    ],
+    "team_context": "需要业务数据分析支持，预算8-10万可分两期支付",
+    "urgency": "medium"
+  },
+  "app_accounting": {
+    "agent_runs": [
+      {
+        "agent_name": "job_design",
+        "task_id": "t3",
+        "input_tokens": null,
+        "output_tokens": null,
+        "time_ms": null,
+        "llm_cost_usd": null
+      },
+      {
+        "agent_name": "job_design",
+        "task_id": "t1",
+        "input_tokens": null,
+        "output_tokens": null,
+        "time_ms": null,
+        "llm_cost_usd": null
+      }
+    ],
+    "reported_input_tokens": null,
+    "reported_output_tokens": null,
+    "reported_time_ms": null,
+    "reported_cost_usd": null,
+    "analysis_traces": 0
+  },
+  "score": {
+    "case_id": "g03",
+    "category": "dashboard",
+    "structural_score": 0.9333,
+    "components": {
+      "requirement": 1.0,
+      "task_count": 1.0,
+      "must_include": 0.6666666666666666,
+      "must_not_include": 1.0,
+      "decisions": 1.0
+    },
+    "details": {
+      "requirement": [
+        {
+          "check": "core_description_keywords_any",
+          "expected": [
+            "看板",
+            "实时",
+            "销售额",
+            "转化"
+          ],
+          "actual": "一个实时展示销售额、客诉率和各渠道转化数据的业务数据看板，计划季度末上线并长期使用",
+          "passed": true,
+          "matched": "看板"
+        }
+      ],
+      "task_count": {
+        "check": "count_range",
+        "expected": [
+          3,
+          6
+        ],
+        "actual": 5,
+        "passed": true
+      },
+      "must_include": [
+        {
+          "check": "must_include",
+          "expected": {
+            "name_keywords_any": [
+              "指标",
+              "口径",
+              "定义",
+              "梳理"
+            ]
+          },
+          "passed": false,
+          "matched_task": null,
+          "closest": {
+            "name_keyword": null
+          }
+        },
+        {
+          "check": "must_include",
+          "expected": {
+            "name_keywords_any": [
+              "看板",
+              "前端",
+              "页面",
+              "可视化"
+            ],
+            "type": "technical"
+          },
+          "passed": true,
+          "matched_task": "可视化界面设计与开发",
+          "closest": {
+            "name_keyword": "可视化",
+            "type": {
+              "expected": "technical",
+              "actual": "technical"
+            }
+          }
+        },
+        {
+          "check": "must_include",
+          "expected": {
+            "name_keywords_any": [
+              "数据",
+              "采集",
+              "接入",
+              "管道",
+              "同步",
+              "ETL"
+            ]
+          },
+          "passed": true,
+          "matched_task": "数据收集与整合系统搭建",
+          "closest": {
+            "name_keyword": "数据"
+          }
+        }
+      ],
+      "must_not_include": {
+        "check": "must_not_include_keywords",
+        "expected": [
+          "招聘 CEO",
+          "线下门店"
+        ],
+        "passed": true,
+        "violations": []
+      },
+      "decisions": {
+        "check": "decisions",
+        "expected": {
+          "human_max": 4
+        },
+        "actual": {
+          "agent": 3,
+          "human": 2,
+          "hybrid": 0,
+          "none": 0
+        },
+        "passed": true,
+        "failures": []
+      }
+    }
+  },
+  "decision_counts": {
+    "agent": 3,
+    "human": 2,
+    "hybrid": 0,
+    "none": 0
+  },
+  "judge": {
+    "score": 3,
+    "rationale": "任务分解未明确区分指标定义、数据摄取和展示，且未直接解决1小时数据延迟要求。工时估计对无数据仓库经验团队偏高，特别是t1任务40小时可能不足。",
+    "repaired": false,
+    "error": null,
+    "raw": "{\"score\": 3, \"rationale\": \"任务分解未明确区分指标定义、数据摄取和展示，且未直接解决1小时数据延迟要求。工时估计对无数据仓库经验团队偏高，特别是t1任务40小时可能不足。\"}"
+  },
+  "llm_calls": [
+    {
+      "case_id": "g03",
+      "phase": "pipeline",
+      "stage": "clarify",
+      "model": "glm-4-plus",
+      "input_tokens": 239,
+      "output_tokens": 43,
+      "total_tokens": 282,
+      "time_ms": 1252,
+      "attempts": 1
+    },
+    {
+      "case_id": "g03",
+      "phase": "pipeline",
+      "stage": "clarify",
+      "model": "glm-4-plus",
+      "input_tokens": 303,
+      "output_tokens": 50,
+      "total_tokens": 353,
+      "time_ms": 1032,
+      "attempts": 1
+    },
+    {
+      "case_id": "g03",
+      "phase": "pipeline",
+      "stage": "clarify",
+      "model": "glm-4-plus",
+      "input_tokens": 369,
+      "output_tokens": 131,
+      "total_tokens": 500,
+      "time_ms": 2177,
+      "attempts": 1
+    },
+    {
+      "case_id": "g03",
+      "phase": "pipeline",
+      "stage": "decompose",
+      "model": "glm-4-plus",
+      "input_tokens": 299,
+      "output_tokens": 422,
+      "total_tokens": 721,
+      "time_ms": 9084,
+      "attempts": 1
+    },
+    {
+      "case_id": "g03",
+      "phase": "pipeline",
+      "stage": "evaluate",
+      "model": "glm-4-plus",
+      "input_tokens": 173,
+      "output_tokens": 91,
+      "total_tokens": 264,
+      "time_ms": 2201,
+      "attempts": 1
+    },
+    {
+      "case_id": "g03",
+      "phase": "pipeline",
+      "stage": "evaluate",
+      "model": "glm-4-plus",
+      "input_tokens": 191,
+      "output_tokens": 90,
+      "total_tokens": 281,
+      "time_ms": 2692,
+      "attempts": 1
+    },
+    {
+      "case_id": "g03",
+      "phase": "pipeline",
+      "stage": "evaluate",
+      "model": "glm-4-plus",
+      "input_tokens": 163,
+      "output_tokens": 80,
+      "total_tokens": 243,
+      "time_ms": 1625,
+      "attempts": 1
+    },
+    {
+      "case_id": "g03",
+      "phase": "pipeline",
+      "stage": "evaluate",
+      "model": "glm-4-plus",
+      "input_tokens": 181,
+      "output_tokens": 95,
+      "total_tokens": 276,
+      "time_ms": 2303,
+      "attempts": 1
+    },
+    {
+      "case_id": "g03",
+      "phase": "pipeline",
+      "stage": "evaluate",
+      "model": "glm-4-plus",
+      "input_tokens": 161,
+      "output_tokens": 85,
+      "total_tokens": 246,
+      "time_ms": 1860,
+      "attempts": 1
+    },
+    {
+      "case_id": "g03",
+      "phase": "pipeline",
+      "stage": "evaluate",
+      "model": "glm-4-plus",
+      "input_tokens": 179,
+      "output_tokens": 88,
+      "total_tokens": 267,
+      "time_ms": 2717,
+      "attempts": 1
+    },
+    {
+      "case_id": "g03",
+      "phase": "pipeline",
+      "stage": "evaluate",
+      "model": "glm-4-plus",
+      "input_tokens": 161,
+      "output_tokens": 78,
+      "total_tokens": 239,
+      "time_ms": 1602,
+      "attempts": 1
+    },
+    {
+      "case_id": "g03",
+      "phase": "pipeline",
+      "stage": "evaluate",
+      "model": "glm-4-plus",
+      "input_tokens": 179,
+      "output_tokens": 88,
+      "total_tokens": 267,
+      "time_ms": 1875,
+      "attempts": 1
+    },
+    {
+      "case_id": "g03",
+      "phase": "pipeline",
+      "stage": "evaluate",
+      "model": "glm-4-plus",
+      "input_tokens": 162,
+      "output_tokens": 89,
+      "total_tokens": 251,
+      "time_ms": 1740,
+      "attempts": 1
+    },
+    {
+      "case_id": "g03",
+      "phase": "pipeline",
+      "stage": "evaluate",
+      "model": "glm-4-plus",
+      "input_tokens": 183,
+      "output_tokens": 94,
+      "total_tokens": 277,
+      "time_ms": 1934,
+      "attempts": 1
+    },
+    {
+      "case_id": "g03",
+      "phase": "pipeline",
+      "stage": "evaluate",
+      "model": "glm-4-plus",
+      "input_tokens": 185,
+      "output_tokens": 78,
+      "total_tokens": 263,
+      "time_ms": 1472,
+      "attempts": 1
+    },
+    {
+      "case_id": "g03",
+      "phase": "pipeline",
+      "stage": "job_design",
+      "model": "glm-4-plus",
+      "input_tokens": 502,
+      "output_tokens": 322,
+      "total_tokens": 824,
+      "time_ms": 5153,
+      "attempts": 1
+    },
+    {
+      "case_id": "g03",
+      "phase": "pipeline",
+      "stage": "job_design",
+      "model": "glm-4-plus",
+      "input_tokens": 501,
+      "output_tokens": 299,
+      "total_tokens": 800,
+      "time_ms": 4926,
+      "attempts": 1
+    },
+    {
+      "case_id": "g03",
+      "phase": "judge",
+      "stage": "other",
+      "model": "glm-4-plus",
+      "input_tokens": 1172,
+      "output_tokens": 56,
+      "total_tokens": 1228,
+      "time_ms": 1108,
+      "attempts": 1
+    }
+  ],
+  "usage": {
+    "pipeline": {
+      "calls": 17,
+      "input_tokens": 4131,
+      "output_tokens": 2223,
+      "total_tokens": 6354,
+      "time_ms": 45645,
+      "est_cost_usd": 0.044414
+    },
+    "judge": {
+      "calls": 1,
+      "input_tokens": 1172,
+      "output_tokens": 56,
+      "total_tokens": 1228,
+      "time_ms": 1108,
+      "est_cost_usd": 0.008584
+    },
+    "by_stage": {
+      "clarify": {
+        "calls": 3,
+        "input_tokens": 911,
+        "output_tokens": 224
+      },
+      "decompose": {
+        "calls": 1,
+        "input_tokens": 299,
+        "output_tokens": 422
+      },
+      "evaluate": {
+        "calls": 11,
+        "input_tokens": 1918,
+        "output_tokens": 956
+      },
+      "job_design": {
+        "calls": 2,
+        "input_tokens": 1003,
+        "output_tokens": 621
+      }
+    }
+  },
+  "wall_time_s": 46.86
+}
