@@ -13,7 +13,7 @@
 ![Python](https://img.shields.io/badge/Python-3.11-blue?style=flat-square&logo=python)
 ![Flask](https://img.shields.io/badge/Flask-3.x-lightgrey?style=flat-square&logo=flask)
 ![React](https://img.shields.io/badge/React-18-61DAFB?style=flat-square&logo=react)
-![Tests](https://img.shields.io/badge/tests-597_passed-brightgreen?style=flat-square)
+![Tests](https://img.shields.io/badge/tests-996_passed-brightgreen?style=flat-square)
 ![Hackathon](https://img.shields.io/badge/AI×Web3-Hackathon-orange?style=flat-square)
 
 </div>
@@ -182,7 +182,7 @@ Later extensions could include company subscriptions, private agent hosting, age
 | On-chain settlement | Mock / local Anvil chain / Sepolia testnet behind a pluggable provider interface |
 | Agent protocol | MCP (Model Context Protocol) |
 | Auth | JWT + pbkdf2 |
-| Tests | 597 passing pytest tests |
+| Tests | 996 passing pytest tests |
 
 ```text
 HireNet/
@@ -192,9 +192,28 @@ HireNet/
 │   ├── services/      # Settlement providers, auth, bootstrap
 │   └── storage/       # SQLite DAO
 ├── frontend/          # React SPA (15 pages)
-├── tests/             # 532 passing pytest tests
+├── tests/             # 996 passing pytest tests
 ├── docs/              # PRD, UX spec, demo voiceover script
+├── evals/             # Golden set, scorer, evaluation reports
 └── start.sh           # One-command startup
+```
+
+### The requirement-analysis pipeline: two implementations and their eval
+
+The employer-side requirement analysis has two implementations, selected by the `HIRENET_TASK_AGENT` environment variable:
+
+| Value | What it runs |
+| --- | --- |
+| `v1` (default) | The existing path: `RequirementAnalysisAgent` plus three module functions |
+| `v2` | `TaskAnalysisAgent` (`app/agents/task_analysis.py`): every model output schema-validated, a cap on clarification turns, `recommendation` never null, per-call token accounting and traces |
+
+Both paths serve the same routes with the same response keys. v2 is **not** the default: on the 20-case golden set its structural score came out below v1's (0.8500 vs 0.8829), which does not meet the flip condition — see the [evaluation report](evals/reports/2026-09-04-v1-vs-v2.md) and the [retrospective](docs/retrospective-task-analysis-agent.en.md).
+
+Every v2 LLM call writes an `analysis_traces` row, so a whole run can be replayed step by step:
+
+```bash
+HIRENET_TASK_AGENT=v2 python wsgi.py         # run one analysis through v2
+python scripts/replay_trace.py <session_id>  # replay: stage / model / parsed_ok / tokens / prompt and response
 ```
 
 ---

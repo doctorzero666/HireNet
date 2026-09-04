@@ -13,7 +13,7 @@
 ![Python](https://img.shields.io/badge/Python-3.11-blue?style=flat-square&logo=python)
 ![Flask](https://img.shields.io/badge/Flask-3.x-lightgrey?style=flat-square&logo=flask)
 ![React](https://img.shields.io/badge/React-18-61DAFB?style=flat-square&logo=react)
-![Tests](https://img.shields.io/badge/tests-597_passed-brightgreen?style=flat-square)
+![Tests](https://img.shields.io/badge/tests-996_passed-brightgreen?style=flat-square)
 ![Hackathon](https://img.shields.io/badge/AI×Web3-Hackathon-orange?style=flat-square)
 
 </div>
@@ -182,7 +182,7 @@ HireNet 将传统招聘平台的“岗位匹配”，扩展成了更前置的**�
 | 链上结算 | Mock / Anvil 本地链 / Sepolia 测试网，Provider 接口可插拔 |
 | Agent 协议 | MCP (Model Context Protocol) |
 | 鉴权 | JWT + pbkdf2 |
-| 测试 | pytest 597 passed |
+| 测试 | pytest 996 passed |
 
 ```text
 HireNet/
@@ -192,9 +192,28 @@ HireNet/
 │   ├── services/      # 结算提供者/auth/bootstrap
 │   └── storage/       # SQLite DAO
 ├── frontend/          # React SPA（15 个页面）
-├── tests/             # pytest 532 passed
+├── tests/             # pytest 996 passed
 ├── docs/              # PRD/UX Spec/Demo 配音脚本
+├── evals/             # 黄金用例集 + 打分器 + 评测报告
 └── start.sh           # 一键启动
+```
+
+### 需求分析流水线：两条实现与它们的评测
+
+雇主侧的需求分析有两条实现，由环境变量 `HIRENET_TASK_AGENT` 选择：
+
+| 取值 | 说明 |
+| --- | --- |
+| `v1`（默认） | 现有实现：`RequirementAnalysisAgent` + 三个模块函数 |
+| `v2` | `TaskAnalysisAgent`（`app/agents/task_analysis.py`）：模型输出全部走 schema 校验、澄清轮次有上限、`recommendation` 永不为 null、逐次调用记录 token 与轨迹 |
+
+两条路径服务同一批路由，响应键完全一致。v2 目前**不是**默认：在 20 个黄金用例上，v2 的结构分低于 v1（0.8500 对 0.8829），未达到切换条件，详见 [评测报告](evals/reports/2026-09-04-v1-vs-v2.md) 与[复盘文章](docs/retrospective-task-analysis-agent.zh.md)。
+
+v2 的每一次 LLM 调用都会写一行 `analysis_traces`，可以逐步回放整次运行：
+
+```bash
+HIRENET_TASK_AGENT=v2 python wsgi.py         # 用 v2 跑一次分析
+python scripts/replay_trace.py <session_id>  # 回放：阶段 / 模型 / 是否解析成功 / token / 提示与回复
 ```
 
 ---

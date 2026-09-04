@@ -105,3 +105,46 @@ Acceptance: report exists with real numbers; command lines and their output incl
 Structural score per case = mean of: requirement checks passed ratio, task count in range (0/1), must_include matched ratio (keyword ∧ type ∧ routing ∧ requires_judgment when specified), must_not_include respected (0/1), decisions distribution in range (0/1). Judge score 1–5 recorded separately, never mixed into the structural score. Cost = sum of tokens × price table. Turns = number of clarification rounds before `is_complete`.
 
 Routing expectations must be grounded in the demo resources that actually exist (see `app/services/demo_bootstrap.py`, `app/services/asset_bootstrap.py`, `app/mcp_servers/*`): only expect `agent` where a demo SkillAsset plausibly covers the task.
+
+---
+
+## Addendum 2026-09-04: baseline outcome
+
+Written after WP4's baseline run and WP5's fixes. Everything above is the spec as it was handed over; this section records what actually happened to the decisions it contains.
+
+### D13: FAIL — the default stays `v1`
+
+The full numbers are in `evals/reports/2026-09-04-v1-vs-v2.md` (§2, §3). Both halves of the D13 condition, computed on pipeline tokens:
+
+- quality: mean structural v2 `0.8500` vs v1 `0.8829` → **FAIL** (delta −0.0329);
+- cost: v2 `149,730` tokens ≤ 1.2 × v1 `145,897` → PASS (1.03×).
+
+So WP5 did **not** flip the default. `HIRENET_TASK_AGENT` still defaults to `v1`; `v2` is opt-in. Everything WP3a/WP3b built stays in the tree and stays tested — the flag exists precisely so this decision can be made on numbers instead of on preference, and can be revisited without a revert.
+
+What the FAIL does and does not say: v2 fixed failure modes (no bare `json.loads`, a turn cap, a non-null `recommendation`, a real `task_description`, usage columns that are no longer NULL, a replayable trace). The structural score measures whether the tasks came out right on 20 cases. Those are different questions, and the second one is currently answered by a golden set on which **no case has been reviewed by a human** (`review_status: draft-needs-human-review` on all 20) and by a judge from the same model family as the system it grades (report §6). The verdict is binding for this round; it is not a verdict on v2's value.
+
+### The g15 fix (WP5)
+
+The largest per-case swing was the injection case: v1 1.00, v2 0.40. The cause was v2's *better* parsing. The model echoed the system prompt, that prompt contains the `[REQUIREMENT_COMPLETE]` marker (rule 4) and the empty JSON template, and `parse_llm_json` found the template and schema-validated it into a "requirement" whose `core_description` was the literal `核心需求描述`. v2 completed at turn 0 on it. v1 survived by accident: its stricter parser crashed.
+
+Fixed in `TaskAnalysisAgent` only, with the prompt text untouched so the baseline comparison stays valid:
+
+1. extraction anchors to the text after the **last** marker, not the first;
+2. a schema-valid requirement is rejected when any string field equals a placeholder from the prompt's JSON template (the placeholder set is derived from the prompt files at import, so it cannot drift), or when `core_description` is empty or shorter than a small minimum;
+3. a response containing a distinctive line of the system prompt is treated as an echo: not a completion, and extraction is not attempted. The trace row records `parsed_ok=false` with `reason=prompt_echo`.
+
+A rejection behaves exactly like a parse failure already did: `is_complete` stays False, the raw text still reaches the employer, the turn still counts towards the D3 cap.
+
+Post-fix rerun of that one case with real calls: structural `0.40 → 0.90`, turns `0 → 3` (report §8). §8 is explicitly **not** part of the baseline and does not change §3.
+
+### Two related decisions taken in WP5
+
+- **D11a, revised.** `sess["jd_report"]` on `/decide` and the `job_id` stamp in `design_job` stay. The automatic `_publish_jobs` call they revived does not: `/decide` and `/quick` no longer push generated JDs onto the global board. Publication is `POST /api/jobs/publish` and nothing else — it is the route that stamps `publisher_id` / `company` / `published_at`, and the auto-publish had also been claiming the `job_id` that the employer's own publish button then tried to use (409). Removing it from `/quick` is a deliberate behaviour change, not a restoration.
+- **Templates.** `app/templates/*.html` was in `.gitignore` while `app/routes/earnings.py` rendered one of them, so a fresh clone failed four tests. The ignore is gone and the five templates are tracked.
+
+### Round two
+
+1. Owner review of the 20 golden cases, plus a human spot-check of at least 20% of the judge scores (the condition D12 already attached to using an LLM judge at all).
+2. Golden set v2: revised expectations, plus the case types this round exposed — recovery after an injection, and whether the `must_include` type expectations are too strict (three of the remaining misses are a type mismatch, not a missing task).
+3. Rerun v1 and v2 on the reviewed set, same commands as report §7.
+4. Re-evaluate D13 on those numbers. Until then the default stays `v1`.
