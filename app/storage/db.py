@@ -100,7 +100,28 @@ def _create_tables(conn: sqlite3.Connection) -> None:
             created_at    TEXT    NOT NULL
         );
 
+        -- Stage 1 / D9: one row per step of a task-analysis run (v2 pipeline
+        -- only). Columns mirror app/schemas/analysis_trace.json exactly; the
+        -- DAO validates against that schema before inserting.
+        -- No FK to a session: analysis sessions live in a process-local dict
+        -- (app/app.py:23), so there is no table to reference yet.
+        CREATE TABLE IF NOT EXISTS analysis_traces (
+            trace_id      TEXT    PRIMARY KEY,
+            session_id    TEXT    NOT NULL,
+            step_no       INTEGER NOT NULL CHECK (step_no >= 0),
+            stage         TEXT    NOT NULL CHECK (stage IN ('clarify', 'extract', 'decompose', 'evaluate', 'decide', 'jd')),
+            model         TEXT    NOT NULL,
+            prompt_json   TEXT    NOT NULL,
+            response_text TEXT    NOT NULL,
+            parsed_ok     INTEGER NOT NULL CHECK (parsed_ok IN (0, 1)),
+            input_tokens  INTEGER,
+            output_tokens INTEGER,
+            time_ms       INTEGER,
+            created_at    TEXT    NOT NULL
+        );
+
         CREATE INDEX IF NOT EXISTS idx_audit_log_run_id ON audit_log (run_id);
+        CREATE INDEX IF NOT EXISTS idx_analysis_traces_session ON analysis_traces (session_id, step_no);
     """)
 
 
