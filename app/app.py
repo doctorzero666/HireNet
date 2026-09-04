@@ -4,11 +4,12 @@ HireNet Flask Application
 import os
 import json
 import math
+import hashlib
 import secrets
 import decimal
 import threading
 import time
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from flask import Flask, Blueprint, request, jsonify, session, render_template, current_app, make_response, send_from_directory
 from dotenv import load_dotenv
 
@@ -1852,6 +1853,105 @@ def royalty_status(run_id):
 #
 # Settlement triggers the existing U4 path (record_agent_run) so the same
 # royalty_ledger row a Job Design invocation would write also lands here.
+#
+# ── AP2 mandate vocabulary (naming only — NOT the AP2 machinery) ─────────────
+#
+# The pact object carries five fields whose *names and meanings* deliberately
+# mirror Google's Agent Payments Protocol (AP2) mandate vocabulary, so an
+# auditor reading a HireNet pact recognises the same concepts:
+#
+#   intent       ← IntentMandate.natural_language_description
+#                  Human-readable statement of what is being authorized.
+#   amount_cap   ← IntentMandate spend-ceiling semantics
+#                  The ceiling this pact may settle for. Same unit as the
+#                  existing `amount` field (dollar units — settle converts it
+#                  to integer basis points via Decimal).
+#   expires_at   ← IntentMandate.intent_expiry / CartContents.cart_expiry
+#                  Wall-clock TTL; approve/settle past it are refused (409).
+#   payee        ← CartContents.merchant_name / PaymentMandateContents.merchant_agent
+#                  The creator wallet_address resolved from asset_id; None
+#                  when the bound SkillAsset has not registered a wallet.
+#   content_hash ← CartMandate's cart_hash (integrity link)
+#                  sha256 of the canonical JSON of the pact's material fields,
+#                  computed at create and re-checked at settle.
+#
+# What this is NOT — do not let the vocabulary oversell the implementation:
+#   - There is NO cryptographic signature anywhere in this flow. `approve` is
+#     an unauthenticated-in-demo UI action; that is exactly why the audit
+#     fields are named `approved_by` / `approval_method="ui"` and NOT AP2's
+#     `user_authorization` / `merchant_authorization`, which AP2 reserves for
+#     base64url JWT / verifiable-presentation values.
+#   - `content_hash` is a plain unsigned digest. It detects accidental
+#     tampering and bugs (the settled pact is the pact that was authorized);
+#     it provides NO non-repudiation between mutually-distrusting parties,
+#     unlike AP2's cart_hash bound inside a merchant-signed JWT.
+#   - Statuses stay pending/approved/rejected/settled. AP2's open/closed
+#     mandate distinction is about pre-authorization scope, not workflow
+#     state, and forcing it here would misdescribe what happens.
+
+# Default mandate TTL when the client does not supply `expires_at`.
+PACT_DEFAULT_TTL_HOURS = 24
+
+# Fields hashed into `content_hash`. Kept as an explicit tuple so a future
+# field addition is a deliberate act (adding one silently would invalidate
+# every in-flight pact's hash at settle time).
+PACT_HASHED_FIELDS = (
+    "pact_id",
+    "task_id",
+    "asset_id",
+    "amount_cap",
+    "currency",
+    "payee",
+    "expires_at",
+)
+
+
+def _pact_content_hash(pact: dict) -> str:
+    """sha256 hex of the canonical JSON of the pact's material fields.
+
+    Canonical = ``sort_keys=True, separators=(",", ":")`` so the digest is
+    byte-stable for identical inputs regardless of dict insertion order.
+    Unsigned: an integrity check, not a signature (see section comment).
+    """
+    material = {field: pact.get(field) for field in PACT_HASHED_FIELDS}
+    canonical = json.dumps(
+        material, sort_keys=True, separators=(",", ":"), ensure_ascii=False
+    )
+    return hashlib.sha256(canonical.encode("utf-8")).hexdigest()
+
+
+def _parse_iso_utc(value):
+    """Parse an ISO 8601 string to an aware UTC datetime, or None if unusable.
+
+    Naive timestamps are read as UTC — every timestamp this module writes is
+    produced by ``datetime.now(timezone.utc).isoformat()``, so a naive value
+    can only come from a client and UTC is the documented contract.
+    """
+    if not isinstance(value, str) or not value.strip():
+        return None
+    text = value.strip()
+    if text.endswith("Z"):
+        text = text[:-1] + "+00:00"
+    try:
+        parsed = datetime.fromisoformat(text)
+    except ValueError:
+        return None
+    if parsed.tzinfo is None:
+        parsed = parsed.replace(tzinfo=timezone.utc)
+    return parsed.astimezone(timezone.utc)
+
+
+def _pact_is_expired(pact: dict, now: datetime | None = None) -> bool:
+    """True when the pact's `expires_at` is in the past.
+
+    A missing or unparseable `expires_at` is treated as "no TTL" rather than
+    "expired" — refusing to settle a pact because of a malformed timestamp
+    would be a worse failure mode than the check simply not applying.
+    """
+    expires = _parse_iso_utc(pact.get("expires_at"))
+    if expires is None:
+        return False
+    return (now or datetime.now(timezone.utc)) >= expires
 
 
 def _pact_or_404(pact_id: str):
@@ -1927,16 +2027,72 @@ def pact_create():
     # asset_id from creation — Anvil's settlement path reads price_chain
     # off the bound asset, and a null asset_id left the row charge_chain
     # blank, which short-circuited the Anvil branch and left tx_hash None.
+    from app.storage.skill_assets import get_skill_asset
     asset_id = data.get("asset_id")
     if asset_id is not None:
         if not isinstance(asset_id, str) or not asset_id.strip():
             return jsonify({"error": "asset_id must be a non-empty string"}), 400
         asset_id = asset_id.strip()
-        from app.storage.skill_assets import get_skill_asset
-        if get_skill_asset(current_app.config["DATABASE_PATH"], asset_id) is None:
+        asset = get_skill_asset(current_app.config["DATABASE_PATH"], asset_id)
+        if asset is None:
             return jsonify({"error": f"Unknown asset_id: {asset_id}"}), 400
     else:
         asset_id = current_app.config.get("JOB_DESIGN_ASSET_ID")
+        asset = (
+            get_skill_asset(current_app.config["DATABASE_PATH"], asset_id)
+            if asset_id else None
+        )
+
+    # ── AP2-shaped mandate fields (see the section comment above) ────────────
+    # All five are additive and all five have a default, so a client that
+    # knows nothing about them still gets a complete mandate.
+
+    # intent: the client's own natural-language description wins; otherwise
+    # synthesise one from the identifiers we already validated.
+    raw_intent = data.get("intent")
+    if raw_intent is None:
+        intent = f"Run {agent_name} for task {task_id}"
+    elif isinstance(raw_intent, str):
+        intent = raw_intent.strip() or f"Run {agent_name} for task {task_id}"
+    else:
+        return jsonify({"error": "intent must be a string"}), 400
+
+    # amount_cap: same unit as `amount` (dollar units), defaults to `amount`.
+    # Deliberately NOT required to be >= amount at create time — settle is
+    # where the ceiling is enforced (409), which keeps "authorize less than
+    # you were quoted" a settle-time refusal rather than a create-time one.
+    raw_cap = data.get("amount_cap")
+    if raw_cap is None:
+        amount_cap = amount_value
+    else:
+        if isinstance(raw_cap, bool):
+            return jsonify({"error": "amount_cap must be a valid number"}), 400
+        try:
+            amount_cap = float(raw_cap)
+        except (TypeError, ValueError):
+            return jsonify({"error": "amount_cap must be a valid number"}), 400
+        if not math.isfinite(amount_cap):
+            return jsonify({"error": "amount_cap must be a finite number"}), 400
+        if amount_cap <= 0:
+            return jsonify({"error": "amount_cap must be positive"}), 400
+
+    # expires_at: ISO 8601 UTC, defaults to now + PACT_DEFAULT_TTL_HOURS.
+    raw_expires = data.get("expires_at")
+    if raw_expires is None:
+        expires_at = (
+            datetime.now(timezone.utc) + timedelta(hours=PACT_DEFAULT_TTL_HOURS)
+        ).isoformat()
+    else:
+        if _parse_iso_utc(raw_expires) is None:
+            return jsonify({
+                "error": "expires_at must be an ISO 8601 datetime string"
+            }), 400
+        expires_at = raw_expires.strip()
+
+    # payee: the creator's on-chain recipient, resolved from the bound asset.
+    # None when the asset has no registered wallet — never invent one, a
+    # fabricated payee would be worse than an absent one at audit time.
+    payee = asset.get("wallet_address") if asset else None
 
     pact_id = "pact-" + secrets.token_hex(6)
     pact = {
@@ -1950,7 +2106,16 @@ def pact_create():
         "currency": currency,
         "created_at": datetime.now(timezone.utc).isoformat(),
         "approved_at": None,
+        # AP2-shaped mandate fields
+        "intent": intent,
+        "amount_cap": amount_cap,
+        "expires_at": expires_at,
+        "payee": payee,
+        "approved_by": None,
+        "approval_method": None,
     }
+    # Computed last: the digest covers the fields as finally stored.
+    pact["content_hash"] = _pact_content_hash(pact)
     pact_sessions[pact_id] = pact
     return jsonify(pact), 201
 
@@ -1974,8 +2139,17 @@ def pact_approve(pact_id):
         return jsonify({
             "error": f"Pact must be pending to approve, current: {pact['status']}"
         }), 400
+    # Mandate TTL. Checked after the state check so an already-approved or
+    # rejected pact keeps reporting the state-machine error it always has.
+    if _pact_is_expired(pact):
+        return jsonify({"error": "pact expired"}), 409
     pact["status"] = "approved"
     pact["approved_at"] = datetime.now(timezone.utc).isoformat()
+    # Audit trail for who approved and how. Deliberately not called
+    # `user_authorization`: this is a UI click, there is no signature behind
+    # it (see the AP2 vocabulary note at the top of this section).
+    pact["approved_by"] = get_current_identity()["id"]
+    pact["approval_method"] = "ui"
     return jsonify(pact)
 
 
@@ -2015,6 +2189,24 @@ def pact_settle(pact_id):
     pact, err = _pact_or_404(pact_id)
     if err:
         return err
+
+    # ── Mandate checks (AP2-shaped; see the section comment above) ───────────
+    # Run before any state transition or DB write so a refused mandate leaves
+    # the pact exactly as it was. Integrity is checked before the cap so a
+    # tampered pact is reported as tampered rather than as merely over-budget.
+    if _pact_is_expired(pact):
+        return jsonify({"error": "pact expired"}), 409
+    if pact.get("content_hash") is not None and \
+            _pact_content_hash(pact) != pact["content_hash"]:
+        return jsonify({"error": "pact integrity check failed"}), 409
+    amount_cap = pact.get("amount_cap")
+    if amount_cap is not None and pact.get("amount") is not None:
+        try:
+            over_cap = decimal.Decimal(str(pact["amount"])) > decimal.Decimal(str(amount_cap))
+        except (ValueError, TypeError, decimal.InvalidOperation):
+            return jsonify({"error": "amount must be a valid number"}), 400
+        if over_cap:
+            return jsonify({"error": "amount exceeds cap"}), 409
 
     asset_id = pact.get("asset_id") or current_app.config.get("JOB_DESIGN_ASSET_ID")
     if not asset_id:
