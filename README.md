@@ -13,7 +13,7 @@
 ![Python](https://img.shields.io/badge/Python-3.11-blue?style=flat-square&logo=python)
 ![Flask](https://img.shields.io/badge/Flask-3.x-lightgrey?style=flat-square&logo=flask)
 ![React](https://img.shields.io/badge/React-18-61DAFB?style=flat-square&logo=react)
-![Tests](https://img.shields.io/badge/tests-996_passed-brightgreen?style=flat-square)
+![Tests](https://img.shields.io/badge/tests-1328_passed-brightgreen?style=flat-square)
 ![Hackathon](https://img.shields.io/badge/AI×Web3-Hackathon-orange?style=flat-square)
 
 </div>
@@ -179,10 +179,10 @@ HireNet 将传统招聘平台的“岗位匹配”，扩展成了更前置的**�
 | --- | --- |
 | 前端 | React 18 + Vite + Island 动森风 UI |
 | 后端 | Flask + SQLite + 智谱 GLM-4 |
-| 链上结算 | Mock / Anvil 本地链 / Sepolia 测试网，Provider 接口可插拔 |
+| 链上结算 | Mock / Anvil 本地链 / Sepolia 测试网 / x402（Base Sepolia USDC，pay-at-invocation），Provider 接口可插拔 |
 | Agent 协议 | MCP (Model Context Protocol) |
 | 鉴权 | JWT + pbkdf2 |
-| 测试 | pytest 996 passed |
+| 测试 | pytest 1328 passed |
 
 ```text
 HireNet/
@@ -192,7 +192,7 @@ HireNet/
 │   ├── services/      # 结算提供者/auth/bootstrap
 │   └── storage/       # SQLite DAO
 ├── frontend/          # React SPA（15 个页面）
-├── tests/             # pytest 996 passed
+├── tests/             # pytest 1328 passed
 ├── docs/              # PRD/UX Spec/Demo 配音脚本
 ├── evals/             # 黄金用例集 + 打分器 + 评测报告
 └── start.sh           # 一键启动
@@ -271,8 +271,9 @@ bash start.sh
 ## 🌱 起源
 
 - **赛事**：AI × Web3 Agentic Builders Hackathon
-- **关键集成**：智谱 GLM、MCP
+- **关键集成**：智谱 GLM、MCP、x402（Base Sepolia USDC）
 - **交付物**：可运行代码、在线 Demo、演示视频与答辩材料
+- **链上结算设计与首次真实结算记录**：见 [`docs/x402-settlement.md`](docs/x402-settlement.md) 与 [`docs/x402-first-run.md`](docs/x402-first-run.md)
 
 ## 📌 说明
 

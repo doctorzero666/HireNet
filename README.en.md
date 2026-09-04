@@ -13,7 +13,7 @@
 ![Python](https://img.shields.io/badge/Python-3.11-blue?style=flat-square&logo=python)
 ![Flask](https://img.shields.io/badge/Flask-3.x-lightgrey?style=flat-square&logo=flask)
 ![React](https://img.shields.io/badge/React-18-61DAFB?style=flat-square&logo=react)
-![Tests](https://img.shields.io/badge/tests-996_passed-brightgreen?style=flat-square)
+![Tests](https://img.shields.io/badge/tests-1328_passed-brightgreen?style=flat-square)
 ![Hackathon](https://img.shields.io/badge/AI×Web3-Hackathon-orange?style=flat-square)
 
 </div>
@@ -179,10 +179,10 @@ Later extensions could include company subscriptions, private agent hosting, age
 | --- | --- |
 | Frontend | React 18 + Vite, Animal-Crossing-inspired island UI |
 | Backend | Flask + SQLite + Zhipu GLM-4 |
-| On-chain settlement | Mock / local Anvil chain / Sepolia testnet behind a pluggable provider interface |
+| On-chain settlement | Mock / local Anvil chain / Sepolia testnet / x402 (Base Sepolia USDC, pay-at-invocation) via a pluggable provider interface |
 | Agent protocol | MCP (Model Context Protocol) |
 | Auth | JWT + pbkdf2 |
-| Tests | 996 passing pytest tests |
+| Tests | 1328 passing pytest tests |
 
 ```text
 HireNet/
@@ -192,7 +192,7 @@ HireNet/
 │   ├── services/      # Settlement providers, auth, bootstrap
 │   └── storage/       # SQLite DAO
 ├── frontend/          # React SPA (15 pages)
-├── tests/             # 996 passing pytest tests
+├── tests/             # 1328 passing pytest tests
 ├── docs/              # PRD, UX spec, demo voiceover script
 ├── evals/             # Golden set, scorer, evaluation reports
 └── start.sh           # One-command startup
@@ -271,8 +271,9 @@ bash start.sh
 ## 🌱 Origin
 
 - **Event**: AI × Web3 Agentic Builders Hackathon
-- **Key integrations**: Zhipu GLM, MCP
+- **Key integrations**: Zhipu GLM, MCP, x402 (Base Sepolia USDC)
 - **Deliverables**: running code, live demo, demo video and pitch materials
+- **Settlement design and the first real on-chain settlement**: see [`docs/x402-settlement.md`](docs/x402-settlement.md) and [`docs/x402-first-run.md`](docs/x402-first-run.md)
 
 ## 📌 Note
 
