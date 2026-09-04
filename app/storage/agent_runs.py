@@ -1,10 +1,22 @@
 import json
+import logging
 import uuid
 from contextlib import closing
 from datetime import datetime, timezone
 
 from app.storage.audit_log import _insert_audit_event_conn
 from app.storage.db import _open, _require_nonneg_int
+
+logger = logging.getLogger(__name__)
+
+# Stage 2 / WP-R: the two royalty_ledger.settlement_method values that mean
+# "this row belongs to an x402 payment". Spelled out here rather than imported
+# from app/services/agent_run_recording.py (X402_METHOD /
+# X402_FEE_RECEIVABLE_METHOD) because that module imports THIS one — a storage
+# layer must not depend on a service. The strings are the contract between the
+# two; if either side changes one, both must change.
+_X402_LEDGER_METHOD = "x402"
+_X402_FEE_RECEIVABLE_LEDGER_METHOD = "x402-fee-receivable"
 
 _INSERT_AGENT_RUN_SQL = """
     INSERT INTO agent_runs
@@ -221,11 +233,41 @@ def confirm_settlement(
 
     Returns:
         rowcount of ledger rows flipped (3 for a typical creator/platform/tax
-        split). 0 means the run was not in 'settling' — caller should treat
-        as a stale confirm and not assume settlement succeeded.
+        split). 0 means the run was not in 'settling', or the rail does not own
+        this run's ledger rows (see the WP-R refusal below) — caller should
+        treat as a stale confirm and not assume settlement succeeded.
+
+    Stage 2 / WP-R (review F1), two guards, both belt-and-braces:
+      * a non-x402 `method` may not confirm a run whose ledger rows carry an
+        x402 settlement_method. The AUTHORITATIVE check is the guard in
+        /api/royalty/settle (app/app.py), which refuses before the claim so
+        nothing moves at all; this one exists because the DAO is what actually
+        writes the rows and must not be able to launder an x402 payment onto
+        another rail even if a future caller forgets the route guard.
+      * the accrued fallback never touches 'x402-fee-receivable' rows. Those
+        are the platform / tax shares of an x402 payment: x402 'exact' pays a
+        single payee, so they are a receivable FROM the creator that NO rail
+        settles. Marking them 'settled' would assert money the platform never
+        received.
     """
     with closing(_open(db_path)) as conn:
         with conn:
+            if method != _X402_LEDGER_METHOD:
+                foreign = conn.execute(
+                    "SELECT 1 FROM royalty_ledger "
+                    "WHERE run_id = ? AND settlement_method IN (?, ?) LIMIT 1",
+                    (run_id,
+                     _X402_LEDGER_METHOD,
+                     _X402_FEE_RECEIVABLE_LEDGER_METHOD),
+                ).fetchone()
+                if foreign is not None:
+                    logger.error(
+                        "refusing to confirm run %s via %r: its ledger rows were "
+                        "written by the x402 rail, and only x402 can say whether "
+                        "that payment landed. Nothing was changed.",
+                        run_id, method,
+                    )
+                    return 0
             run_cur = conn.execute(
                 "UPDATE agent_runs "
                 "SET settlement_status = 'settled', tx_hash = ?, settlement_method = ? "
@@ -249,10 +291,17 @@ def confirm_settlement(
                 (run_id,),
             )
             if ledger_cur.rowcount == 0:
+                # WP-R: … EXCEPT the x402 fee receivables. A failed x402 run is
+                # walked back to all-accrued by fail_settlement, so without this
+                # exclusion a retry on the x402 rail would settle the two rows
+                # the creator still owes us. NULL settlement_method (every
+                # legacy row) is included by the IS NULL arm — SQL's three-value
+                # logic would otherwise drop those rows silently.
                 ledger_cur = conn.execute(
                     "UPDATE royalty_ledger SET status = 'settled' "
-                    "WHERE run_id = ? AND status = 'accrued'",
-                    (run_id,),
+                    "WHERE run_id = ? AND status = 'accrued' "
+                    "AND (settlement_method IS NULL OR settlement_method != ?)",
+                    (run_id, _X402_FEE_RECEIVABLE_LEDGER_METHOD),
                 )
             # Phase 1 wrote exactly 1 ledger row (creator only); Phase 2 / U2
             # rebuilt this to 3 rows (creator + platform + tax) for new runs,

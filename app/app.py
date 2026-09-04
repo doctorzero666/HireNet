@@ -1607,6 +1607,47 @@ def royalty_settle():
             "settlement_status": "settling",
         }), 409
 
+    provider = current_app.config["SETTLEMENT_PROVIDER"]
+    provider_name = getattr(provider, "name", provider.__class__.__name__)
+
+    # Stage 2 / WP-R (review F1). The mirror of the guard in royalty_status
+    # below, and the AUTHORITATIVE one for this route: it runs BEFORE the
+    # claim, so a refused request changes nothing at all.
+    #
+    # Invariant it protects: a run paid on the x402 rail may only be advanced
+    # by the x402 provider. An x402 run whose chain tx reverted is walked back
+    # to 'failed' with all three ledger rows 'accrued' (fail_settlement), and
+    # 'failed' is a claimable source state. Without this guard a POST under the
+    # default mock provider would claim it, get a synthetic success out of
+    # MockSettlementProvider.settle(), and confirm_settlement's accrued branch
+    # would mark ALL THREE rows 'settled' — including the two
+    # 'x402-fee-receivable' rows that are owed BY the creator and that no
+    # transfer ever paid — while overwriting settlement_method x402 → mock and
+    # the tx_hash of the reverted payment. Money the platform never received
+    # would read as collected.
+    #
+    # 409 (not the 200-with-state body royalty_status answers with): this is a
+    # POST asking us to move money, and the caller must be able to tell "did
+    # nothing" from the 200 a completed settle returns. The informational keys
+    # of the status body are carried along so the refusal is still readable.
+    if run.get("settlement_method") == "x402" and provider_name != "x402":
+        current_app.logger.warning(
+            "refusing to settle run %s: it was paid via x402 but the configured "
+            "settlement provider is %r, which cannot know anything about that "
+            "payment. Set HIRENET_SETTLEMENT_PROVIDER=x402 to confirm it on-chain.",
+            run_id, provider_name,
+        )
+        return jsonify({
+            "error": (
+                "run was pre-settled via x402; only the x402 settlement "
+                f"provider may advance it (configured provider: {provider_name})"
+            ),
+            "run_id": run_id,
+            "settlement_status": current_status,
+            "settlement_method": run.get("settlement_method"),
+            "tx_hash": run.get("tx_hash"),
+        }), 409
+
     # Claim the run (accrued/failed → settling). If someone raced us between
     # the SELECT above and the UPDATE here, claim returns False and we 409 —
     # the racing thread now owns the in-flight settle.
@@ -1615,9 +1656,6 @@ def royalty_settle():
             "error": "Could not claim settlement (race lost)",
             "run_id": run_id,
         }), 409
-
-    provider = current_app.config["SETTLEMENT_PROVIDER"]
-    provider_name = getattr(provider, "name", provider.__class__.__name__)
 
     # Provider is intentionally given the creator-side view of the payment —
     # multi-payee splits are a ledger-layer fact (creator + platform + tax),

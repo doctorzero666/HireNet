@@ -1184,3 +1184,167 @@ class TestStatusPollForPresettledRuns:
             assert resp.get_json()["settlement_status"] == "settling"
         finally:
             os.unlink(path)
+
+
+# ---------------------------------------------------------------------------
+# Part 2h — Stage 2 / WP-R (review F1): POST /api/royalty/settle must refuse an
+# x402 run under any other rail. This is the reviewer's `_probe_receivable.py`
+# scenario, turned into a regression test: before the guard, a mock provider
+# marked the creator share AND the two never-paid receivables 'settled'.
+# ---------------------------------------------------------------------------
+
+def _ledger_rows(path, run_id):
+    return {r["party"]: r for r in list_royalties_by_run(path, run_id)}
+
+
+class TestSettleRouteRefusesAForeignRail:
+
+    def _failed_x402_run(self, app, path):
+        """A pre-settled x402 run the chain reported as reverted.
+
+        After the poll: run 'failed', all three ledger rows back to 'accrued'
+        (WP-D's fail_settlement) — which is the state that makes 'failed' a
+        claimable source for /api/royalty/settle.
+        """
+        run_id = _seed_presettled_run(path)
+        with app.test_client() as c:
+            c.get(f"/api/royalty/status/{run_id}")
+        assert get_agent_run(path, run_id)["settlement_status"] == "failed"
+        assert _ledger_status(path, run_id) == {
+            "creator": "accrued", "platform": "accrued", "tax": "accrued",
+        }
+        return run_id
+
+    def test_mock_provider_cannot_settle_a_failed_x402_run(self):
+        app, path = _x402_client(receipt=_receipt(status=0))
+        try:
+            run_id = self._failed_x402_run(app, path)
+
+            # Operator restarts without HIRENET_SETTLEMENT_PROVIDER=x402.
+            app.config["SETTLEMENT_PROVIDER"] = MockSettlementProvider()
+            with app.test_client() as c:
+                resp = c.post("/api/royalty/settle", json={"run_id": run_id})
+
+            assert resp.status_code == 409
+            body = resp.get_json()
+            assert "x402" in body["error"]
+            assert body["settlement_method"] == X402_METHOD
+        finally:
+            os.unlink(path)
+
+    def test_the_refused_settle_changes_nothing(self):
+        """Every column the mock path would have overwritten, unchanged."""
+        app, path = _x402_client(receipt=_receipt(status=0))
+        try:
+            run_id = self._failed_x402_run(app, path)
+            before_run = get_agent_run(path, run_id)
+            before_rows = _ledger_rows(path, run_id)
+
+            app.config["SETTLEMENT_PROVIDER"] = MockSettlementProvider()
+            with app.test_client() as c:
+                c.post("/api/royalty/settle", json={"run_id": run_id})
+
+            after_run = get_agent_run(path, run_id)
+            # The run was never claimed: still 'failed', still x402, still the
+            # hash of the payment that reverted.
+            assert after_run["settlement_status"] == "failed"
+            assert after_run["settlement_method"] == X402_METHOD
+            assert after_run["tx_hash"] == TX_HASH
+            assert after_run["tx_hash"] == before_run["tx_hash"]
+
+            after_rows = _ledger_rows(path, run_id)
+            assert _ledger_status(path, run_id) == {
+                "creator": "accrued", "platform": "accrued", "tax": "accrued",
+            }
+            for party in ("creator", "platform", "tax"):
+                assert after_rows[party]["settlement_method"] == \
+                    before_rows[party]["settlement_method"]
+                assert after_rows[party]["tx_hash"] == before_rows[party]["tx_hash"]
+            # The receivables are still flagged as owed BY the creator.
+            assert after_rows["platform"]["settlement_method"] == \
+                X402_FEE_RECEIVABLE_METHOD
+            assert after_rows["tax"]["settlement_method"] == \
+                X402_FEE_RECEIVABLE_METHOD
+        finally:
+            os.unlink(path)
+
+    def test_the_x402_provider_is_still_allowed_through(self):
+        """The guard is about the rail, not about the state: with x402
+        configured, a failed run is retriable exactly as before."""
+        app, path = _x402_client(receipt=_receipt(status=0))
+        try:
+            run_id = self._failed_x402_run(app, path)
+            with app.test_client() as c:
+                resp = c.post("/api/royalty/settle", json={"run_id": run_id})
+            # X402SettlementProvider.settle() always refuses (there is nothing
+            # to submit — the caller already paid), so this is a 502, NOT the
+            # 409 the guard returns. The point is that the guard let it reach
+            # the provider at all.
+            assert resp.status_code == 502
+            assert resp.get_json()["settlement_status"] == "failed"
+        finally:
+            os.unlink(path)
+
+
+class TestConfirmSettlementNeverPaysAReceivable:
+    """DAO level: the same invariant, independent of the route."""
+
+    def _failed_presettled_run(self, db_path):
+        from app.storage.agent_runs import fail_settlement
+
+        asset_id = _register_asset(db_path)
+        run_id = _record(db_path, asset_id, presettled=_payment())["run_id"]
+        assert fail_settlement(db_path, run_id, "chain said reverted") is True
+        return run_id
+
+    def test_a_foreign_rail_cannot_confirm_an_x402_run(self, db_path):
+        from app.storage.agent_runs import claim_settlement, confirm_settlement
+
+        run_id = self._failed_presettled_run(db_path)
+        assert claim_settlement(db_path, run_id) is True
+
+        assert confirm_settlement(
+            db_path, run_id, tx_hash="mock-abc123", method="mock"
+        ) == 0
+
+        run = get_agent_run(db_path, run_id)
+        assert run["settlement_status"] == "settling"   # the claim, not settled
+        assert run["settlement_method"] == X402_METHOD
+        assert run["tx_hash"] == TX_HASH
+        assert _ledger_status(db_path, run_id) == {
+            "creator": "accrued", "platform": "accrued", "tax": "accrued",
+        }
+
+    def test_the_x402_rail_settles_only_the_creator_row(self, db_path):
+        """The retry path: same all-accrued state, confirmed by x402 itself.
+
+        The creator share is payable; the platform / tax receivables are not,
+        by ANY rail, so the accrued fallback must skip them.
+        """
+        from app.storage.agent_runs import claim_settlement, confirm_settlement
+
+        run_id = self._failed_presettled_run(db_path)
+        assert claim_settlement(db_path, run_id) is True
+
+        assert confirm_settlement(
+            db_path, run_id, tx_hash=TX_HASH, method=X402_METHOD
+        ) == 1
+
+        assert _ledger_status(db_path, run_id) == {
+            "creator": "settled", "platform": "accrued", "tax": "accrued",
+        }
+
+    def test_a_legacy_run_is_unaffected(self, db_path):
+        """No x402 rows → the historical accrued fallback, all three settled."""
+        from app.storage.agent_runs import claim_settlement, confirm_settlement
+
+        asset_id = _register_asset(db_path)
+        run_id = _record(db_path, asset_id)["run_id"]
+        assert claim_settlement(db_path, run_id) is True
+
+        assert confirm_settlement(
+            db_path, run_id, tx_hash="mock-abc123", method="mock"
+        ) == 3
+        assert _ledger_status(db_path, run_id) == {
+            "creator": "settled", "platform": "settled", "tax": "settled",
+        }
