@@ -7,6 +7,7 @@ import Ribbon from '../components/Ribbon'
 import MetricCard from '../components/MetricCard'
 import PixelButton from '../components/PixelButton'
 import { fetchCreatorEarnings, fetchCreatorLedger } from '../services/api'
+import { useLang } from '../i18n/LanguageProvider'
 
 /* Backend stores ledger amounts as integer basis points (USD cents).
    formatAmount turns 1234 → "$12.34" — same convention as AgentPerformance. */
@@ -29,19 +30,19 @@ function sumBuckets(buckets) {
   }
 }
 
-function formatTime(iso) {
+function formatTime(iso, t) {
   if (!iso) return ''
   const d = new Date(iso)
   if (Number.isNaN(d.getTime())) return iso
   const now = new Date()
   const diffMs = now - d
   const min = Math.floor(diffMs / 60000)
-  if (min < 1) return '刚刚'
-  if (min < 60) return `${min}m 前`
+  if (min < 1) return t('creatorLedger.time.justNow')
+  if (min < 60) return t('creatorLedger.time.minutesAgo', { n: min })
   const hr = Math.floor(min / 60)
-  if (hr < 24) return `${hr}h 前`
+  if (hr < 24) return t('creatorLedger.time.hoursAgo', { n: hr })
   const day = Math.floor(hr / 24)
-  if (day < 30) return `${day}d 前`
+  if (day < 30) return t('creatorLedger.time.daysAgo', { n: day })
   return d.toLocaleDateString()
 }
 
@@ -53,6 +54,7 @@ function shortHash(h) {
 
 export default function CreatorLedger() {
   const navigate = useNavigate()
+  const { t } = useLang()
   const [ledger, setLedger] = useState(null)
   const [earnings, setEarnings] = useState(null)
   const [error, setError] = useState('')
@@ -65,8 +67,9 @@ export default function CreatorLedger() {
         setLedger(l)
         setEarnings(e)
       })
-      .catch((e) => { if (!cancelled) setError(e.message || '加载失败') })
+      .catch((e) => { if (!cancelled) setError(e.message || t('creatorLedger.errors.loadFailed')) })
     return () => { cancelled = true }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   const entries = ledger?.entries ?? []
@@ -74,13 +77,13 @@ export default function CreatorLedger() {
 
   /* Accrued totals from /earnings still drive the headline because they
      filter for status='accrued' explicitly. /ledger also returns
-     accrued_totals + settled_totals so the "已结算" card has its own bucket
+     accrued_totals + settled_totals so the "Settled" card has its own bucket
      instead of guessing from the per-entry sum. */
   const accrued = sumBuckets(earnings?.totals_by_currency ?? ledger?.accrued_totals)
   const settled = sumBuckets(ledger?.settled_totals)
   const totalCalls = callCount
 
-  // 累计 = accrued + settled by (currency, chain). We sum on first bucket only
+  // total = accrued + settled by (currency, chain). We sum on first bucket only
   // because that's what the headline reads; secondary buckets render under it.
   const totalDisplay = (() => {
     const accAmt = earnings?.totals_by_currency?.[0]?.amount ?? 0
@@ -97,23 +100,23 @@ export default function CreatorLedger() {
         <NavBar role="creator" />
 
         <div style={{ textAlign: 'center', margin: '6px 0 20px' }}>
-          <Ribbon color="app-yellow" size={20}>💰 收益账本</Ribbon>
+          <Ribbon color="app-yellow" size={20}>💰 {t('creatorLedger.title')}</Ribbon>
         </div>
 
-        {/* 4 指标卡 */}
+        {/* 4 metric cards */}
         <div style={{
           display: 'grid',
           gridTemplateColumns: 'repeat(4, 1fr)',
           gap: 14,
           marginBottom: 24,
         }}>
-          <MetricCard icon="📞" label="总调用次数" value={totalCalls} color="var(--text)" />
-          <MetricCard icon="💰" label="累计收益" value={totalDisplay} color="var(--money)" />
-          <MetricCard icon="✅" label="已结算" value={settled.display} color="var(--primary-active)" />
-          <MetricCard icon="⏳" label="待结算" value={accrued.display} color="var(--warning-active)" />
+          <MetricCard icon="📞" label={t('creatorLedger.metrics.totalCalls')} value={totalCalls} color="var(--text)" />
+          <MetricCard icon="💰" label={t('creatorLedger.metrics.totalEarnings')} value={totalDisplay} color="var(--money)" />
+          <MetricCard icon="✅" label={t('creatorLedger.metrics.settled')} value={settled.display} color="var(--primary-active)" />
+          <MetricCard icon="⏳" label={t('creatorLedger.metrics.pending')} value={accrued.display} color="var(--warning-active)" />
         </div>
 
-        {/* 多币种附注（如果有多于一个 bucket） */}
+        {/* Multi-currency footnote (when there's more than one bucket) */}
         {(accrued.extras.length > 0 || settled.extras.length > 0) && (
           <div style={{
             background: 'rgba(255, 255, 255, 0.5)',
@@ -130,20 +133,20 @@ export default function CreatorLedger() {
           }}>
             {accrued.extras.map((b, i) => (
               <div key={`acc-${i}`} style={{ display: 'flex', justifyContent: 'space-between' }}>
-                <span>待结算 · {b.currency}{b.chain ? ` @ ${b.chain}` : ''}</span>
+                <span>{t('creatorLedger.metrics.pending')} · {b.currency}{b.chain ? ` @ ${b.chain}` : ''}</span>
                 <span style={{ color: 'var(--warning-active)' }}>{formatAmount(b.amount, b.currency)}</span>
               </div>
             ))}
             {settled.extras.map((b, i) => (
               <div key={`set-${i}`} style={{ display: 'flex', justifyContent: 'space-between' }}>
-                <span>已结算 · {b.currency}{b.chain ? ` @ ${b.chain}` : ''}</span>
+                <span>{t('creatorLedger.metrics.settled')} · {b.currency}{b.chain ? ` @ ${b.chain}` : ''}</span>
                 <span style={{ color: 'var(--primary-active)' }}>{formatAmount(b.amount, b.currency)}</span>
               </div>
             ))}
           </div>
         )}
 
-        {/* 调用记录列表 */}
+        {/* Call ledger list */}
         <div style={{
           background: '#f7f3df',
           border: '1.5px solid var(--border-soft)',
@@ -162,14 +165,14 @@ export default function CreatorLedger() {
             padding: '6px 0 12px',
             borderBottom: '1px dashed rgb(232, 220, 200)',
           }}>
-            📋 调用记录
+            📋 {t('creatorLedger.callLog')}
             <span style={{
               fontSize: 11,
               fontWeight: 700,
               color: 'var(--text-secondary)',
               marginLeft: 'auto',
             }}>
-              {entries.length} 条
+              {t('creatorLedger.entryCount', { count: entries.length })}
             </span>
           </div>
 
@@ -181,7 +184,7 @@ export default function CreatorLedger() {
               color: 'var(--warning-active)',
               textAlign: 'center',
             }}>
-              加载失败：{error}
+              {t('creatorLedger.errors.loadFailedPrefix')}{error}
             </div>
           )}
 
@@ -193,26 +196,26 @@ export default function CreatorLedger() {
               fontWeight: 700,
               color: 'var(--text-secondary)',
             }}>
-              🏝️ 还没有收益记录
+              🏝️ {t('creatorLedger.empty.title')}
               <div style={{
                 marginTop: 6,
                 fontSize: 11.5,
                 fontWeight: 600,
                 color: 'var(--text-muted)',
               }}>
-                等第一个企业调用你注册的 Agent，收益会出现在这里。
+                {t('creatorLedger.empty.subtitle')}
               </div>
             </div>
           )}
 
           {entries.map((e, i) => (
-            <LedgerRow key={e.run_id} entry={e} isLast={i === entries.length - 1} />
+            <LedgerRow key={e.run_id} entry={e} isLast={i === entries.length - 1} t={t} />
           ))}
         </div>
 
         <div style={{ textAlign: 'center', marginTop: 6 }}>
           <PixelButton variant="wood" onClick={() => navigate('/creator')}>
-            ◂ 返回工坊
+            ◂ {t('agentPerformance.backToWorkshop')}
           </PixelButton>
         </div>
       </Board>
@@ -220,7 +223,7 @@ export default function CreatorLedger() {
   )
 }
 
-function LedgerRow({ entry, isLast }) {
+function LedgerRow({ entry, isLast, t }) {
   const status = entry.status
   const isSettled = status === 'settled'
   const txShort = shortHash(entry.tx_hash)
@@ -245,13 +248,13 @@ function LedgerRow({ entry, isLast }) {
           gap: 6,
           flexWrap: 'wrap',
         }}>
-          🤖 {entry.agent_name || '未命名 Agent'}
+          🤖 {entry.agent_name || t('creatorLedger.unnamedAgent')}
           <span style={{
             fontSize: 11,
             fontWeight: 700,
             color: 'var(--text-secondary)',
           }}>
-            · 来自 {entry.caller_name || entry.caller_id || '未知企业'}
+            · {t('agentPerformance.fromPrefix')} {entry.caller_name || entry.caller_id || t('creatorLedger.unknownEmployer')}
           </span>
         </div>
         <div style={{
@@ -264,7 +267,7 @@ function LedgerRow({ entry, isLast }) {
           gap: 8,
           flexWrap: 'wrap',
         }}>
-          <span>🕐 {formatTime(entry.created_at)}</span>
+          <span>🕐 {formatTime(entry.created_at, t)}</span>
           {txShort && (
             <span style={{
               fontFamily: 'monospace',
@@ -294,7 +297,7 @@ function LedgerRow({ entry, isLast }) {
           background: isSettled ? '#e9f4dd' : '#fdf3d7',
           border: `1px solid ${isSettled ? '#c8e4a6' : '#eddca2'}`,
         }}>
-          {isSettled ? '✅ 已结算' : '⏳ 待结算'}
+          {isSettled ? `✅ ${t('creatorLedger.metrics.settled')}` : `⏳ ${t('creatorLedger.metrics.pending')}`}
         </span>
         <span style={{
           fontSize: 15,

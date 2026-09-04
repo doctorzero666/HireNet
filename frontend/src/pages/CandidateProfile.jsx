@@ -7,6 +7,7 @@ import Ribbon from '../components/Ribbon'
 import Icon from '../components/Icon'
 import StreamText from '../components/StreamText'
 import { fetchCandidateProfile, fetchCandidates, analyzeCandidate } from '../services/api'
+import { useLang } from '../i18n/LanguageProvider'
 
 function pick(obj, keys, fallback = '') {
   for (const k of keys) {
@@ -27,6 +28,7 @@ function asList(value) {
 
 export default function CandidateProfile() {
   const navigate = useNavigate()
+  const { t } = useLang()
   const [profile, setProfile] = useState(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
@@ -40,7 +42,7 @@ export default function CandidateProfile() {
       .then((data) => {
         const first = (data?.candidates || [])[0]
         const id = first?.id
-        if (!id) throw new Error('暂无候选人资料')
+        if (!id) throw new Error(t('candidateProfile.errors.noProfile'))
         return fetchCandidateProfile(id)
       })
       .then((data) => {
@@ -50,13 +52,14 @@ export default function CandidateProfile() {
       })
       .catch((e) => {
         if (cancelled) return
-        setError(e.message || '资料加载失败')
+        setError(e.message || t('candidateProfile.errors.loadFailed'))
         setLoading(false)
       })
     return () => { cancelled = true }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
-  const name = pick(profile, ['name', 'display_name', 'candidate_name'], '岛上来客')
+  const name = pick(profile, ['name', 'display_name', 'candidate_name'], t('candidateProfile.defaultName'))
   const headline = pick(profile, ['headline', 'title', 'role', 'current_role'], '')
   const bio = pick(profile, ['bio', 'summary', 'about', 'introduction'], '')
   const skills = asList(pick(profile, ['skills', 'tags', 'tech'], []))
@@ -69,14 +72,14 @@ export default function CandidateProfile() {
         <NavBar role="jobseeker" />
 
         <div style={{ textAlign: 'center', margin: '14px 0 18px' }}>
-          <Ribbon color="app-pink" size={20}>🪪 我的资料卡</Ribbon>
+          <Ribbon color="app-pink" size={20}>🪪 {t('candidateProfile.title')}</Ribbon>
         </div>
 
         {loading && (
           <div className="generating">
             <div className="spinner" />
             <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--text-muted)' }}>
-              翻找你的岛民档案…
+              {t('candidateProfile.loading')}
             </div>
           </div>
         )}
@@ -136,7 +139,7 @@ export default function CandidateProfile() {
             </div>
 
             {bio && (
-              <Section title="自我介绍">
+              <Section title={t('candidateProfile.bio')}>
                 <p style={{
                   fontSize: 14,
                   fontWeight: 500,
@@ -151,7 +154,7 @@ export default function CandidateProfile() {
             )}
 
             {skills.length > 0 && (
-              <Section title="技能标签">
+              <Section title={t('candidateProfile.skillTags')}>
                 <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
                   {skills.map((s, i) => (
                     <span key={i} style={{
@@ -171,7 +174,7 @@ export default function CandidateProfile() {
             )}
 
             {experiences.length > 0 && (
-              <Section title="经历">
+              <Section title={t('candidateProfile.experience')}>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
                   {experiences.map((exp, i) => (
                     <ExperienceItem key={i} exp={exp} />
@@ -180,7 +183,7 @@ export default function CandidateProfile() {
               </Section>
             )}
 
-            <Section title="🤖 AI 优势分析">
+            <Section title={`🤖 ${t('candidateProfile.aiAnalysis')}`}>
               {!analysis && !analyzing && (
                 <button
                   type="button"
@@ -193,13 +196,13 @@ export default function CandidateProfile() {
                       const result = await analyzeCandidate(profile)
                       setAnalysis(result)
                     } catch (e) {
-                      setAnalyzeError(e.message || 'AI 分析失败')
+                      setAnalyzeError(e.message || t('candidateProfile.errors.analysisFailed'))
                     } finally {
                       setAnalyzing(false)
                     }
                   }}
                 >
-                  <Icon name="spark" size={15} /> AI 分析我的优势
+                  <Icon name="spark" size={15} /> {t('candidateProfile.analyzeMyStrengths')}
                 </button>
               )}
 
@@ -212,7 +215,7 @@ export default function CandidateProfile() {
                   alignItems: 'center',
                   gap: 10,
                 }}>
-                  <div className="spinner" /> 让 GLM-4 翻一翻你的资料…
+                  <div className="spinner" /> {t('candidateProfile.analyzing')}
                 </div>
               )}
 
@@ -256,14 +259,14 @@ export default function CandidateProfile() {
                 className="btn btn-ghost"
                 onClick={() => navigate('/jobseeker')}
               >
-                ◂ 返回岗位广场
+                ◂ {t('candidateProfile.backToBoard')}
               </button>
               <button
                 type="button"
                 className="btn btn-primary"
-                onClick={() => alert('Demo：资料编辑即将上线 🚧')}
+                onClick={() => alert(t('candidateProfile.editComingSoon'))}
               >
-                <Icon name="edit" size={15} /> 编辑资料
+                <Icon name="edit" size={15} /> {t('candidateProfile.editProfile')}
               </button>
             </div>
           </>
@@ -328,6 +331,7 @@ function StrengthLine({ index, text }) {
 }
 
 function ExperienceItem({ exp }) {
+  const { t } = useLang()
   if (typeof exp === 'string') {
     return (
       <div style={{
@@ -340,9 +344,9 @@ function ExperienceItem({ exp }) {
       </div>
     )
   }
-  const title = exp?.title || exp?.role || exp?.position || '岗位'
+  const title = exp?.title || exp?.role || exp?.position || t('candidateProfile.role')
   const company = exp?.company || exp?.organization || ''
-  const period = exp?.period || exp?.duration || (exp?.start && `${exp.start}${exp?.end ? ` ~ ${exp.end}` : ' ~ 至今'}`) || ''
+  const period = exp?.period || exp?.duration || (exp?.start && `${exp.start}${exp?.end ? ` ~ ${exp.end}` : ` ~ ${t('candidateProfile.present')}`}`) || ''
   const detail = exp?.description || exp?.summary || ''
   return (
     <div style={{

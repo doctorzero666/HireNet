@@ -1,10 +1,15 @@
+import { useLang } from '../i18n/LanguageProvider'
+import { translateBackend } from '../i18n/backendStrings'
+
 /**
- * HybridTaskCard — 人机协同任务卡片
+ * HybridTaskCard — card for a human + Agent collaboration task
  */
 export default function HybridTaskCard({ task, decision }) {
+  const { t, lang } = useLang()
   const rec = decision?.recommendation ?? {}
-  const division = rec.reason ?? rec.resource ?? '人机分工待定'
-  const cost = rec.cost_hint ?? '—'
+  const rawDivision = rec.reason ?? rec.resource
+  const division = rawDivision ? translateBackend(rawDivision, lang) : t('hybridTaskCard.fallbackDivision')
+  const cost = translateBackend(rec.cost_hint, lang) ?? '—'
   const hours = task?.estimated_hours ?? '—'
 
   return (
@@ -25,7 +30,7 @@ export default function HybridTaskCard({ task, decision }) {
           fontWeight: 800, fontSize: 18,
           color: 'var(--text)', margin: 0,
         }}>
-          {task?.name ?? '未命名任务'}
+          {task?.name ?? t('taskCard.unnamedTask')}
         </h4>
         <span style={{
           display: 'inline-flex', alignItems: 'center', gap: 6,
@@ -36,7 +41,7 @@ export default function HybridTaskCard({ task, decision }) {
           fontSize: 11.5, fontWeight: 800, color: '#5068d8',
           whiteSpace: 'nowrap',
         }}>
-          🔄 人机协同
+          🔄 {t('hybridTaskCard.badge')}
         </span>
       </div>
 
@@ -61,13 +66,13 @@ export default function HybridTaskCard({ task, decision }) {
         fontWeight: 600,
       }}>
         <div style={{ color: '#5068d8', fontWeight: 800 }}>
-          🤝 分工说明
+          🤝 {t('hybridTaskCard.divisionLabel')}
         </div>
         <div>{division}</div>
       </div>
 
       <div style={{ fontSize: 13, color: 'var(--text-secondary)', fontWeight: 700 }}>
-        ⏱️ {hours} 小时 · <span style={{ color: 'var(--money)' }}>💰 {cost}</span>
+        ⏱️ {t('taskCard.hours', { hours })} · <span style={{ color: 'var(--money)' }}>💰 {cost}</span>
       </div>
     </div>
   )

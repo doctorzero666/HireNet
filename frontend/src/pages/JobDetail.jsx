@@ -6,6 +6,7 @@ import NavBar from '../components/NavBar'
 import Ribbon from '../components/Ribbon'
 import Icon from '../components/Icon'
 import { fetchJobs, fetchCandidates, applyToJob } from '../services/api'
+import { useLang } from '../i18n/LanguageProvider'
 
 function normalizeJobs(payload) {
   if (Array.isArray(payload)) return payload
@@ -48,6 +49,7 @@ export default function JobDetail() {
   const { jobId } = useParams()
   const navigate = useNavigate()
   const location = useLocation()
+  const { t } = useLang()
 
   const [job, setJob] = useState(location.state?.job || null)
   const [loading, setLoading] = useState(!location.state?.job)
@@ -68,15 +70,16 @@ export default function JobDetail() {
           return String(id) === String(jobId)
         })
         if (found) setJob(found)
-        else setError('未找到该岗位')
+        else setError(t('jobDetail.errors.notFound'))
         setLoading(false)
       })
       .catch((e) => {
         if (cancelled) return
-        setError(e.message || '岗位加载失败')
+        setError(e.message || t('jobDetail.errors.loadFailed'))
         setLoading(false)
       })
     return () => { cancelled = true }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [job, jobId])
 
   useEffect(() => {
@@ -94,7 +97,7 @@ export default function JobDetail() {
   const handleApply = async () => {
     if (applying) return
     if (!candidateId) {
-      setApplyError('候选人资料尚未就绪，请稍后再试')
+      setApplyError(t('jobDetail.errors.candidateNotReady'))
       return
     }
     setApplying(true)
@@ -107,17 +110,17 @@ export default function JobDetail() {
       navigate('/jobseeker/result', {
         state: {
           result,
-          jobTitle: pick(job, ['title', 'job_title', 'name'], '该岗位'),
+          jobTitle: pick(job, ['title', 'job_title', 'name'], t('jobDetail.thisRole')),
           jobId,
         },
       })
     } catch (e) {
-      setApplyError(e.message || '投递失败，请稍后再试')
+      setApplyError(e.message || t('jobDetail.errors.applyFailed'))
       setApplying(false)
     }
   }
 
-  const title = pick(job, ['title', 'job_title', 'name'], '岗位详情')
+  const title = pick(job, ['title', 'job_title', 'name'], t('jobDetail.title'))
   const company = pick(job, ['company', 'company_name', 'employer'], '')
   const salary = salaryText(job)
   const location_ = pick(job, ['location', 'city', 'work_location'], '')
@@ -134,14 +137,14 @@ export default function JobDetail() {
         <NavBar role="jobseeker" />
 
         <div style={{ textAlign: 'center', margin: '14px 0 18px' }}>
-          <Ribbon color="app-yellow" size={20}>📜 岗位详情</Ribbon>
+          <Ribbon color="app-yellow" size={20}>📜 {t('jobDetail.title')}</Ribbon>
         </div>
 
         {loading && (
           <div className="generating">
             <div className="spinner" />
             <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--text-muted)' }}>
-              翻开岗位文卷…
+              {t('jobDetail.loading')}
             </div>
           </div>
         )}
@@ -183,7 +186,7 @@ export default function JobDetail() {
 
               {desc && (
                 <div>
-                  <SectionTitle>岗位描述</SectionTitle>
+                  <SectionTitle>{t('jobDetail.description')}</SectionTitle>
                   <p style={{
                     fontSize: 14,
                     lineHeight: 1.7,
@@ -199,14 +202,14 @@ export default function JobDetail() {
 
               {requirements && (
                 <div style={{ marginTop: 18 }}>
-                  <SectionTitle>要求</SectionTitle>
+                  <SectionTitle>{t('jobDetail.requirements')}</SectionTitle>
                   <RequirementsBlock data={requirements} />
                 </div>
               )}
 
               {skills && (
                 <div style={{ marginTop: 18 }}>
-                  <SectionTitle>关键技能</SectionTitle>
+                  <SectionTitle>{t('jobDetail.keySkills')}</SectionTitle>
                   <SkillsRow data={skills} />
                 </div>
               )}
@@ -228,7 +231,7 @@ export default function JobDetail() {
                 onClick={() => navigate('/jobseeker')}
                 disabled={applying}
               >
-                ◂ 返回广场
+                ◂ {t('jobDetail.backToBoard')}
               </button>
               <button
                 type="button"
@@ -236,7 +239,7 @@ export default function JobDetail() {
                 onClick={handleApply}
                 disabled={applying}
               >
-                {applying ? '投递中…' : '一键投递'} <Icon name="rocket" size={16} />
+                {applying ? t('jobDetail.applying') : t('jobDetail.oneClickApply')} <Icon name="rocket" size={16} />
               </button>
             </div>
           </>

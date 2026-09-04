@@ -1,16 +1,19 @@
 import PixelButton from './PixelButton'
+import { useLang } from '../i18n/LanguageProvider'
+import { translateBackend } from '../i18n/backendStrings'
 
 /**
- * AgentTaskCard — Agent 可完成的任务卡片
+ * AgentTaskCard — card for a task an Agent can complete
  * props:
  *   task: { id, name, description, type, estimated_hours }
  *   decision: { recommendation: { decision, resource, reason, cost_hint }, evaluations }
  *   onLaunch?: () => void
  */
 export default function AgentTaskCard({ task, decision, onLaunch }) {
+  const { t, lang } = useLang()
   const rec = decision?.recommendation ?? {}
-  const resource = rec.resource?.resource_name ?? rec.resource ?? '匹配中…'
-  const cost = rec.cost_hint ?? '—'
+  const resource = rec.resource?.resource_name ?? rec.resource ?? t('taskCard.matching')
+  const cost = translateBackend(rec.cost_hint, lang) ?? '—'
   const hours = task?.estimated_hours ?? '—'
 
   return (
@@ -31,7 +34,7 @@ export default function AgentTaskCard({ task, decision, onLaunch }) {
           fontWeight: 800, fontSize: 18,
           color: 'var(--text)', margin: 0,
         }}>
-          {task?.name ?? '未命名任务'}
+          {task?.name ?? t('taskCard.unnamedTask')}
         </h4>
         <span style={{
           display: 'inline-flex', alignItems: 'center', gap: 6,
@@ -42,7 +45,7 @@ export default function AgentTaskCard({ task, decision, onLaunch }) {
           fontSize: 11.5, fontWeight: 800, color: '#5a9e1e',
           whiteSpace: 'nowrap',
         }}>
-          ✅ Agent 可完成
+          ✅ {t('agentTaskCard.badge')}
         </span>
       </div>
 
@@ -66,11 +69,11 @@ export default function AgentTaskCard({ task, decision, onLaunch }) {
         fontWeight: 600,
       }}>
         <div style={{ color: 'var(--primary-active)', fontWeight: 800 }}>
-          🤖 匹配 Agent：{resource}
+          🤖 {t('agentTaskCard.matchedAgent')}{resource}
         </div>
         {rec.reason && (
           <div style={{ color: 'var(--text-body)' }}>
-            {rec.reason}
+            {translateBackend(rec.reason, lang)}
           </div>
         )}
       </div>
@@ -80,10 +83,10 @@ export default function AgentTaskCard({ task, decision, onLaunch }) {
         gap: 16, flexWrap: 'wrap',
       }}>
         <div style={{ fontSize: 13, color: 'var(--text-secondary)', fontWeight: 700 }}>
-          ⏱️ {hours} 小时 · <span style={{ color: 'var(--money)' }}>💰 {cost}</span>
+          ⏱️ {t('taskCard.hours', { hours })} · <span style={{ color: 'var(--money)' }}>💰 {cost}</span>
         </div>
         <PixelButton variant="gold" onClick={onLaunch}>
-          ▶ 启动 Agent
+          ▶ {t('agentTaskCard.launch')}
         </PixelButton>
       </div>
     </div>

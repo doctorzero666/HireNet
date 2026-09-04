@@ -3,18 +3,23 @@ import { useNavigate } from 'react-router-dom'
 import Scene from '../components/Scene'
 import Board from '../components/Board'
 import { login } from '../services/api'
+import { useLang } from '../i18n/LanguageProvider'
 
 /* Phase 2 / U6 — minimal real auth login page.
    Demo users: li_boss / zhang_ai / wang_dev / zhao_design, password "demo123". */
-const DEMO_HINTS = [
-  { id: 'li_boss',     name: '李老板', role: '企业'   },
-  { id: 'zhang_ai',    name: '张AI',  role: '创作者' },
-  { id: 'wang_dev',    name: '王工',  role: '求职者' },
-  { id: 'zhao_design', name: '赵设计', role: '创作者' },
-]
+function useDemoHints(t) {
+  return [
+    { id: 'li_boss',     name: t('login.demoHints.liBoss.name'),    role: t('login.demoHints.liBoss.role')    },
+    { id: 'zhang_ai',    name: t('login.demoHints.zhangAi.name'),   role: t('login.demoHints.zhangAi.role')   },
+    { id: 'wang_dev',    name: t('login.demoHints.wangDev.name'),   role: t('login.demoHints.wangDev.role')   },
+    { id: 'zhao_design', name: t('login.demoHints.zhaoDesign.name'), role: t('login.demoHints.zhaoDesign.role') },
+  ]
+}
 
 export default function Login() {
   const navigate = useNavigate()
+  const { t } = useLang()
+  const DEMO_HINTS = useDemoHints(t)
   const [userId, setUserId] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
@@ -23,7 +28,7 @@ export default function Login() {
   const handleSubmit = async (e) => {
     e.preventDefault()
     if (!userId.trim() || !password) {
-      setError('请输入用户名和密码')
+      setError(t('login.errors.missingCredentials'))
       return
     }
     setLoading(true)
@@ -32,7 +37,7 @@ export default function Login() {
       await login(userId.trim(), password)
       navigate('/')
     } catch (err) {
-      setError(err.message || '登录失败')
+      setError(err.message || t('login.errors.loginFailed'))
       setLoading(false)
     }
   }
@@ -41,13 +46,13 @@ export default function Login() {
     <Scene>
       <Board maxWidth={520}>
         <div className="home" style={{ padding: '32px 8px' }}>
-          <div className="eyebrow">🔑 登录</div>
-          <h1>登录 HireNet</h1>
-          <p className="sub">用账号登录后，你只能看到自己的数据。</p>
+          <div className="eyebrow">🔑 {t('login.eyebrow')}</div>
+          <h1>{t('login.title')}</h1>
+          <p className="sub">{t('login.subtitle')}</p>
 
           <form onSubmit={handleSubmit} style={{ marginTop: 24, display: 'flex', flexDirection: 'column', gap: 14 }}>
             <label style={FIELD_LABEL}>
-              用户名
+              {t('login.username')}
               <input
                 type="text"
                 value={userId}
@@ -58,12 +63,12 @@ export default function Login() {
               />
             </label>
             <label style={FIELD_LABEL}>
-              密码
+              {t('login.password')}
               <input
                 type="password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                placeholder="demo 用户密码：demo123"
+                placeholder={t('login.passwordPlaceholder')}
                 autoComplete="current-password"
                 style={FIELD_INPUT}
               />
@@ -77,12 +82,12 @@ export default function Login() {
               className="btn btn-primary btn-lg btn-block"
               style={{ marginTop: 4 }}
             >
-              {loading ? '登录中…' : '登录'}
+              {loading ? t('login.loggingIn') : t('login.title')}
             </button>
           </form>
 
           <div style={DEMO_HINT_BOX}>
-            <div style={DEMO_HINT_TITLE}>Demo 账号（密码均为 demo123）</div>
+            <div style={DEMO_HINT_TITLE}>{t('login.demoAccountsTitle')}</div>
             <div style={DEMO_HINT_GRID}>
               {DEMO_HINTS.map((u) => (
                 <button

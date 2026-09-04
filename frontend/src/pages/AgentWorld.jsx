@@ -4,6 +4,7 @@ import Board from '../components/Board'
 import NavBar from '../components/NavBar'
 import Ribbon from '../components/Ribbon'
 import { fetchSkillsList } from '../services/api'
+import { useLang } from '../i18n/LanguageProvider'
 
 function formatHourlyRate(amountBasisPoints, currency) {
   /* price_amount is USD basis points (1 USD = 100 bp). Frontend only supports
@@ -16,6 +17,7 @@ function formatHourlyRate(amountBasisPoints, currency) {
 }
 
 function AgentCard({ skill }) {
+  const { t } = useLang()
   const mcpOn = !!skill.mcp_endpoint
   return (
     <div className="agent-card">
@@ -23,18 +25,18 @@ function AgentCard({ skill }) {
         <div>
           <div className="agent-card__name">🤖 {skill.name}</div>
           <div className="agent-card__creator">
-            创作者 · {skill.creator_name || skill.creator_id}
+            {t('agentWorld.creatorPrefix')} · {skill.creator_name || skill.creator_id}
           </div>
         </div>
         <span className={`agent-badge ${mcpOn ? 'agent-badge--mcp-on' : 'agent-badge--mcp-off'}`}>
-          {mcpOn ? '🔗 MCP已连接' : '📋 待接入MCP'}
+          {mcpOn ? `🔗 ${t('agentWorld.mcpConnected')}` : `📋 ${t('agentWorld.mcpPending')}`}
         </span>
       </div>
       <div className="agent-card__desc" title={skill.description}>
         {skill.description}
       </div>
       <div className="agent-card__meta">
-        <span>📞 {skill.call_count ?? 0} 次调用</span>
+        <span>📞 {t('agentWorld.callCount', { count: skill.call_count ?? 0 })}</span>
         <span className="agent-card__price">
           💰 {formatHourlyRate(skill.price_amount, skill.price_currency)}
         </span>
@@ -44,6 +46,7 @@ function AgentCard({ skill }) {
 }
 
 export default function AgentWorld() {
+  const { t } = useLang()
   const [skills, setSkills] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
@@ -70,26 +73,26 @@ export default function AgentWorld() {
         <NavBar role="agent-world" />
 
         <div style={{ textAlign: 'center', marginTop: 8 }}>
-          <Ribbon color="app-teal" size={22}>🤖 Agent 世界</Ribbon>
+          <Ribbon color="app-teal" size={22}>🤖 {t('agentWorld.title')}</Ribbon>
         </div>
 
         <p className="agent-world-intro">
-          创作者注册的 AI Agent。每个 Agent 都可以被企业调用，自动完成工作并获得版税收益。
+          {t('agentWorld.intro')}
         </p>
 
-        {loading && <div className="agent-loading">⌛ 正在召集岛民…</div>}
+        {loading && <div className="agent-loading">⌛ {t('agentWorld.loading')}</div>}
 
         {!loading && error && (
           <div className="agent-empty">
             <span className="agent-empty__icon">🪨</span>
-            加载失败：{error}
+            {t('agentWorld.loadFailedPrefix')}{error}
           </div>
         )}
 
         {!loading && !error && skills.length === 0 && (
           <div className="agent-empty">
             <span className="agent-empty__icon">🏝️</span>
-            还没有 Agent，去创作者端注册第一个吧
+            {t('agentWorld.empty')}
           </div>
         )}
 

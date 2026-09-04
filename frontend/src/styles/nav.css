@@ -117,6 +117,39 @@
   box-shadow: var(--elev-base);
 }
 
+/* WP-I18N: EN / 中文 toggle */
+.lang-toggle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  white-space: nowrap;
+  font-family: var(--font);
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--text-body);
+  padding: 6px 12px;
+  border-radius: var(--pill);
+  background: var(--bg-content);
+  border: 2px solid var(--border-soft);
+  cursor: pointer;
+  transition: all 0.2s var(--ease);
+}
+
+.lang-toggle:hover {
+  color: var(--primary);
+  border-color: var(--primary);
+}
+
+/* Standalone toggle for pages that render no NavBar (RoleSelect, Login,
+   EmployerHub) — rendered directly from App.jsx. */
+.lang-toggle--floating {
+  position: fixed;
+  top: 16px;
+  right: 16px;
+  z-index: 200;
+  box-shadow: var(--elev-sm);
+}
+
 /* ── SectionLabel（对应 .eyebrow 药丸标签） ── */
 .section-label {
   display: flex;

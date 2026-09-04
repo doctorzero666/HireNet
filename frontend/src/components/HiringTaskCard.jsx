@@ -1,12 +1,15 @@
 import PixelButton from './PixelButton'
+import { useLang } from '../i18n/LanguageProvider'
+import { translateBackend } from '../i18n/backendStrings'
 
 /**
- * HiringTaskCard — 需要招聘人选的任务卡片
+ * HiringTaskCard — card for a task that needs a human hire
  */
 export default function HiringTaskCard({ task, decision, onGenerateJD }) {
+  const { t, lang } = useLang()
   const rec = decision?.recommendation ?? {}
-  const reason = rec.reason ?? '当前 Agent 资源无法胜任，建议招聘'
-  const salary = rec.cost_hint ?? '—'
+  const reason = rec.reason ? translateBackend(rec.reason, lang) : t('hiringTaskCard.fallbackReason')
+  const salary = translateBackend(rec.cost_hint, lang) ?? '—'
   const hours = task?.estimated_hours ?? '—'
 
   return (
@@ -27,7 +30,7 @@ export default function HiringTaskCard({ task, decision, onGenerateJD }) {
           fontWeight: 800, fontSize: 18,
           color: 'var(--text)', margin: 0,
         }}>
-          {task?.name ?? '未命名任务'}
+          {task?.name ?? t('taskCard.unnamedTask')}
         </h4>
         <span style={{
           display: 'inline-flex', alignItems: 'center', gap: 6,
@@ -38,7 +41,7 @@ export default function HiringTaskCard({ task, decision, onGenerateJD }) {
           fontSize: 11.5, fontWeight: 800, color: '#b8900a',
           whiteSpace: 'nowrap',
         }}>
-          ⚠️ 建议招人
+          ⚠️ {t('hiringTaskCard.badge')}
         </span>
       </div>
 
@@ -63,7 +66,7 @@ export default function HiringTaskCard({ task, decision, onGenerateJD }) {
         fontWeight: 600,
       }}>
         <div style={{ color: 'var(--warning-active)', fontWeight: 800 }}>
-          📋 招聘原因
+          📋 {t('hiringTaskCard.reasonLabel')}
         </div>
         <div>{reason}</div>
       </div>
@@ -73,10 +76,10 @@ export default function HiringTaskCard({ task, decision, onGenerateJD }) {
         gap: 16, flexWrap: 'wrap',
       }}>
         <div style={{ fontSize: 13, color: 'var(--text-secondary)', fontWeight: 700 }}>
-          ⏱️ {hours} 小时 · <span style={{ color: 'var(--money)' }}>💰 预估薪资 {salary}</span>
+          ⏱️ {t('taskCard.hours', { hours })} · <span style={{ color: 'var(--money)' }}>💰 {t('hiringTaskCard.estimatedSalary')} {salary}</span>
         </div>
         <PixelButton variant="gold" onClick={onGenerateJD}>
-          📝 生成 JD
+          📝 {t('hiringTaskCard.generateJd')}
         </PixelButton>
       </div>
     </div>

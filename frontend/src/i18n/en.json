@@ -1,0 +1,504 @@
+{
+  "languageNames": {
+    "en": "EN",
+    "zh": "中文"
+  },
+  "common": {
+    "languageToggle": {
+      "ariaLabel": "Switch language"
+    }
+  },
+  "nav": {
+    "comingSoon": "Coming soon",
+    "employer": {
+      "requirementAnalysis": "Requirement Analysis",
+      "myTasks": "My Tasks",
+      "dashboard": "Dashboard"
+    },
+    "creator": {
+      "myAgents": "My Agents",
+      "ledger": "Earnings Ledger"
+    },
+    "jobseeker": {
+      "jobBoard": "Job Board",
+      "myProfile": "My Profile",
+      "applications": "Applications"
+    },
+    "agentWorld": {
+      "roleSelect": "Role Select",
+      "iAmCreator": "I'm a Creator",
+      "iAmEmployer": "I'm an Employer"
+    }
+  },
+  "roleSelect": {
+    "tagline": "AI Workforce Network · Islander Edition",
+    "pill": "🏝️ Make work feel as natural as island life",
+    "chooseIdentity": "Choose your identity",
+    "enter": "Enter",
+    "footerLink": "See who's keeping this world running · Enter the Agent World",
+    "employer": {
+      "title": "I'm an Employer",
+      "sub": "Describe your needs · smart matching · find resources.",
+      "step1": "Describe your business needs",
+      "step2": "AI breaks it down and matches resources",
+      "step3": "Launch an Agent or hire talent"
+    },
+    "jobseeker": {
+      "title": "I'm a Jobseeker",
+      "sub": "Explore opportunities · take on tasks · a growth path.",
+      "step1": "Explore opportunities and find the right tasks",
+      "step2": "Take on tasks and put your skills to work",
+      "step3": "Build a growth path and royalty income"
+    },
+    "creator": {
+      "title": "I'm a Creator",
+      "sub": "Publish an Agent · earn income · build royalties.",
+      "step1": "Register your AI Agent's capabilities",
+      "step2": "Get called by businesses, work gets done automatically",
+      "step3": "Earn ongoing royalty income"
+    }
+  },
+  "login": {
+    "eyebrow": "Log in",
+    "title": "Log in to HireNet",
+    "subtitle": "Once you log in, you only see your own data.",
+    "username": "Username",
+    "password": "Password",
+    "passwordPlaceholder": "Demo user password: demo123",
+    "loggingIn": "Logging in…",
+    "demoAccountsTitle": "Demo accounts (password is demo123 for all)",
+    "errors": {
+      "missingCredentials": "Please enter a username and password",
+      "loginFailed": "Login failed"
+    },
+    "demoHints": {
+      "liBoss": { "name": "Boss Li", "role": "Enterprise" },
+      "zhangAi": { "name": "AI Zhang", "role": "Creator" },
+      "wangDev": { "name": "Dev Wang", "role": "Jobseeker" },
+      "zhaoDesign": { "name": "Designer Zhao", "role": "Creator" }
+    }
+  },
+  "employerHub": {
+    "title": "Guild Hall",
+    "subtitle": "Choose what you want to do today",
+    "backToRoleSelect": "Back to role select",
+    "hq": {
+      "title": "Business HQ",
+      "description": "See your business overview, Agent activity and key metrics",
+      "button": "Enter HQ"
+    },
+    "engagement": {
+      "title": "Start an Engagement",
+      "description": "Describe your business needs — AI helps analyze, break down and match Agents",
+      "button": "Write an engagement"
+    }
+  },
+  "employerHome": {
+    "eyebrow": "New task",
+    "title": "What do you want to get done today?",
+    "subtitle": "Hand your goal to the platform. We'll break the task down, match trusted Agents, and execute safely within the authorization you grant.",
+    "composerLabel": "Describe your need",
+    "composerPlaceholder": "e.g. I need to build a smart customer-service system for an e-commerce platform...",
+    "submit": "to submit",
+    "analyzing": "Analyzing…",
+    "startAnalysis": "Start analysis",
+    "errors": {
+      "startFailed": "Failed to start analysis"
+    },
+    "examples": {
+      "customerService": {
+        "label": "Build a smart customer service system",
+        "text": "I want to build a smart customer service system for an e-commerce platform, covering pre-sales inquiries, after-sales support and complaint handling."
+      },
+      "salesAnalysis": {
+        "label": "Analyze sales data",
+        "text": "Help me analyze the last three quarters of sales data and identify growth opportunities and unusual fluctuations."
+      },
+      "dataDashboard": {
+        "label": "Build a data dashboard",
+        "text": "I need a real-time business dashboard that rolls up revenue, complaint rate and conversion across channels."
+      }
+    }
+  },
+  "employerDashboard": {
+    "title": "Business HQ",
+    "agentsTitle": "Your Agents",
+    "warningsTitle": "Warnings",
+    "backToHub": "Back to Guild Hall",
+    "online": "Online",
+    "offline": "Offline",
+    "callsCount": "{count} calls",
+    "metrics": {
+      "spend": "Spend this month",
+      "activeAgents": "Active Agents",
+      "completionRate": "Task completion rate",
+      "hoursSaved": "Hours saved"
+    },
+    "agents": {
+      "csScript": { "name": "Customer Service Script Generator", "creator": "@Li Si" },
+      "dataAnalyst": { "name": "Data Analysis Assistant", "creator": "@Wang Wu" },
+      "codeReview": { "name": "Code Review Bot", "creator": "@Zhao Liu" }
+    },
+    "warnings": {
+      "csScriptDrop": "Customer Service Script Generator call volume is down 30% this week",
+      "dataAnalystAccuracy": "Data Analysis Assistant accuracy is below the 90% threshold"
+    }
+  },
+  "analysisChat": {
+    "title": "AI Requirement Analysis",
+    "startingConversation": "Starting the conversation…",
+    "thinking": "Thinking…",
+    "generatingReport": "Generating your requirement analysis report…",
+    "generatingSteps": "Breaking down tasks · matching Agents · estimating cost",
+    "inputPlaceholder": "Continue describing…",
+    "send": "Send",
+    "you": "You",
+    "errors": {
+      "reportFailed": "Failed to generate report",
+      "sendFailed": "Failed to send"
+    }
+  },
+  "analysisReport": {
+    "eyebrow": "Analysis Report",
+    "title": "Execution Plan",
+    "tasksHeading": "Task Breakdown",
+    "tasksCount": "{count} tasks",
+    "noTasks": "No tasks yet",
+    "startAnother": "Start another",
+    "metrics": {
+      "taskCount": "Tasks",
+      "agentReady": "Agent-ready",
+      "needsHiring": "Needs hiring",
+      "hybrid": "Human + Agent"
+    },
+    "summary": {
+      "agentOnly": "No hiring needed — every task can be done by an Agent",
+      "humanOnly": "Hiring recommended — no current Agent can meet this need",
+      "hybrid": "Recommended: a mixed plan — {agentTasks} task(s) via Agent, {humanTasks} task(s) need a human"
+    },
+    "lost": {
+      "eyebrow": "Report lost",
+      "title": "Report lost",
+      "bodyPrefix": "No execution plan was found for session",
+      "bodySuffix": ".",
+      "hint": "Refreshing loses state — please start a new analysis.",
+      "restart": "Start over"
+    },
+    "demoAgent": {
+      "name": "Customer Service Script Generator",
+      "creator": "@Li Si"
+    }
+  },
+  "taskCard": {
+    "unnamedTask": "Untitled task",
+    "matching": "Matching…",
+    "hours": "{hours} hrs"
+  },
+  "agentTaskCard": {
+    "badge": "Agent-ready",
+    "matchedAgent": "Matched Agent: ",
+    "launch": "Launch Agent"
+  },
+  "hiringTaskCard": {
+    "badge": "Hiring recommended",
+    "reasonLabel": "Hiring reason",
+    "estimatedSalary": "Estimated salary",
+    "generateJd": "Generate JD",
+    "fallbackReason": "No current Agent resource can handle this — hiring is recommended"
+  },
+  "hybridTaskCard": {
+    "badge": "Human + Agent",
+    "divisionLabel": "Division of labor",
+    "fallbackDivision": "Division of labor to be determined"
+  },
+  "jdModal": {
+    "ariaLabel": "JD preview",
+    "draftTitle": "JD Draft",
+    "publishedPrefix": "Published to the job board",
+    "done": "Done",
+    "publishing": "Publishing…",
+    "publish": "Publish to job board",
+    "close": "Close",
+    "errors": {
+      "publishFailed": "Publish failed"
+    },
+    "fallback": {
+      "title": "Untitled role",
+      "company": "Employer",
+      "salary": "Negotiable"
+    },
+    "headings": {
+      "company": "Company",
+      "salary": "Salary",
+      "summary": "Role Summary",
+      "responsibilities": "Core Responsibilities",
+      "requirements": "Requirements",
+      "niceToHave": "Nice to Have"
+    }
+  },
+  "identitySwitcher": {
+    "switchIdentity": "Switch demo identity",
+    "anonymous": "Anonymous visitor",
+    "roles": {
+      "enterprise": "Enterprise",
+      "creator": "Creator",
+      "jobseeker": "Jobseeker"
+    },
+    "errors": {
+      "loadFailed": "Failed to load identity",
+      "switchFailed": "Switch failed"
+    }
+  },
+  "agentWorld": {
+    "title": "Agent World",
+    "intro": "AI Agents registered by creators. Every Agent can be called by businesses, complete work automatically, and earn royalty income.",
+    "loading": "Gathering islanders…",
+    "loadFailedPrefix": "Load failed: ",
+    "empty": "No Agents yet — register the first one from the Creator side",
+    "creatorPrefix": "Creator",
+    "mcpConnected": "MCP connected",
+    "mcpPending": "MCP pending",
+    "callCount": "{count} calls"
+  },
+  "applicationResult": {
+    "success": "Application sent",
+    "delivered": "Your resume has been delivered",
+    "appliedToPrefix": "Successfully applied to ",
+    "appliedGeneric": "Successfully applied to this role",
+    "matchScoreLabel": "Match score",
+    "coverLetterLabel": "Cover letter drafted by AI",
+    "noResult": "No application response received — please retry from the job detail page.",
+    "myProfileCard": "My Profile Card",
+    "backToBoard": "Back to job board"
+  },
+  "creatorHome": {
+    "title": "Creator Workshop",
+    "subtitle": "Manage your Agents, track every call and every payout",
+    "loading": "Loading…",
+    "empty": "No Agents registered yet — click ⚒️ Register New Agent below to start",
+    "online": "Online",
+    "offline": "Offline",
+    "callCount": "{count} calls",
+    "totalEarned": "{amount} total",
+    "registerNew": "Register New Agent",
+    "backToRoleSelect": "Back to role select"
+  },
+  "jobSeekerHome": {
+    "title": "Job Board",
+    "subtitle": "Pick a role you're interested in and let this island see your skills",
+    "loading": "Island courier delivering…",
+    "viewMyProfileCard": "View my profile card",
+    "matchLabel": "Match",
+    "viewDetails": "View details",
+    "empty": {
+      "title": "No open roles right now",
+      "subtitle": "The next hiring ship is about to dock — check back soon"
+    },
+    "errors": {
+      "loadFailed": "Failed to load jobs"
+    }
+  },
+  "jobDetail": {
+    "title": "Job Detail",
+    "loading": "Unrolling the job scroll…",
+    "thisRole": "this role",
+    "description": "Job Description",
+    "requirements": "Requirements",
+    "keySkills": "Key Skills",
+    "backToBoard": "Back to board",
+    "applying": "Applying…",
+    "oneClickApply": "One-click apply",
+    "errors": {
+      "notFound": "This job could not be found",
+      "loadFailed": "Failed to load jobs",
+      "candidateNotReady": "Your candidate profile isn't ready yet — please try again shortly",
+      "applyFailed": "Application failed — please try again shortly"
+    }
+  },
+  "candidateProfile": {
+    "title": "My Profile Card",
+    "loading": "Digging up your islander file…",
+    "defaultName": "Island visitor",
+    "bio": "About Me",
+    "skillTags": "Skill Tags",
+    "experience": "Experience",
+    "aiAnalysis": "AI Strengths Analysis",
+    "analyzeMyStrengths": "AI: analyze my strengths",
+    "analyzing": "Letting GLM-4 flip through your profile…",
+    "backToBoard": "Back to job board",
+    "editComingSoon": "Demo: profile editing is coming soon 🚧",
+    "editProfile": "Edit profile",
+    "role": "Role",
+    "present": "present",
+    "errors": {
+      "noProfile": "No candidate profile yet",
+      "loadFailed": "Failed to load profile",
+      "analysisFailed": "AI analysis failed"
+    }
+  },
+  "agentPerformance": {
+    "title": "Agent Performance",
+    "recentCalls": "Recent Calls",
+    "earningsBreakdown": "Earnings Breakdown",
+    "fromPrefix": "From",
+    "accrued": "Accrued",
+    "settled": "Settled",
+    "totalLabel": "Total",
+    "withdrawSent": "💸 Withdrawal request sent to wallet",
+    "withdrawToWallet": "Withdraw to wallet",
+    "backToWorkshop": "Back to workshop",
+    "metrics": {
+      "totalCalls": "Total calls",
+      "thisMonth": "This month",
+      "accuracy": "Accuracy",
+      "total": "Total"
+    },
+    "calls": {
+      "csScript": "Generate customer service script",
+      "salesAnalysis": "Analyze sales data",
+      "ecommercePlatform": "E-commerce platform",
+      "retailCompany": "Retail company",
+      "hoursAgo": "{hours}h ago",
+      "daysAgo": "{days}d ago"
+    },
+    "errors": {
+      "earningsFailed": "Failed to load earnings",
+      "earningsFailedPrefix": "Failed to load earnings: "
+    }
+  },
+  "agentRegister": {
+    "title": "Register New Agent",
+    "subtitle": "Fill in the asset details · once provenance is recorded it can be called",
+    "probing": "Probing…",
+    "testConnection": "Test connection",
+    "mcpHint": "Leave blank to skip MCP — no external tool is called at settlement.",
+    "toolsFound": "Found {count} tool(s)",
+    "noToolsDeclared": "This endpoint declares no tools",
+    "submitting": "Submitting…",
+    "submit": "Submit registration",
+    "registerSuccess": "Registered: {id}",
+    "registerFailed": "Registration failed: {message}",
+    "fields": {
+      "name": "Agent name",
+      "namePlaceholder": "e.g. Customer Service Script Generator",
+      "description": "Description",
+      "descriptionPlaceholder": "What does it do? What scenarios is it good for?",
+      "type": "Type",
+      "price": "Rate $/hour",
+      "pricePlaceholder": "e.g. 30",
+      "wallet": "Wallet address"
+    },
+    "errors": {
+      "missingMcpUrl": "Please enter an MCP endpoint URL first",
+      "invalidUrl": "Invalid URL format",
+      "unsupportedProtocol": "Unsupported protocol {protocol}",
+      "invalidJsonResponse": "Response is not valid JSON",
+      "connectionFailed": "Connection failed",
+      "missingNameOrDescription": "Please fill in a name and description",
+      "unknownError": "Unknown error"
+    }
+  },
+  "creatorLedger": {
+    "title": "Earnings Ledger",
+    "callLog": "Call Log",
+    "entryCount": "{count} entries",
+    "unnamedAgent": "Unnamed Agent",
+    "unknownEmployer": "Unknown employer",
+    "metrics": {
+      "totalCalls": "Total calls",
+      "totalEarnings": "Total earnings",
+      "settled": "Settled",
+      "pending": "Pending"
+    },
+    "empty": {
+      "title": "No earnings yet",
+      "subtitle": "Once a business calls your registered Agent, earnings will show up here."
+    },
+    "time": {
+      "justNow": "just now",
+      "minutesAgo": "{n}m ago",
+      "hoursAgo": "{n}h ago",
+      "daysAgo": "{n}d ago"
+    },
+    "errors": {
+      "loadFailed": "Failed to load",
+      "loadFailedPrefix": "Failed to load: "
+    }
+  },
+  "executionPage": {
+    "taskComplete": "Task Complete",
+    "timeSpent": "Time spent {hours} hrs",
+    "cost": "Cost ${amount}",
+    "costBreakdown": "Cost Breakdown",
+    "creatorLabel": "creator",
+    "platformLabel": "platform",
+    "taxLabel": "tax",
+    "royaltyRecord": "Royalty record",
+    "onChain": "Verifiable on-chain (Sepolia)",
+    "viewOnEtherscan": "View on Etherscan",
+    "acceptedSettled": "Accepted — settlement complete",
+    "downloading": "Downloading...",
+    "downloadScript": "Download script",
+    "openingPreview": "Opening preview...",
+    "preview": "Preview",
+    "accepted": "Accepted",
+    "acceptConfirm": "Confirm acceptance",
+    "addAnotherTask": "Add another task",
+    "demo": {
+      "taskName": "Generate customer service script",
+      "agentName": "Customer Service Script Generator",
+      "creator": "@Li Si"
+    },
+    "mcp": {
+      "notConnected": "This Agent isn't connected to MCP — no external output",
+      "callFailed": "MCP call failed (settlement is unaffected)",
+      "unknownError": "Unknown error",
+      "outputPreview": "Agent Output Preview",
+      "totalCount": "{count} total",
+      "showingFirst": "Showing the first {shown} of {total} items"
+    }
+  },
+  "pactModal": {
+    "title": "Pact Authorization Confirmation",
+    "defaultAgentName": "Customer Service Script Generator",
+    "defaultCreator": "@Li Si",
+    "costBreakdown": "Cost Breakdown",
+    "rate": "Rate",
+    "rateValue": "${price} / hr",
+    "estimatedDuration": "Estimated duration",
+    "hoursValue": "{hours} hrs",
+    "totalCap": "Total cap",
+    "adjustDuration": "Adjust estimated duration (hours):",
+    "payeeWallet": "Payee wallet",
+    "mandate": {
+      "title": "Authorization Mandate",
+      "intent": "Authorized for",
+      "payee": "Payee",
+      "amountCap": "Authorization cap",
+      "expiresAt": "Valid until",
+      "txHash": "Transaction hash"
+    },
+    "wallet": {
+      "confirmInWallet": "Please confirm the authorization in your wallet",
+      "placeholder": "[Wallet confirmation UI placeholder]",
+      "step1": "Open your wallet app",
+      "step2": "Review the Pact details",
+      "step3": "Confirm the signature"
+    },
+    "stages": {
+      "creating": "Creating Pact",
+      "approving": "Approving",
+      "settling": "Settling",
+      "waiting": "Waiting for confirmation"
+    },
+    "buttons": {
+      "done": "Done",
+      "confirmAuthorization": "Confirm authorization",
+      "adjustCap": "Adjust cap",
+      "reject": "Reject"
+    },
+    "errors": {
+      "requestFailed": "Request failed"
+    }
+  }
+}

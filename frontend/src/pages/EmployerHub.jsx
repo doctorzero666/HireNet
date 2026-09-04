@@ -3,14 +3,16 @@ import Scene from '../components/Scene'
 import Board from '../components/Board'
 import SectionLabel from '../components/SectionLabel'
 import PixelButton from '../components/PixelButton'
+import { useLang } from '../i18n/LanguageProvider'
 
 export default function EmployerHub() {
   const navigate = useNavigate()
+  const { t } = useLang()
 
   return (
     <Scene>
       <Board maxWidth={700}>
-        {/* 品牌区 */}
+        {/* Brand block */}
         <div style={{ textAlign: 'center', marginBottom: 24 }}>
           <div style={{
             fontSize: 'clamp(26px, 4vw, 36px)',
@@ -19,7 +21,7 @@ export default function EmployerHub() {
             textShadow: '0px 3px 0px rgba(189, 174, 160, 0.55)',
             letterSpacing: '0.01em',
           }}>
-            🏛 公会大厅
+            🏛 {t('employerHub.title')}
           </div>
           <div style={{
             fontSize: 14,
@@ -32,7 +34,7 @@ export default function EmployerHub() {
           </div>
         </div>
 
-        <SectionLabel>请选择你今天要做的事</SectionLabel>
+        <SectionLabel>{t('employerHub.subtitle')}</SectionLabel>
 
         <div style={{
           display: 'flex',
@@ -40,26 +42,26 @@ export default function EmployerHub() {
           gap: 18,
           marginTop: 20,
         }}>
-          {/* 卡片 A：业务大本营 */}
+          {/* Card A: business HQ */}
           <HubCard
             accentColor="var(--app-green)"
-            title="🏰 业务大本营"
-            description="查看你的业务全景、Agent 工作状态和关键指标"
-            buttonLabel="🚪 进入大本营"
+            title={`🏰 ${t('employerHub.hq.title')}`}
+            description={t('employerHub.hq.description')}
+            buttonLabel={`🚪 ${t('employerHub.hq.button')}`}
             onClick={() => navigate('/employer/dashboard')}
           />
 
-          {/* 卡片 B：发起委托 */}
+          {/* Card B: start an engagement */}
           <HubCard
             accentColor="var(--app-teal)"
-            title="📜 发起委托"
-            description="描述你的业务需求，AI 帮你分析、拆解、匹配 Agent"
-            buttonLabel="📜 写一份委托"
+            title={`📜 ${t('employerHub.engagement.title')}`}
+            description={t('employerHub.engagement.description')}
+            buttonLabel={`📜 ${t('employerHub.engagement.button')}`}
             onClick={() => navigate('/employer')}
           />
         </div>
 
-        {/* 返回链接 */}
+        {/* Back link */}
         <div style={{ textAlign: 'center', marginTop: 28 }}>
           <a
             href="/"
@@ -82,7 +84,7 @@ export default function EmployerHub() {
               transition: 'all 0.25s var(--ease)',
             }}
           >
-            ◂ 返回角色选择
+            ◂ {t('employerHub.backToRoleSelect')}
           </a>
         </div>
       </Board>

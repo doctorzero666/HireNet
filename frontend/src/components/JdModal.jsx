@@ -2,15 +2,18 @@ import { useEffect, useMemo, useState } from 'react'
 import Icon from './Icon'
 import Ribbon from './Ribbon'
 import { publishJob } from '../services/api'
+import { useLang } from '../i18n/LanguageProvider'
+import { translateBackend } from '../i18n/backendStrings'
 
 /**
  * JdModal — Markdown JD preview + publish to the job pool.
  *
- * Triggered from HiringTaskCard's 「📝 生成JD」 in AnalysisReport. Composes a
- * JD draft from the task + jd_report shape returned by /api/analyze/decide
- * and lets the user publish it via POST /api/jobs/publish.
+ * Triggered from HiringTaskCard's "Generate JD" button in AnalysisReport.
+ * Composes a JD draft from the task + jd_report shape returned by
+ * /api/analyze/decide and lets the user publish it via POST /api/jobs/publish.
  */
 export default function JdModal({ task, decision, jdReport, onClose }) {
+  const { t, lang } = useLang()
   const [publishing, setPublishing] = useState(false)
   const [error, setError] = useState('')
   const [published, setPublished] = useState(null) // { job_id }
@@ -18,7 +21,10 @@ export default function JdModal({ task, decision, jdReport, onClose }) {
   // Pull the matching job_design from jd_report if generate_jd_report ran;
   // otherwise fall back to a JD built from the task + decision fields.
   const jobDesign = useMemo(() => findJobDesign(task, jdReport), [task, jdReport])
-  const jdMarkdown = useMemo(() => buildJdMarkdown(task, decision, jobDesign), [task, decision, jobDesign])
+  const jdMarkdown = useMemo(
+    () => buildJdMarkdown(task, decision, jobDesign, t, lang),
+    [task, decision, jobDesign, t, lang],
+  )
 
   useEffect(() => {
     function onKey(e) { if (e.key === 'Escape') onClose?.() }
@@ -47,7 +53,7 @@ export default function JdModal({ task, decision, jdReport, onClose }) {
       })
       setPublished({ job_id: res.job_id })
     } catch (e) {
-      setError(e.message || '发布失败')
+      setError(e.message || t('jdModal.errors.publishFailed'))
     } finally {
       setPublishing(false)
     }
@@ -55,9 +61,9 @@ export default function JdModal({ task, decision, jdReport, onClose }) {
 
   return (
     <div style={BACKDROP} onClick={onClose}>
-      <div style={MODAL} onClick={(e) => e.stopPropagation()} role="dialog" aria-label="JD 预览">
+      <div style={MODAL} onClick={(e) => e.stopPropagation()} role="dialog" aria-label={t('jdModal.ariaLabel')}>
         <div style={{ textAlign: 'center', marginBottom: 14 }}>
-          <Ribbon color="app-yellow" size={18}>📝 JD 草稿</Ribbon>
+          <Ribbon color="app-yellow" size={18}>📝 {t('jdModal.draftTitle')}</Ribbon>
         </div>
 
         <pre style={JD_BLOCK}>{jdMarkdown}</pre>
@@ -65,14 +71,14 @@ export default function JdModal({ task, decision, jdReport, onClose }) {
         {error && <div style={ERROR_BOX}>{error}</div>}
         {published && (
           <div style={SUCCESS_BOX}>
-            ✅ 已发布到岗位广场（job_id：<code>{published.job_id}</code>）
+            ✅ {t('jdModal.publishedPrefix')}（job_id：<code>{published.job_id}</code>）
           </div>
         )}
 
         <div style={ACTIONS}>
           {published ? (
             <button type="button" className="btn btn-primary" onClick={onClose}>
-              <Icon name="check" size={15} /> 完成
+              <Icon name="check" size={15} /> {t('jdModal.done')}
             </button>
           ) : (
             <>
@@ -82,10 +88,10 @@ export default function JdModal({ task, decision, jdReport, onClose }) {
                 onClick={handlePublish}
                 disabled={publishing}
               >
-                {publishing ? '发布中…' : '📤 发布到岗位广场'}
+                {publishing ? t('jdModal.publishing') : `📤 ${t('jdModal.publish')}`}
               </button>
               <button type="button" className="btn btn-ghost" onClick={onClose}>
-                关闭
+                {t('jdModal.close')}
               </button>
             </>
           )}
@@ -105,13 +111,15 @@ function findJobDesign(task, jdReport) {
   )
 }
 
-function buildJdMarkdown(task, decision, jobDesign) {
+function buildJdMarkdown(task, decision, jobDesign, t, lang) {
   if (jobDesign?.markdown) return jobDesign.markdown
 
-  const title = jobDesign?.job_title ?? task?.name ?? '未命名岗位'
-  const company = jobDesign?.company ?? '招聘方'
+  const title = jobDesign?.job_title ?? task?.name ?? t('jdModal.fallback.title')
+  const company = jobDesign?.company ?? t('jdModal.fallback.company')
   const summary = jobDesign?.summary ?? task?.description ?? ''
-  const salary = jobDesign?.salary ?? decision?.recommendation?.cost_hint ?? '面议'
+  const salary = jobDesign?.salary
+    ?? translateBackend(decision?.recommendation?.cost_hint, lang)
+    ?? t('jdModal.fallback.salary')
   const responsibilities = jobDesign?.core_responsibilities ?? []
   /* Match the JD agent's output schema (required_skills / nice_to_have_skills).
      The legacy `requirements` / `nice_to_have` keys were a render-only
@@ -123,18 +131,18 @@ function buildJdMarkdown(task, decision, jobDesign) {
   const lines = [
     `# ${title}`,
     '',
-    `**公司：** ${company}`,
-    salary ? `**薪资：** ${salary}` : '',
+    `**${t('jdModal.headings.company')}：** ${company}`,
+    salary ? `**${t('jdModal.headings.salary')}：** ${salary}` : '',
     '',
-    summary ? `## 岗位简介\n\n${summary}` : '',
+    summary ? `## ${t('jdModal.headings.summary')}\n\n${summary}` : '',
     responsibilities.length
-      ? '## 核心职责\n\n' + responsibilities.map((r) => `- ${r}`).join('\n')
+      ? `## ${t('jdModal.headings.responsibilities')}\n\n` + responsibilities.map((r) => `- ${r}`).join('\n')
       : '',
     requirements.length
-      ? '## 任职要求\n\n' + requirements.map((r) => `- ${r}`).join('\n')
+      ? `## ${t('jdModal.headings.requirements')}\n\n` + requirements.map((r) => `- ${r}`).join('\n')
       : '',
     nice.length
-      ? '## 加分项\n\n' + nice.map((r) => `- ${r}`).join('\n')
+      ? `## ${t('jdModal.headings.niceToHave')}\n\n` + nice.map((r) => `- ${r}`).join('\n')
       : '',
   ]
   return lines.filter(Boolean).join('\n\n')

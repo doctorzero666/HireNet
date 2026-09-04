@@ -6,6 +6,7 @@ import NavBar from '../components/NavBar'
 import Ribbon from '../components/Ribbon'
 import Icon from '../components/Icon'
 import StreamText from '../components/StreamText'
+import { useLang } from '../i18n/LanguageProvider'
 
 function pick(obj, keys, fallback = null) {
   for (const k of keys) {
@@ -28,6 +29,7 @@ function formatScore(raw) {
 export default function ApplicationResult() {
   const navigate = useNavigate()
   const location = useLocation()
+  const { t } = useLang()
 
   const { result, jobTitle, jobId } = location.state || {}
 
@@ -45,7 +47,7 @@ export default function ApplicationResult() {
         <NavBar role="jobseeker" />
 
         <div style={{ textAlign: 'center', margin: '14px 0 18px' }}>
-          <Ribbon color="app-green" size={20}>✅ 投递成功</Ribbon>
+          <Ribbon color="app-green" size={20}>✅ {t('applicationResult.success')}</Ribbon>
         </div>
 
         <div style={{
@@ -64,7 +66,7 @@ export default function ApplicationResult() {
             color: 'var(--text)',
             marginBottom: 8,
           }}>
-            你的简历已经送达
+            {t('applicationResult.delivered')}
           </div>
           <div style={{
             fontSize: 14,
@@ -73,8 +75,8 @@ export default function ApplicationResult() {
             lineHeight: 1.65,
           }}>
             {jobTitle
-              ? <>已成功投递「<strong style={{ color: 'var(--text)' }}>{jobTitle}</strong>」</>
-              : '已成功投递该岗位'}
+              ? <>{t('applicationResult.appliedToPrefix')}「<strong style={{ color: 'var(--text)' }}>{jobTitle}</strong>」</>
+              : t('applicationResult.appliedGeneric')}
             {jobId && <span style={{ display: 'block', fontSize: 12, marginTop: 4, color: 'var(--text-disabled)' }}>JOB · {jobId}</span>}
           </div>
         </div>
@@ -101,7 +103,7 @@ export default function ApplicationResult() {
                 letterSpacing: '0.04em',
                 marginBottom: 6,
               }}>
-                🎯 匹配度评分
+                🎯 {t('applicationResult.matchScoreLabel')}
               </div>
               <div style={{
                 fontSize: 36,
@@ -151,7 +153,7 @@ export default function ApplicationResult() {
                 color: 'var(--text-muted)',
                 letterSpacing: '0.04em',
               }}>
-                AI 为你起草的求职信
+                {t('applicationResult.coverLetterLabel')}
               </div>
             </div>
             <div style={{
@@ -169,7 +171,7 @@ export default function ApplicationResult() {
 
         {!result && (
           <div className="chat-error" style={{ marginBottom: 18 }}>
-            未收到投递返回，请从岗位详情重新尝试。
+            {t('applicationResult.noResult')}
           </div>
         )}
 
@@ -184,14 +186,14 @@ export default function ApplicationResult() {
             className="btn btn-ghost"
             onClick={() => navigate('/jobseeker/profile')}
           >
-            <Icon name="user" size={15} /> 我的资料卡
+            <Icon name="user" size={15} /> {t('applicationResult.myProfileCard')}
           </button>
           <button
             type="button"
             className="btn btn-soft"
             onClick={() => navigate('/jobseeker')}
           >
-            返回岗位广场 <Icon name="arrow" size={16} />
+            {t('applicationResult.backToBoard')} <Icon name="arrow" size={16} />
           </button>
         </div>
       </Board>

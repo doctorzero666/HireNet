@@ -6,20 +6,23 @@ import NavBar from '../components/NavBar'
 import SectionLabel from '../components/SectionLabel'
 import PixelButton from '../components/PixelButton'
 import { settleRoyalty } from '../services/api'
+import { useLang } from '../i18n/LanguageProvider'
 
-const DEMO_EXECUTION = {
-  taskId: 'task-001',
-  taskName: '生成客服话术',
-  agentName: '客服话术生成器',
-  creator: '@李四',
-  hours: 1.8,
-  total: 54,
-  creatorShare: 37.8,
-  platformShare: 10.8,
-  tax: 5.4,
-  txHash: null,
-  royaltyId: 'RL-2026-0608-0042',
-  mcpResult: null,
+function demoExecution(t) {
+  return {
+    taskId: 'task-001',
+    taskName: t('executionPage.demo.taskName'),
+    agentName: t('executionPage.demo.agentName'),
+    creator: t('executionPage.demo.creator'),
+    hours: 1.8,
+    total: 54,
+    creatorShare: 37.8,
+    platformShare: 10.8,
+    tax: 5.4,
+    txHash: null,
+    royaltyId: 'RL-2026-0608-0042',
+    mcpResult: null,
+  }
 }
 
 // royalty_splits amounts come from the backend as integer cents (basis points);
@@ -29,21 +32,21 @@ function centsToDollars(v) {
   return typeof v === 'number' ? v / 100 : 0
 }
 
-function buildExecution(taskId, data) {
-  if (!data) return DEMO_EXECUTION
+function buildExecution(taskId, data, demo) {
+  if (!data) return demo
   const splits = data.royalty_splits || {}
   return {
-    taskId: taskId || data.task_id || DEMO_EXECUTION.taskId,
-    taskName: data.task_name || data.task_id || DEMO_EXECUTION.taskName,
-    agentName: data.agent_name || DEMO_EXECUTION.agentName,
-    creator: data.creator || DEMO_EXECUTION.creator,
-    hours: data.hours || DEMO_EXECUTION.hours,
-    total: data.amount != null ? Number(data.amount) : DEMO_EXECUTION.total,
+    taskId: taskId || data.task_id || demo.taskId,
+    taskName: data.task_name || data.task_id || demo.taskName,
+    agentName: data.agent_name || demo.agentName,
+    creator: data.creator || demo.creator,
+    hours: data.hours || demo.hours,
+    total: data.amount != null ? Number(data.amount) : demo.total,
     creatorShare: centsToDollars(splits.creator?.amount),
     platformShare: centsToDollars(splits.platform?.amount),
     tax: centsToDollars(splits.tax?.amount),
     txHash: data.tx_hash || null,
-    royaltyId: data.run_id || DEMO_EXECUTION.royaltyId,
+    royaltyId: data.run_id || demo.royaltyId,
     mcpResult: data.mcp_result || null,
   }
 }
@@ -52,10 +55,11 @@ export default function ExecutionPage() {
   const { taskId } = useParams()
   const location = useLocation()
   const navigate = useNavigate()
+  const { t } = useLang()
   const settlement = location.state?.settlement || null
-  const execution = buildExecution(taskId, settlement)
+  const execution = buildExecution(taskId, settlement, demoExecution(t))
   const [accepted, setAccepted] = useState(false)
-  /* settledTxHash overrides execution.txHash after the user clicks 验收. The
+  /* settledTxHash overrides execution.txHash after the user clicks Accept. The
      modal path already populates execution.txHash via navigate state; the
      verify button is the only way to surface a tx_hash for runs that came in
      without one (preset records, page refresh). */
@@ -65,7 +69,7 @@ export default function ExecutionPage() {
     /* Idempotent: backend /royalty/settle short-circuits when the run is
        already settled and returns the existing tx_hash. So the modal-path
        caller gets the same tx_hash back; the preset-data caller gets the
-       newly minted one. Errors are swallowed — 验收 is UX confirmation, not
+       newly minted one. Errors are swallowed — Accept is UX confirmation, not
        a blocking gate. */
     if (execution.royaltyId) {
       try {
@@ -73,7 +77,7 @@ export default function ExecutionPage() {
         if (res?.tx_hash && !execution.txHash) {
           setSettledTxHash(res.tx_hash)
         }
-      } catch (_) { /* silent — see comment above */ }
+      } catch { /* silent — see comment above */ }
     }
     setAccepted(true)
   }
@@ -89,7 +93,7 @@ export default function ExecutionPage() {
         <NavBar role="employer" />
 
         <div style={{ marginTop: 8, textAlign: 'center' }}>
-          <SectionLabel>🎉 任务完成</SectionLabel>
+          <SectionLabel>🎉 {t('executionPage.taskComplete')}</SectionLabel>
         </div>
 
         <ResultView
@@ -108,6 +112,7 @@ export default function ExecutionPage() {
 }
 
 function McpOutputBlock({ mcpResult }) {
+  const { t } = useLang()
   if (!mcpResult) {
     return (
       <div
@@ -123,7 +128,7 @@ function McpOutputBlock({ mcpResult }) {
           textAlign: 'center',
         }}
       >
-        ⓘ 该 Agent 未接入 MCP，无外部产出
+        ⓘ {t('executionPage.mcp.notConnected')}
       </div>
     )
   }
@@ -143,13 +148,13 @@ function McpOutputBlock({ mcpResult }) {
         }}
       >
         <div style={{ fontWeight: 800, marginBottom: 6 }}>
-          ⚠️ MCP 调用失败（结算不受影响）
+          ⚠️ {t('executionPage.mcp.callFailed')}
         </div>
         <div style={{ fontSize: 12.5, fontWeight: 600 }}>
           tool: <code>{mcpResult.tool || '?'}</code>
         </div>
         <div style={{ fontSize: 12.5, fontWeight: 600, marginTop: 4 }}>
-          {mcpResult.error || '未知错误'}
+          {mcpResult.error || t('executionPage.mcp.unknownError')}
         </div>
       </div>
     )
@@ -183,10 +188,10 @@ function McpOutputBlock({ mcpResult }) {
         }}
       >
         <div style={{ fontWeight: 800, fontSize: 15, color: 'var(--text)' }}>
-          📜 Agent 产出预览
+          📜 {t('executionPage.mcp.outputPreview')}
         </div>
         <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--text-secondary)' }}>
-          tool: <code>{mcpResult.tool}</code> · 共 {total} 条
+          tool: <code>{mcpResult.tool}</code> · {t('executionPage.mcp.totalCount', { count: total })}
         </div>
       </div>
       <ol
@@ -205,7 +210,7 @@ function McpOutputBlock({ mcpResult }) {
       </ol>
       {total > preview.length && (
         <div style={{ fontSize: 11.5, color: 'var(--text-disabled)', fontWeight: 600, marginTop: 8 }}>
-          仅展示前 {preview.length} 条 · 完整产物 {total} 条
+          {t('executionPage.mcp.showingFirst', { shown: preview.length, total })}
         </div>
       )}
     </div>
@@ -213,13 +218,14 @@ function McpOutputBlock({ mcpResult }) {
 }
 
 function ResultView({ execution, accepted, onAccept, onRetry }) {
+  const { t } = useLang()
   const e = execution
   const txShort = e.txHash && e.txHash.length > 12
     ? `${e.txHash.slice(0, 6)}...${e.txHash.slice(-4)}`
     : e.txHash
   return (
     <div style={{ padding: '8px 6px' }}>
-      {/* 大勾 + 标题 */}
+      {/* Big checkmark + title */}
       <div style={{ textAlign: 'center', marginBottom: 20 }}>
         <div
           style={{
@@ -238,11 +244,11 @@ function ResultView({ execution, accepted, onAccept, onRetry }) {
             marginTop: 8,
           }}
         >
-          任务完成
+          {t('executionPage.taskComplete')}
         </div>
       </div>
 
-      {/* Agent 信息卡 */}
+      {/* Agent info card */}
       <div
         style={{
           background: 'rgba(255, 255, 255, 0.6)',
@@ -260,14 +266,14 @@ function ResultView({ execution, accepted, onAccept, onRetry }) {
           🤖 {e.agentName} <span style={{ color: 'var(--text-secondary)', fontWeight: 600 }}>({e.creator})</span>
         </div>
         <div style={{ marginBottom: 4, fontWeight: 600 }}>
-          ⏱️ 耗时 {e.hours} 小时 · <span style={{ color: 'var(--money)', fontWeight: 800 }}>💰 费用 ${e.total}</span>
+          ⏱️ {t('executionPage.timeSpent', { hours: e.hours })} · <span style={{ color: 'var(--money)', fontWeight: 800 }}>💰 {t('executionPage.cost', { amount: e.total })}</span>
         </div>
       </div>
 
-      {/* MCP 产出（替代原假进度条/假产物计数） */}
+      {/* MCP output (replaces the old fake progress bar / fake output count) */}
       <McpOutputBlock mcpResult={e.mcpResult} />
 
-      {/* 费用拆分 */}
+      {/* Cost breakdown */}
       <div
         style={{
           background: 'rgba(255, 255, 255, 0.55)',
@@ -280,10 +286,10 @@ function ResultView({ execution, accepted, onAccept, onRetry }) {
           color: 'var(--text-body)',
         }}
       >
-        <div style={{ fontWeight: 800, marginBottom: 10, color: 'var(--text)' }}>💰 费用明细</div>
+        <div style={{ fontWeight: 800, marginBottom: 10, color: 'var(--text)' }}>💰 {t('executionPage.costBreakdown')}</div>
         <div style={{ lineHeight: 1.8 }}>
-          ${e.total} → <strong style={{ color: 'var(--money)', fontWeight: 900 }}>${e.creatorShare}</strong> 创作者 ({e.creator}) +{' '}
-          <strong style={{ color: 'var(--money)', fontWeight: 900 }}>${e.platformShare}</strong> 平台 + <strong style={{ color: 'var(--money)', fontWeight: 900 }}>${e.tax}</strong> 税费
+          ${e.total} → <strong style={{ color: 'var(--money)', fontWeight: 900 }}>${e.creatorShare}</strong> {t('executionPage.creatorLabel')} ({e.creator}) +{' '}
+          <strong style={{ color: 'var(--money)', fontWeight: 900 }}>${e.platformShare}</strong> {t('executionPage.platformLabel')} + <strong style={{ color: 'var(--money)', fontWeight: 900 }}>${e.tax}</strong> {t('executionPage.taxLabel')}
         </div>
         <div
           style={{
@@ -293,13 +299,13 @@ function ResultView({ execution, accepted, onAccept, onRetry }) {
             fontWeight: 600,
           }}
         >
-          版税记录：<code>#{e.royaltyId}</code>
+          {t('executionPage.royaltyRecord')}：<code>#{e.royaltyId}</code>
         </div>
       </div>
 
-      {/* 链上 tx_hash 卡 — 仅在有真实 tx_hash 时显示。Sepolia 测试网
-          有公开浏览器，点击直接跳 Etherscan 查 receipt / value /
-          input data。 */}
+      {/* On-chain tx_hash card — only shown when there's a real tx_hash.
+          Sepolia testnet has a public explorer; clicking jumps straight to
+          Etherscan to see the receipt / value / input data. */}
       {e.txHash && (
         <div
           style={{
@@ -314,7 +320,7 @@ function ResultView({ execution, accepted, onAccept, onRetry }) {
           }}
         >
           <div style={{ fontWeight: 800, marginBottom: 6, color: 'var(--success-active)' }}>
-            🔗 链上可查 (Sepolia)
+            🔗 {t('executionPage.onChain')}
           </div>
           <div style={{ marginBottom: 8 }}>
             <code style={{ fontSize: 12.5 }}>{txShort}</code>
@@ -331,12 +337,12 @@ function ResultView({ execution, accepted, onAccept, onRetry }) {
               borderBottom: '1.5px dashed var(--success-active)',
             }}
           >
-            在 Etherscan 查看 →
+            {t('executionPage.viewOnEtherscan')} →
           </a>
         </div>
       )}
 
-      {/* 验收提示 */}
+      {/* Accepted confirmation */}
       {accepted && (
         <div
           style={{
@@ -354,11 +360,11 @@ function ResultView({ execution, accepted, onAccept, onRetry }) {
             marginRight: 'auto',
           }}
         >
-          ✅ 已验收 — 结算完成
+          ✅ {t('executionPage.acceptedSettled')}
         </div>
       )}
 
-      {/* 按钮行 */}
+      {/* Button row */}
       <div
         style={{
           display: 'flex',
@@ -367,17 +373,17 @@ function ResultView({ execution, accepted, onAccept, onRetry }) {
           justifyContent: 'center',
         }}
       >
-        <PixelButton variant="gold" onClick={() => alert('下载中...')}>
-          📥 下载话术表
+        <PixelButton variant="gold" onClick={() => alert(t('executionPage.downloading'))}>
+          📥 {t('executionPage.downloadScript')}
         </PixelButton>
-        <PixelButton variant="wood" onClick={() => alert('打开预览...')}>
-          👀 在线预览
+        <PixelButton variant="wood" onClick={() => alert(t('executionPage.openingPreview'))}>
+          👀 {t('executionPage.preview')}
         </PixelButton>
         <PixelButton variant="gold" onClick={onAccept} disabled={accepted}>
-          {accepted ? '✅ 已验收' : '✅ 验收确认'}
+          {accepted ? `✅ ${t('executionPage.accepted')}` : `✅ ${t('executionPage.acceptConfirm')}`}
         </PixelButton>
         <PixelButton variant="wood" onClick={onRetry}>
-          🔄 追加任务
+          🔄 {t('executionPage.addAnotherTask')}
         </PixelButton>
       </div>
     </div>

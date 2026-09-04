@@ -7,11 +7,14 @@ import SectionLabel from '../components/SectionLabel'
 import PixelButton from '../components/PixelButton'
 import MetricCard from '../components/MetricCard'
 import { fetchCreatorEarnings } from '../services/api'
+import { useLang } from '../i18n/LanguageProvider'
 
-const CALLS = [
-  { id: 'call-1', task: '生成客服话术', employer: '电商平台', ago: '2h 前', amount: '$60' },
-  { id: 'call-2', task: '分析销售数据', employer: '零售公司', ago: '1d 前', amount: '$45' },
-]
+function useCalls(t) {
+  return [
+    { id: 'call-1', task: t('agentPerformance.calls.csScript'), employer: t('agentPerformance.calls.ecommercePlatform'), ago: t('agentPerformance.calls.hoursAgo', { hours: 2 }), amount: '$60' },
+    { id: 'call-2', task: t('agentPerformance.calls.salesAnalysis'), employer: t('agentPerformance.calls.retailCompany'), ago: t('agentPerformance.calls.daysAgo', { days: 1 }), amount: '$45' },
+  ]
+}
 
 /* Backend stores ledger amounts as integer basis points (USD cents).
    formatAmount turns 1234 → "$12.34" so the panel never claims $1234 by accident. */
@@ -25,6 +28,8 @@ function formatAmount(amountCents, currency) {
 export default function AgentPerformance() {
   const { agentId } = useParams()
   const navigate = useNavigate()
+  const { t } = useLang()
+  const CALLS = useCalls(t)
   const [earnings, setEarnings] = useState(null)
   const [earnError, setEarnError] = useState('')
 
@@ -32,8 +37,9 @@ export default function AgentPerformance() {
     let cancelled = false
     fetchCreatorEarnings()
       .then((data) => { if (!cancelled) setEarnings(data) })
-      .catch((e) => { if (!cancelled) setEarnError(e.message || '收益加载失败') })
+      .catch((e) => { if (!cancelled) setEarnError(e.message || t('agentPerformance.errors.earningsFailed')) })
     return () => { cancelled = true }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   // Pick the top accrued bucket as the headline. The full breakdown is rendered
@@ -49,7 +55,7 @@ export default function AgentPerformance() {
         <NavBar role="creator" />
 
         <div style={{ marginTop: 8 }}>
-          <SectionLabel>🤖 Agent 性能面板</SectionLabel>
+          <SectionLabel>🤖 {t('agentPerformance.title')}</SectionLabel>
         </div>
 
         <p style={{
@@ -63,21 +69,21 @@ export default function AgentPerformance() {
           Agent ID：<code>{agentId}</code>
         </p>
 
-        {/* 4 指标卡片 */}
+        {/* 4 metric cards */}
         <div style={{
           display: 'grid',
           gridTemplateColumns: 'repeat(4, 1fr)',
           gap: 14,
           marginBottom: 28,
         }}>
-          <MetricCard icon="📞" label="总调用" value={callCount} color="var(--text)" />
-          <MetricCard icon="📅" label="本月" value={callCount} color="var(--text)" />
-          <MetricCard icon="🎯" label="准确率" value="92%" color="var(--text)" />
-          <MetricCard icon="💰" label="累计" value={accruedLabel} color="var(--money)" />
+          <MetricCard icon="📞" label={t('agentPerformance.metrics.totalCalls')} value={callCount} color="var(--text)" />
+          <MetricCard icon="📅" label={t('agentPerformance.metrics.thisMonth')} value={callCount} color="var(--text)" />
+          <MetricCard icon="🎯" label={t('agentPerformance.metrics.accuracy')} value="92%" color="var(--text)" />
+          <MetricCard icon="💰" label={t('agentPerformance.metrics.total')} value={accruedLabel} color="var(--money)" />
         </div>
 
-        {/* 最近调用记录 */}
-        <SectionLabel>📜 最近调用记录</SectionLabel>
+        {/* Recent calls */}
+        <SectionLabel>📜 {t('agentPerformance.recentCalls')}</SectionLabel>
         <div style={{
           background: 'rgba(255, 255, 255, 0.6)',
           border: '1.5px solid var(--border-soft)',
@@ -114,7 +120,7 @@ export default function AgentPerformance() {
                   color: 'var(--text-secondary)',
                   marginTop: 2,
                 }}>
-                  来自 {c.employer} · {c.ago}
+                  {t('agentPerformance.fromPrefix')} {c.employer} · {c.ago}
                 </div>
               </div>
               <div style={{
@@ -129,8 +135,8 @@ export default function AgentPerformance() {
           ))}
         </div>
 
-        {/* 收益明细 */}
-        <SectionLabel>💰 收益明细</SectionLabel>
+        {/* Earnings breakdown */}
+        <SectionLabel>💰 {t('agentPerformance.earningsBreakdown')}</SectionLabel>
         <div style={{
           background: 'var(--primary-bg)',
           border: '1.5px solid #b8ece6',
@@ -146,17 +152,17 @@ export default function AgentPerformance() {
             gap: 16,
           }}>
             <SplitStat
-              label="已计提 (accrued)"
+              label={t('agentPerformance.accrued')}
               value={accruedLabel}
               color="var(--warning-active)"
             />
             <SplitStat
-              label="已结算 (settled)"
+              label={t('agentPerformance.settled')}
               value="—"
               color="var(--primary-active)"
             />
             <SplitStat
-              label="累计 (total)"
+              label={t('agentPerformance.totalLabel')}
               value={accruedLabel}
               color="var(--money)"
             />
@@ -193,7 +199,7 @@ export default function AgentPerformance() {
               color: 'var(--warning-active)',
               textAlign: 'center',
             }}>
-              收益数据加载失败：{earnError}
+              {t('agentPerformance.errors.earningsFailedPrefix')}{earnError}
             </div>
           )}
           <div style={{
@@ -202,17 +208,17 @@ export default function AgentPerformance() {
           }}>
             <PixelButton
               variant="gold"
-              onClick={() => alert('💸 提现请求已发送到钱包')}
+              onClick={() => alert(t('agentPerformance.withdrawSent'))}
             >
-              💸 提现到钱包
+              💸 {t('agentPerformance.withdrawToWallet')}
             </PixelButton>
           </div>
         </div>
 
-        {/* 返回按钮 */}
+        {/* Back button */}
         <div style={{ textAlign: 'center', marginTop: 16 }}>
           <PixelButton variant="wood" onClick={() => navigate('/creator')}>
-            ◂ 返回工坊
+            ◂ {t('agentPerformance.backToWorkshop')}
           </PixelButton>
         </div>
       </Board>

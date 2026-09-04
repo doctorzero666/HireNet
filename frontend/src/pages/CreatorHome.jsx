@@ -6,6 +6,7 @@ import NavBar from '../components/NavBar'
 import SectionLabel from '../components/SectionLabel'
 import PixelButton from '../components/PixelButton'
 import { fetchCreatorEarnings, fetchSkillsList } from '../services/api'
+import { useLang } from '../i18n/LanguageProvider'
 
 function formatAmount(amountCents, currency) {
   if (amountCents == null) return '$0.00'
@@ -16,6 +17,7 @@ function formatAmount(amountCents, currency) {
 
 export default function CreatorHome() {
   const navigate = useNavigate()
+  const { t } = useLang()
   const [earnings, setEarnings] = useState(null)
   const [agents, setAgents] = useState(null)
 
@@ -43,7 +45,7 @@ export default function CreatorHome() {
         <NavBar role="creator" />
 
         <div style={{ marginTop: 8 }}>
-          <SectionLabel>⚒️ 创作者工坊</SectionLabel>
+          <SectionLabel>⚒️ {t('creatorHome.title')}</SectionLabel>
         </div>
 
         <p style={{
@@ -55,10 +57,10 @@ export default function CreatorHome() {
           marginTop: 12,
           marginBottom: 20,
         }}>
-          管理你的 Agent，追踪每次调用与收益
+          {t('creatorHome.subtitle')}
         </p>
 
-        {/* Agent 列表 */}
+        {/* Agent list */}
         <div style={{
           display: 'flex',
           flexDirection: 'column',
@@ -73,7 +75,7 @@ export default function CreatorHome() {
               color: 'var(--text-muted)',
               padding: '18px 0',
             }}>
-              载入中…
+              {t('creatorHome.loading')}
             </div>
           )}
           {agents !== null && agents.length === 0 && (
@@ -84,7 +86,7 @@ export default function CreatorHome() {
               color: 'var(--text-muted)',
               padding: '18px 0',
             }}>
-              还没有注册任何 Agent，点击下方 ⚒️ 注册新 Agent 开始
+              {t('creatorHome.empty')}
             </div>
           )}
           {(agents ?? []).map((a) => {
@@ -150,9 +152,9 @@ export default function CreatorHome() {
                       background: online ? '#e9f4dd' : 'var(--bg-secondary)',
                       marginRight: 8,
                     }}>
-                      {online ? '● 在线' : '○ 离线'}
+                      {online ? `● ${t('creatorHome.online')}` : `○ ${t('creatorHome.offline')}`}
                     </span>
-                    📞 {callCount} 次调用 · <span style={{ color: 'var(--money)', fontWeight: 800 }}>💰 {earnedDisplay} 累计</span>
+                    📞 {t('creatorHome.callCount', { count: callCount })} · <span style={{ color: 'var(--money)', fontWeight: 800 }}>💰 {t('creatorHome.totalEarned', { amount: earnedDisplay })}</span>
                   </div>
                 </div>
                 <span style={{
@@ -168,7 +170,7 @@ export default function CreatorHome() {
           })}
         </div>
 
-        {/* 注册入口 */}
+        {/* Register entry point */}
         <div style={{
           display: 'flex',
           justifyContent: 'center',
@@ -177,10 +179,10 @@ export default function CreatorHome() {
           marginTop: 10,
         }}>
           <PixelButton variant="gold" onClick={() => navigate('/creator/register')}>
-            ⚒️ 注册新 Agent
+            ⚒️ {t('creatorHome.registerNew')}
           </PixelButton>
           <PixelButton variant="wood" onClick={() => navigate('/')}>
-            ◂ 返回角色选择
+            ◂ {t('creatorHome.backToRoleSelect')}
           </PixelButton>
         </div>
       </Board>

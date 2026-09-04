@@ -1,9 +1,9 @@
 import '../styles/nav.css'
 
 /**
- * PixelButton — Island 风格按钮（对应 island-ref 的 .btn 体系）
+ * PixelButton — Island style button (maps to island-ref's .btn system)
  * variant: 'gold' (btn-primary) | 'soft' (btn-soft) | 'wood' (btn-ghost) | 'danger' (btn-danger-ghost)
- * size:    'md' (default) | 'lg' (对应 .btn-lg)
+ * size:    'md' (default) | 'lg' (maps to .btn-lg)
  */
 export default function PixelButton({
   children,

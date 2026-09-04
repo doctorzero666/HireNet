@@ -6,6 +6,7 @@ import NavBar from '../components/NavBar'
 import SectionLabel from '../components/SectionLabel'
 import PixelButton from '../components/PixelButton'
 import { registerSkillAsset } from '../services/api'
+import { useLang } from '../i18n/LanguageProvider'
 
 const INPUT_STYLE = {
   width: '100%',
@@ -55,16 +56,16 @@ const FIELD_WRAP = { marginBottom: 16 }
    backend's SSRF allowlist is the real defense for server-side calls; this
    probe runs in the user's own browser, so we reject obviously invalid /
    non-http URLs and let the network layer report the rest. */
-function validateProbeUrl(raw) {
-  if (!raw) return { ok: false, error: '请先填入 MCP 端点 URL' }
+function validateProbeUrl(raw, t) {
+  if (!raw) return { ok: false, error: t('agentRegister.errors.missingMcpUrl') }
   let parsed
   try {
     parsed = new URL(raw)
   } catch {
-    return { ok: false, error: 'URL 格式无效' }
+    return { ok: false, error: t('agentRegister.errors.invalidUrl') }
   }
   if (parsed.protocol !== 'http:' && parsed.protocol !== 'https:') {
-    return { ok: false, error: `不支持的协议 ${parsed.protocol}` }
+    return { ok: false, error: t('agentRegister.errors.unsupportedProtocol', { protocol: parsed.protocol }) }
   }
   return { ok: true, probeUrl: raw.replace(/\/+$/, '') + '/mcp/tools/list' }
 }
@@ -79,6 +80,7 @@ function extractTools(data) {
 
 export default function AgentRegister() {
   const navigate = useNavigate()
+  const { t } = useLang()
   const [form, setForm] = useState({
     name: '',
     description: '',
@@ -96,7 +98,7 @@ export default function AgentRegister() {
   const handleTestConnection = async () => {
     if (testing) return
     setTestResult(null)
-    const check = validateProbeUrl(form.mcpEndpointUrl.trim())
+    const check = validateProbeUrl(form.mcpEndpointUrl.trim(), t)
     if (!check.ok) {
       setTestResult({ ok: false, error: check.error })
       return
@@ -114,12 +116,12 @@ export default function AgentRegister() {
       }
       const data = await res.json().catch(() => null)
       if (!data) {
-        setTestResult({ ok: false, error: '响应不是有效的 JSON' })
+        setTestResult({ ok: false, error: t('agentRegister.errors.invalidJsonResponse') })
         return
       }
       setTestResult({ ok: true, tools: extractTools(data) })
     } catch (err) {
-      setTestResult({ ok: false, error: err?.message || '连接失败' })
+      setTestResult({ ok: false, error: err?.message || t('agentRegister.errors.connectionFailed') })
     } finally {
       setTesting(false)
     }
@@ -129,7 +131,7 @@ export default function AgentRegister() {
     e.preventDefault()
     if (submitting) return
     if (!form.name.trim() || !form.description.trim()) {
-      alert('请填写名称和描述')
+      alert(t('agentRegister.errors.missingNameOrDescription'))
       return
     }
     /* schema requires price_amount as a non-negative integer in basis
@@ -154,10 +156,10 @@ export default function AgentRegister() {
         price_amount,
         price_currency: 'USD',
       })
-      alert(`📜 注册成功：${result.skill_id}`)
+      alert(`📜 ${t('agentRegister.registerSuccess', { id: result.skill_id })}`)
       navigate('/creator')
     } catch (err) {
-      alert(`❌ 注册失败：${err?.message || '未知错误'}`)
+      alert(`❌ ${t('agentRegister.registerFailed', { message: err?.message || t('agentRegister.errors.unknownError') })}`)
     } finally {
       setSubmitting(false)
     }
@@ -177,7 +179,7 @@ export default function AgentRegister() {
         <NavBar role="creator" />
 
         <div style={{ marginTop: 8 }}>
-          <SectionLabel>⚒️ 注册新 Agent</SectionLabel>
+          <SectionLabel>⚒️ {t('agentRegister.title')}</SectionLabel>
         </div>
 
         <p style={{
@@ -189,38 +191,38 @@ export default function AgentRegister() {
           marginTop: 12,
           marginBottom: 20,
         }}>
-          填写资产信息 · 完成确权后即可被调用
+          {t('agentRegister.subtitle')}
         </p>
 
         <form onSubmit={handleSubmit}>
           <div style={FIELD_WRAP}>
-            <label style={LABEL_STYLE}>Agent 名称</label>
+            <label style={LABEL_STYLE}>{t('agentRegister.fields.name')}</label>
             <input
               type="text"
               value={form.name}
               onChange={onChange('name')}
               onFocus={handleFocus}
               onBlur={handleBlur}
-              placeholder="例：客服话术生成器"
+              placeholder={t('agentRegister.fields.namePlaceholder')}
               style={INPUT_STYLE}
             />
           </div>
 
           <div style={FIELD_WRAP}>
-            <label style={LABEL_STYLE}>描述</label>
+            <label style={LABEL_STYLE}>{t('agentRegister.fields.description')}</label>
             <textarea
               value={form.description}
               onChange={onChange('description')}
               onFocus={handleFocus}
               onBlur={handleBlur}
-              placeholder="它能做什么？适合什么场景？"
+              placeholder={t('agentRegister.fields.descriptionPlaceholder')}
               rows={4}
               style={TEXTAREA_STYLE}
             />
           </div>
 
           <div style={FIELD_WRAP}>
-            <label style={LABEL_STYLE}>类型</label>
+            <label style={LABEL_STYLE}>{t('agentRegister.fields.type')}</label>
             <select
               value={form.type}
               onChange={onChange('type')}
@@ -235,7 +237,7 @@ export default function AgentRegister() {
           </div>
 
           <div style={FIELD_WRAP}>
-            <label style={LABEL_STYLE}>单价 $/小时</label>
+            <label style={LABEL_STYLE}>{t('agentRegister.fields.price')}</label>
             <input
               type="number"
               min="0"
@@ -244,13 +246,13 @@ export default function AgentRegister() {
               onChange={onChange('price')}
               onFocus={handleFocus}
               onBlur={handleBlur}
-              placeholder="例：30"
+              placeholder={t('agentRegister.fields.pricePlaceholder')}
               style={INPUT_STYLE}
             />
           </div>
 
           <div style={FIELD_WRAP}>
-            <label style={LABEL_STYLE}>钱包地址</label>
+            <label style={LABEL_STYLE}>{t('agentRegister.fields.wallet')}</label>
             <input
               type="text"
               value={form.wallet}
@@ -285,10 +287,10 @@ export default function AgentRegister() {
                 onClick={handleTestConnection}
                 disabled={testing || !form.mcpEndpointUrl.trim()}
               >
-                {testing ? '⏳ 探测中…' : '🔍 测试连接'}
+                {testing ? `⏳ ${t('agentRegister.probing')}` : `🔍 ${t('agentRegister.testConnection')}`}
               </PixelButton>
               <div style={{ fontSize: 11, color: 'var(--text-disabled)', fontWeight: 600, flex: 1, minWidth: 200 }}>
-                留空则不接入 MCP；结算时不会调用外部工具。
+                {t('agentRegister.mcpHint')}
               </div>
             </div>
             {testResult && (
@@ -304,18 +306,18 @@ export default function AgentRegister() {
                 {testResult.ok ? (
                   <>
                     <div style={{ fontWeight: 700, marginBottom: testResult.tools.length ? 8 : 0 }}>
-                      ✅ 发现 {testResult.tools.length} 个工具
+                      ✅ {t('agentRegister.toolsFound', { count: testResult.tools.length })}
                     </div>
                     {testResult.tools.length === 0 && (
                       <div style={{ fontSize: 12, color: 'var(--text-muted)', marginTop: 4 }}>
-                        该端点未声明任何工具
+                        {t('agentRegister.noToolsDeclared')}
                       </div>
                     )}
-                    {testResult.tools.map((t, i) => {
+                    {testResult.tools.map((tool, i) => {
                       /* Coerce in case the MCP server returns non-string
                          values — React throws on object children. */
-                      const name = typeof t?.name === 'string' ? t.name : '?'
-                      const desc = typeof t?.description === 'string' ? t.description : ''
+                      const name = typeof tool?.name === 'string' ? tool.name : '?'
+                      const desc = typeof tool?.description === 'string' ? tool.description : ''
                       return (
                         <div key={`${name}-${i}`} style={{
                           marginTop: i === 0 ? 0 : 6,
@@ -347,10 +349,10 @@ export default function AgentRegister() {
             flexWrap: 'wrap',
           }}>
             <PixelButton variant="gold" type="submit" disabled={submitting}>
-              {submitting ? '⌛ 提交中…' : '📜 提交注册'}
+              {submitting ? `⌛ ${t('agentRegister.submitting')}` : `📜 ${t('agentRegister.submit')}`}
             </PixelButton>
             <PixelButton variant="wood" onClick={() => navigate('/creator')}>
-              ◂ 返回工坊
+              ◂ {t('agentPerformance.backToWorkshop')}
             </PixelButton>
           </div>
         </form>

@@ -2,62 +2,67 @@ import { useNavigate } from 'react-router-dom'
 import Scene from '../components/Scene'
 import Ribbon from '../components/Ribbon'
 import Icon from '../components/Icon'
+import { useLang } from '../i18n/LanguageProvider'
 
-const EMPLOYER = {
-  role: 'ent',
-  icon: '🏢',
-  title: '我是雇主',
-  sub: '描述需求 · 智能匹配 · 找到资源。',
-  steps: [
-    '描述你的业务需求',
-    'AI 智能拆解与匹配',
-    '启动 Agent 或招募人才',
-  ],
-  cta: '进入',
-  to: '/employer/hub',
-}
-
-const SEEKER = {
-  role: 'cre',
-  icon: '👤',
-  title: '我是求职者',
-  sub: '探索机会 · 参与任务 · 成长路径。',
-  steps: [
-    '探索机会，发现合适的任务',
-    '参与任务，让技能被调用',
-    '建立成长路径与版税收益',
-  ],
-  cta: '进入',
-  to: '/jobseeker',
-}
-
-const CREATOR = {
-  role: 'cre',
-  icon: '🎨',
-  title: '我是创作者',
-  sub: '发布 Agent · 获得收益 · 建立版税。',
-  steps: [
-    '注册你的 AI Agent 能力',
-    '被企业调用，自动完成工作',
-    '获得持续版税收益',
-  ],
-  cta: '进入',
-  to: '/creator',
+function useRoleCards(t) {
+  return {
+    EMPLOYER: {
+      role: 'ent',
+      icon: '🏢',
+      title: t('roleSelect.employer.title'),
+      sub: t('roleSelect.employer.sub'),
+      steps: [
+        t('roleSelect.employer.step1'),
+        t('roleSelect.employer.step2'),
+        t('roleSelect.employer.step3'),
+      ],
+      cta: t('roleSelect.enter'),
+      to: '/employer/hub',
+    },
+    SEEKER: {
+      role: 'cre',
+      icon: '👤',
+      title: t('roleSelect.jobseeker.title'),
+      sub: t('roleSelect.jobseeker.sub'),
+      steps: [
+        t('roleSelect.jobseeker.step1'),
+        t('roleSelect.jobseeker.step2'),
+        t('roleSelect.jobseeker.step3'),
+      ],
+      cta: t('roleSelect.enter'),
+      to: '/jobseeker',
+    },
+    CREATOR: {
+      role: 'cre',
+      icon: '🎨',
+      title: t('roleSelect.creator.title'),
+      sub: t('roleSelect.creator.sub'),
+      steps: [
+        t('roleSelect.creator.step1'),
+        t('roleSelect.creator.step2'),
+        t('roleSelect.creator.step3'),
+      ],
+      cta: t('roleSelect.enter'),
+      to: '/creator',
+    },
+  }
 }
 
 export default function RoleSelect() {
   const navigate = useNavigate()
+  const { t } = useLang()
+  const { EMPLOYER, SEEKER, CREATOR } = useRoleCards(t)
   return (
     <Scene>
       <div className="roleselect">
         <div className="guild-brand">
           <h1 className="guild-logo"><span className="leaf">🍃</span> HireNet</h1>
-          <p className="guild-sub">AI 劳动力网络 · 岛民版</p>
-          <div className="guild-pill">🏝️ 让工作像岛上生活一样自然</div>
+          <p className="guild-sub">{t('roleSelect.tagline')}</p>
+          <div className="guild-pill">{t('roleSelect.pill')}</div>
         </div>
 
         <div className="rs-board-title">
-          <Ribbon color="app-teal" size={22}>选择你的身份</Ribbon>
+          <Ribbon color="app-teal" size={22}>{t('roleSelect.chooseIdentity')}</Ribbon>
         </div>
 
         <div className="role-grid">
@@ -71,7 +76,7 @@ export default function RoleSelect() {
             href="/agents"
             onClick={(e) => { e.preventDefault(); navigate('/agents') }}
           >
-            看看谁正在让这个世界运转 · 进入 Agent 世界 <Icon name="arrow" size={14} />
+            {t('roleSelect.footerLink')} <Icon name="arrow" size={14} />
           </a>
         </div>
       </div>

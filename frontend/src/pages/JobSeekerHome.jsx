@@ -6,6 +6,7 @@ import NavBar from '../components/NavBar'
 import Ribbon from '../components/Ribbon'
 import Icon from '../components/Icon'
 import { fetchJobs } from '../services/api'
+import { useLang } from '../i18n/LanguageProvider'
 
 function normalizeJobs(payload) {
   if (Array.isArray(payload)) return payload
@@ -46,6 +47,7 @@ function salaryText(job) {
 
 export default function JobSeekerHome() {
   const navigate = useNavigate()
+  const { t } = useLang()
   const [jobs, setJobs] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
@@ -60,10 +62,11 @@ export default function JobSeekerHome() {
       })
       .catch((e) => {
         if (cancelled) return
-        setError(e.message || '岗位加载失败')
+        setError(e.message || t('jobSeekerHome.errors.loadFailed'))
         setLoading(false)
       })
     return () => { cancelled = true }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   return (
@@ -72,7 +75,7 @@ export default function JobSeekerHome() {
         <NavBar role="jobseeker" />
 
         <div style={{ textAlign: 'center', margin: '14px 0 6px' }}>
-          <Ribbon color="app-teal" size={22}>🏝️ 岗位广场</Ribbon>
+          <Ribbon color="app-teal" size={22}>🏝️ {t('jobSeekerHome.title')}</Ribbon>
         </div>
         <p style={{
           textAlign: 'center',
@@ -83,14 +86,14 @@ export default function JobSeekerHome() {
           margin: '12px auto 24px',
           maxWidth: 520,
         }}>
-          挑一份感兴趣的工作，让你的技能被这座岛屿看见
+          {t('jobSeekerHome.subtitle')}
         </p>
 
         {loading && (
           <div className="generating">
             <div className="spinner" />
             <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--text-muted)' }}>
-              岛屿信使派送中…
+              {t('jobSeekerHome.loading')}
             </div>
           </div>
         )}
@@ -112,10 +115,10 @@ export default function JobSeekerHome() {
           }}>
             <div style={{ fontSize: 56, lineHeight: 1, marginBottom: 14 }}>🏝️</div>
             <div style={{ fontWeight: 800, fontSize: 16, color: 'var(--text)' }}>
-              暂无开放岗位
+              {t('jobSeekerHome.empty.title')}
             </div>
             <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-muted)', marginTop: 6 }}>
-              下一艘招聘船即将靠岸，再来看看吧
+              {t('jobSeekerHome.empty.subtitle')}
             </div>
           </div>
         )}
@@ -129,7 +132,7 @@ export default function JobSeekerHome() {
           }}>
             {jobs.map((job, i) => {
               const jobId = pickField(job, ['job_id', 'id', 'jd_id'], `job-${i}`)
-              const title = pickField(job, ['title', 'job_title', 'name'], '未命名岗位')
+              const title = pickField(job, ['title', 'job_title', 'name'], t('jdModal.fallback.title'))
               const company = pickField(job, ['company', 'company_name', 'employer'], '')
               const salary = salaryText(job)
               const desc = pickField(job, ['description', 'summary', 'jd', 'detail'], '')
@@ -156,7 +159,7 @@ export default function JobSeekerHome() {
             className="btn btn-ghost"
             onClick={() => navigate('/jobseeker/profile')}
           >
-            <Icon name="user" size={16} /> 查看我的资料卡
+            <Icon name="user" size={16} /> {t('jobSeekerHome.viewMyProfileCard')}
           </button>
         </div>
       </Board>
@@ -165,6 +168,7 @@ export default function JobSeekerHome() {
 }
 
 function JobCard({ title, company, salary, desc, matchScore, onClick }) {
+  const { t } = useLang()
   return (
     <button
       type="button"
@@ -216,7 +220,7 @@ function JobCard({ title, company, salary, desc, matchScore, onClick }) {
             padding: '3px 12px',
             whiteSpace: 'nowrap',
           }}>
-            🎯 匹配 {typeof matchScore === 'number' ? `${Math.round(matchScore * (matchScore <= 1 ? 100 : 1))}%` : matchScore}
+            🎯 {t('jobSeekerHome.matchLabel')} {typeof matchScore === 'number' ? `${Math.round(matchScore * (matchScore <= 1 ? 100 : 1))}%` : matchScore}
           </span>
         )}
       </div>
@@ -260,7 +264,7 @@ function JobCard({ title, company, salary, desc, matchScore, onClick }) {
         color: 'var(--primary-active)',
         marginTop: 12,
       }}>
-        查看详情 <Icon name="arrow" size={14} />
+        {t('jobSeekerHome.viewDetails')} <Icon name="arrow" size={14} />
       </div>
     </button>
   )

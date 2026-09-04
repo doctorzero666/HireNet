@@ -10,11 +10,41 @@ import HybridTaskCard from '../components/HybridTaskCard'
 import PactConfirmationModal from '../components/PactConfirmationModal'
 import JdModal from '../components/JdModal'
 import { fetchDemoAgent } from '../services/api'
+import { useLang } from '../i18n/LanguageProvider'
+
+/**
+ * Layer 2 (WP-I18N spec §2) — `summary.verdict` is composed from the
+ * structured fields (`verdict_type`, `agent_tasks`, `human_tasks`) when
+ * `lang === "en"` instead of pattern-translating the Chinese prose the
+ * backend sends. `lang === "zh"` (or a legacy plain-string summary) still
+ * renders the backend's verdict text verbatim.
+ */
+function summaryVerdictText(summary, lang, t) {
+  if (!summary) return null
+  if (typeof summary === 'string') return summary
+  if (lang !== 'en') return summary.verdict ?? null
+
+  const agentTasks = summary.agent_tasks ?? 0
+  const humanTasks = summary.human_tasks ?? 0
+  switch (summary.verdict_type) {
+    case 'agent_only':
+      return t('analysisReport.summary.agentOnly')
+    case 'human_only':
+      return t('analysisReport.summary.humanOnly')
+    case 'hybrid':
+      return t('analysisReport.summary.hybrid', { agentTasks, humanTasks })
+    default:
+      // Unrecognised verdict_type: fall back to the raw backend text rather
+      // than showing nothing.
+      return summary.verdict ?? null
+  }
+}
 
 export default function AnalysisReport() {
   const { sessionId } = useParams()
   const location = useLocation()
   const navigate = useNavigate()
+  const { t, lang } = useLang()
   const result = location.state
   const [pactTask, setPactTask] = useState(null)
   const [jdTask, setJdTask] = useState(null)
@@ -39,11 +69,11 @@ export default function AnalysisReport() {
           <NavBar role="employer" />
           <div className="report">
             <div className="report-head">
-              <div className="eyebrow"><Icon name="warning" size={14} /> 报告丢失</div>
-              <h1>报告丢失</h1>
+              <div className="eyebrow"><Icon name="warning" size={14} /> {t('analysisReport.lost.eyebrow')}</div>
+              <h1>{t('analysisReport.lost.title')}</h1>
               <p>
-                没有找到 session <code>{sessionId}</code> 的执行方案。
-                <br />刷新会丢失状态，请重新发起分析。
+                {t('analysisReport.lost.bodyPrefix')} <code>{sessionId}</code> {t('analysisReport.lost.bodySuffix')}
+                <br />{t('analysisReport.lost.hint')}
               </p>
             </div>
             <div style={{ textAlign: 'center', marginTop: 18 }}>
@@ -52,7 +82,7 @@ export default function AnalysisReport() {
                 className="btn btn-soft"
                 onClick={() => navigate('/employer')}
               >
-                重新开始 <Icon name="arrow" size={16} />
+                {t('analysisReport.lost.restart')} <Icon name="arrow" size={16} />
               </button>
             </div>
           </div>
@@ -77,10 +107,7 @@ export default function AnalysisReport() {
     { agent: 0, human: 0, hybrid: 0 },
   )
 
-  const summaryText =
-    typeof result.summary === 'string'
-      ? result.summary
-      : (result.summary?.verdict ?? null)
+  const summaryText = summaryVerdictText(result.summary, lang, t)
 
   return (
     <Scene>
@@ -89,21 +116,21 @@ export default function AnalysisReport() {
 
         <div className="report">
           <div className="report-head">
-            <div className="eyebrow"><Icon name="chart" size={14} /> 分析报告</div>
-            <h1>执行方案</h1>
+            <div className="eyebrow"><Icon name="chart" size={14} /> {t('analysisReport.eyebrow')}</div>
+            <h1>{t('analysisReport.title')}</h1>
             {summaryText && <p>{summaryText}</p>}
           </div>
 
           <div className="metric-grid">
-            <Metric label="任务数" value={tasks.length} />
-            <Metric label="Agent 可执行" value={counts.agent} color="var(--success-active)" />
-            <Metric label="需招人" value={counts.human} color="var(--warning-active)" />
-            <Metric label="人机协同" value={counts.hybrid} color="#5068d8" />
+            <Metric label={t('analysisReport.metrics.taskCount')} value={tasks.length} />
+            <Metric label={t('analysisReport.metrics.agentReady')} value={counts.agent} color="var(--success-active)" />
+            <Metric label={t('analysisReport.metrics.needsHiring')} value={counts.human} color="var(--warning-active)" />
+            <Metric label={t('analysisReport.metrics.hybrid')} value={counts.hybrid} color="#5068d8" />
           </div>
 
           <div className="section-h">
-            <span className="sh-title">拆解任务</span>
-            <span className="sh-meta">共 {tasks.length} 项</span>
+            <span className="sh-title">{t('analysisReport.tasksHeading')}</span>
+            <span className="sh-meta">{t('analysisReport.tasksCount', { count: tasks.length })}</span>
           </div>
 
           <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
@@ -115,7 +142,7 @@ export default function AnalysisReport() {
                 color: 'var(--text-secondary)',
                 fontWeight: 600,
               }}>
-                暂无拆解任务
+                {t('analysisReport.noTasks')}
               </div>
             )}
             {tasks.map((task) => {
@@ -151,7 +178,7 @@ export default function AnalysisReport() {
               className="btn btn-ghost"
               onClick={() => navigate('/employer')}
             >
-              <Icon name="refresh" size={15} /> 再来一单
+              <Icon name="refresh" size={15} /> {t('analysisReport.startAnother')}
             </button>
           </div>
         </div>
@@ -165,10 +192,10 @@ export default function AnalysisReport() {
                (TESTING path or older deploys without the bootstrap). */
             name: demoAgent?.name
               ?? pactTask.decision?.recommendation?.resource?.resource_name
-              ?? '客服话术生成器',
+              ?? t('analysisReport.demoAgent.name'),
             creator: demoAgent?.creator_name
               ? `@${demoAgent.creator_name}`
-              : '@李四',
+              : t('analysisReport.demoAgent.creator'),
             wallet: demoAgent?.wallet ?? '0x1234567890abcdef1234567890abcdef0000abcd',
             pricePerHour: demoAgent?.price_per_hour ?? 30,
             asset_id: demoAgent?.asset_id,

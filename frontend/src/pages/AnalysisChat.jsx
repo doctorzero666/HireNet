@@ -6,6 +6,7 @@ import NavBar from '../components/NavBar'
 import Icon from '../components/Icon'
 import StreamText from '../components/StreamText'
 import { replyAnalysis, runDecision } from '../services/api'
+import { useLang } from '../i18n/LanguageProvider'
 
 function extractQuickOptions(text) {
   if (!text) return { body: text, options: [] }
@@ -23,6 +24,7 @@ export default function AnalysisChat() {
   const { sessionId } = useParams()
   const navigate = useNavigate()
   const location = useLocation()
+  const { t, lang } = useLang()
 
   const [messages, setMessages] = useState(() => {
     const state = location.state
@@ -62,10 +64,11 @@ export default function AnalysisChat() {
       })
       .catch((e) => {
         if (cancelled) return
-        setError(e.message || '生成报告失败')
+        setError(e.message || t('analysisChat.errors.reportFailed'))
         decidingRef.current = false
       })
     return () => { cancelled = true }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [complete, sessionId, navigate])
 
   const send = async (text) => {
@@ -76,11 +79,11 @@ export default function AnalysisChat() {
     setMessages((prev) => [...prev, { role: 'user', text: trimmed, stream: false }])
     setSending(true)
     try {
-      const result = await replyAnalysis(sessionId, trimmed)
+      const result = await replyAnalysis(sessionId, trimmed, lang)
       setMessages((prev) => [...prev, { role: 'ai', text: result.response, stream: true }])
       if (result.is_complete) setComplete(true)
     } catch (e) {
-      setError(e.message || '发送失败')
+      setError(e.message || t('analysisChat.errors.sendFailed'))
     } finally {
       setSending(false)
     }
@@ -97,7 +100,7 @@ export default function AnalysisChat() {
             <div className="avatar indigo lg" style={{ margin: '0 auto' }}>
               <Icon name="bot" size={20} />
             </div>
-            <h2>AI 需求分析</h2>
+            <h2>{t('analysisChat.title')}</h2>
             {initialMessage && (
               <p>{initialMessage}</p>
             )}
@@ -112,7 +115,7 @@ export default function AnalysisChat() {
                 fontWeight: 600,
                 padding: 32,
               }}>
-                开始对话…
+                {t('analysisChat.startingConversation')}
               </div>
             )}
 
@@ -133,7 +136,7 @@ export default function AnalysisChat() {
 
             {sending && (
               <ChatMessage
-                message={{ role: 'ai', text: '思考中…' }}
+                message={{ role: 'ai', text: t('analysisChat.thinking') }}
                 stream={false}
                 disabled
                 showOptions={false}
@@ -146,10 +149,10 @@ export default function AnalysisChat() {
               <div className="spinner" />
               <div style={{ textAlign: 'center' }}>
                 <div style={{ fontWeight: 700, fontSize: 15, color: 'var(--text)' }}>
-                  正在生成需求分析报告…
+                  {t('analysisChat.generatingReport')}
                 </div>
                 <div className="muted" style={{ fontSize: 13, marginTop: 5 }}>
-                  拆解任务 · 匹配 Agent · 估算成本
+                  {t('analysisChat.generatingSteps')}
                 </div>
               </div>
             </div>
@@ -169,7 +172,7 @@ export default function AnalysisChat() {
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
                 onKeyDown={(e) => { if (e.key === 'Enter') send() }}
-                placeholder="继续描述…"
+                placeholder={t('analysisChat.inputPlaceholder')}
                 disabled={sending}
               />
               <button
@@ -178,7 +181,7 @@ export default function AnalysisChat() {
                 onClick={() => send()}
                 disabled={sending || !input.trim()}
               >
-                发送 <Icon name="arrow" size={16} />
+                {t('analysisChat.send')} <Icon name="arrow" size={16} />
               </button>
             </div>
           )}
@@ -189,6 +192,7 @@ export default function AnalysisChat() {
 }
 
 function ChatMessage({ message, stream, onPick, disabled, showOptions }) {
+  const { t } = useLang()
   const isUser = message.role === 'user'
   const { body, options } = isUser
     ? { body: message.text, options: [] }
@@ -200,7 +204,7 @@ function ChatMessage({ message, stream, onPick, disabled, showOptions }) {
         <Icon name={isUser ? 'user' : 'bot'} size={isUser ? 15 : 16} />
       </div>
       <div className="msg-body">
-        <div className="who">{isUser ? '你' : 'HireNet Agent'}</div>
+        <div className="who">{isUser ? t('analysisChat.you') : 'HireNet Agent'}</div>
         <div className="bubble" style={isUser ? undefined : { minHeight: 48 }}>
           {stream ? <StreamText text={body} /> : body}
         </div>

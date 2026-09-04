@@ -1,7 +1,7 @@
 import '../styles/scene.css'
 
 /**
- * Scene — 全屏 Animal Island 风格背景容器
+ * Scene — full-screen Animal Island style background container
  */
 export default function Scene({ children }) {
   return (

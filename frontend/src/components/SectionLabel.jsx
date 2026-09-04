@@ -1,7 +1,7 @@
 import '../styles/nav.css'
 
 /**
- * SectionLabel — 金色铭牌标题
+ * SectionLabel — gold plaque heading
  */
 export default function SectionLabel({ children }) {
   return <div className="section-label">{children}</div>

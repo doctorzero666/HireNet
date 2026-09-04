@@ -1,10 +1,10 @@
 /**
- * MetricCard — Island 风格指标卡片（对应 island-ref 的 .metric）
+ * MetricCard — Island style metric card (maps to island-ref's .metric)
  * Props:
- *   icon: 表情或字符（例：'💰'）
- *   label: 指标名称
- *   value: 指标数值（字符串或数字）
- *   color: 数值颜色，默认 #794f27
+ *   icon: emoji or character (e.g. '💰')
+ *   label: metric name
+ *   value: metric value (string or number)
+ *   color: value color, defaults to #794f27
  */
 export default function MetricCard({ icon, label, value, color = '#794f27' }) {
   return (

@@ -23,31 +23,36 @@ import JobDetail from './pages/JobDetail'
 import CandidateProfile from './pages/CandidateProfile'
 import ApplicationResult from './pages/ApplicationResult'
 import IdentitySwitcher from './components/IdentitySwitcher'
+import { LanguageProvider } from './i18n/LanguageProvider'
+import LanguageToggle from './i18n/LanguageToggle'
 
 function App() {
   return (
-    <BrowserRouter>
-      <IdentitySwitcher />
-      <Routes>
-        <Route path="/" element={<RoleSelect />} />
-        <Route path="/login" element={<Login />} />
-        <Route path="/employer" element={<EmployerHome />} />
-        <Route path="/employer/hub" element={<EmployerHub />} />
-        <Route path="/employer/dashboard" element={<EmployerDashboard />} />
-        <Route path="/employer/analysis/:sessionId" element={<AnalysisChat />} />
-        <Route path="/employer/report/:sessionId" element={<AnalysisReport />} />
-        <Route path="/employer/execution/:taskId" element={<ExecutionPage />} />
-        <Route path="/creator" element={<CreatorHome />} />
-        <Route path="/agents" element={<AgentWorld />} />
-        <Route path="/creator/register" element={<AgentRegister />} />
-        <Route path="/creator/agent/:agentId" element={<AgentPerformance />} />
-        <Route path="/creator/ledger" element={<CreatorLedger />} />
-        <Route path="/jobseeker" element={<JobSeekerHome />} />
-        <Route path="/jobseeker/job/:jobId" element={<JobDetail />} />
-        <Route path="/jobseeker/profile" element={<CandidateProfile />} />
-        <Route path="/jobseeker/result" element={<ApplicationResult />} />
-      </Routes>
-    </BrowserRouter>
+    <LanguageProvider>
+      <BrowserRouter>
+        <IdentitySwitcher />
+        <LanguageToggle className="lang-toggle--floating" />
+        <Routes>
+          <Route path="/" element={<RoleSelect />} />
+          <Route path="/login" element={<Login />} />
+          <Route path="/employer" element={<EmployerHome />} />
+          <Route path="/employer/hub" element={<EmployerHub />} />
+          <Route path="/employer/dashboard" element={<EmployerDashboard />} />
+          <Route path="/employer/analysis/:sessionId" element={<AnalysisChat />} />
+          <Route path="/employer/report/:sessionId" element={<AnalysisReport />} />
+          <Route path="/employer/execution/:taskId" element={<ExecutionPage />} />
+          <Route path="/creator" element={<CreatorHome />} />
+          <Route path="/agents" element={<AgentWorld />} />
+          <Route path="/creator/register" element={<AgentRegister />} />
+          <Route path="/creator/agent/:agentId" element={<AgentPerformance />} />
+          <Route path="/creator/ledger" element={<CreatorLedger />} />
+          <Route path="/jobseeker" element={<JobSeekerHome />} />
+          <Route path="/jobseeker/job/:jobId" element={<JobDetail />} />
+          <Route path="/jobseeker/profile" element={<CandidateProfile />} />
+          <Route path="/jobseeker/result" element={<ApplicationResult />} />
+        </Routes>
+      </BrowserRouter>
+    </LanguageProvider>
   )
 }
 

@@ -32,21 +32,25 @@ function buildHeaders(extra = {}) {
   return h
 }
 
-export async function startAnalysis(message) {
+export async function startAnalysis(message, lang) {
+  const body = { message }
+  if (lang) body.lang = lang
   const res = await fetch(`${API_BASE}/analyze/start`, {
     method: 'POST',
     headers: buildHeaders(),
-    body: JSON.stringify({ message }),
+    body: JSON.stringify(body),
   })
   if (!res.ok) throw new Error(`API error: ${res.status}`)
   return res.json()
 }
 
-export async function replyAnalysis(sessionId, message) {
+export async function replyAnalysis(sessionId, message, lang) {
+  const body = { session_id: sessionId, message }
+  if (lang) body.lang = lang
   const res = await fetch(`${API_BASE}/analyze/reply`, {
     method: 'POST',
     headers: buildHeaders(),
-    body: JSON.stringify({ session_id: sessionId, message }),
+    body: JSON.stringify(body),
   })
   if (!res.ok) throw new Error(`API error: ${res.status}`)
   return res.json()
@@ -258,7 +262,7 @@ export async function settlePact(pactId) {
         const roy = await royRes.json()
         tx_hash = roy.tx_hash || null
       }
-    } catch (_) { /* swallow — caller still gets royalty_splits */ }
+    } catch { /* swallow — caller still gets royalty_splits */ }
   }
 
   return {
@@ -282,10 +286,11 @@ export async function settlePact(pactId) {
   }
 }
 
-/* Demo bootstrap exposes a single preset "客服话术生成器" Agent — modal pulls
-   asset_id / creator / wallet from here so the Pact settle lands on zhang_ai
-   instead of the JOB_DESIGN_ASSET_ID fallback. Returns null on 404 (e.g.
-   TESTING path) so callers can gracefully degrade to hardcoded demo data. */
+/* Demo bootstrap exposes a single preset "Customer Service Script Generator"
+   Agent — modal pulls asset_id / creator / wallet from here so the Pact
+   settle lands on zhang_ai instead of the JOB_DESIGN_ASSET_ID fallback.
+   Returns null on 404 (e.g. TESTING path) so callers can gracefully degrade
+   to hardcoded demo data. */
 export async function fetchDemoAgent() {
   const res = await fetch(`${API_BASE}/demo/agent`, { headers: buildHeaders() })
   if (res.status === 404) return null
@@ -294,7 +299,7 @@ export async function fetchDemoAgent() {
 }
 
 /* Idempotent settle trigger. Modal calls it as part of settlePact's two-step
-   flow; ExecutionPage's 验收 button also calls it so a preset/refreshed run
+   flow; ExecutionPage's accept-delivery button also calls it so a preset/refreshed run
    without tx_hash still surfaces one on user sign-off. */
 export async function settleRoyalty(runId) {
   const res = await fetch(`${API_BASE}/royalty/settle`, {

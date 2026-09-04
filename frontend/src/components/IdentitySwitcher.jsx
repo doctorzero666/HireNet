@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { fetchIdentities, setIdentity, hasJwtToken } from '../services/api'
+import { useLang } from '../i18n/LanguageProvider'
 
 /**
  * IdentitySwitcher — bottom-left floating capsule for Demo identity switching.
@@ -14,6 +15,12 @@ import { fetchIdentities, setIdentity, hasJwtToken } from '../services/api'
  * sense, and the capsule is hidden entirely. Demo mode lights it back up.
  */
 export default function IdentitySwitcher() {
+  const { t } = useLang()
+  const ROLE_LABELS = {
+    enterprise: t('identitySwitcher.roles.enterprise'),
+    creator: t('identitySwitcher.roles.creator'),
+    jobseeker: t('identitySwitcher.roles.jobseeker'),
+  }
   const [open, setOpen] = useState(false)
   const [identities, setIdentities] = useState([])
   const [current, setCurrent] = useState(null)
@@ -32,9 +39,10 @@ export default function IdentitySwitcher() {
       })
       .catch((e) => {
         if (cancelled) return
-        setError(e.message || '身份加载失败')
+        setError(e.message || t('identitySwitcher.errors.loadFailed'))
       })
     return () => { cancelled = true }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [jwtActive])
 
   if (jwtActive) return null
@@ -50,20 +58,20 @@ export default function IdentitySwitcher() {
       // Force-refresh so every page picks up the new identity from its own data fetch.
       window.location.reload()
     } catch (e) {
-      setError(e.message || '切换失败')
+      setError(e.message || t('identitySwitcher.errors.switchFailed'))
       setSwitching(false)
     }
   }
 
-  const displayName = current?.name ?? '匿名访客'
+  const displayName = current?.name ?? t('identitySwitcher.anonymous')
   const displayAvatar = current?.avatar ?? '👤'
   const roleLabel = ROLE_LABELS[current?.role] ?? ''
 
   return (
     <div style={WRAPPER_STYLE}>
       {open && (
-        <div style={PANEL_STYLE} role="dialog" aria-label="切换 Demo 身份">
-          <div style={PANEL_HEADER_STYLE}>切换 Demo 身份</div>
+        <div style={PANEL_STYLE} role="dialog" aria-label={t('identitySwitcher.switchIdentity')}>
+          <div style={PANEL_HEADER_STYLE}>{t('identitySwitcher.switchIdentity')}</div>
           {identities.map((it) => {
             const active = current?.id === it.id
             return (
@@ -96,7 +104,7 @@ export default function IdentitySwitcher() {
         type="button"
         onClick={() => setOpen((v) => !v)}
         style={CAPSULE_STYLE}
-        title="点击切换 Demo 身份"
+        title={t('identitySwitcher.switchIdentity')}
       >
         <span style={CAPSULE_AVATAR_STYLE}>{displayAvatar}</span>
         <span style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start' }}>
@@ -109,12 +117,6 @@ export default function IdentitySwitcher() {
       </button>
     </div>
   )
-}
-
-const ROLE_LABELS = {
-  enterprise: '企业',
-  creator: '创作者',
-  jobseeker: '求职者',
 }
 
 const WRAPPER_STYLE = {

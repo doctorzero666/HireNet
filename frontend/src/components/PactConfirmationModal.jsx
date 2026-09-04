@@ -1,24 +1,28 @@
 import { useEffect, useRef, useState } from 'react'
 import PixelButton from './PixelButton'
 import { createPact, approvePact, settlePact } from '../services/api'
+import { useLang } from '../i18n/LanguageProvider'
 
 /**
- * PactConfirmationModal — Pact 授权确认 Modal
+ * PactConfirmationModal — Pact authorization confirmation modal
  * props:
  *   agent: { name, creator, wallet, pricePerHour }
  *   task: { id, name, description, estimatedHours }
- *   onConfirm: (settlement) => void   // 由结算完成后的“完成”按钮触发，不再在
- *                                     // settle 返回时自动触发（WP-E）
+ *   onConfirm: (settlement) => void   // fired by the "Done" button once
+ *                                     // settlement is complete, no longer
+ *                                     // fired automatically when settle
+ *                                     // returns (WP-E)
  *   onReject: () => void
  *   onClose: () => void
  */
 
-/* 授权凭证 (mandate) 展示辅助 — 后端 /api/pact/create 返回的 AP2 风格字段
-   intent / payee / amount_cap / expires_at 在这里被渲染出来。这些字段只是
-   命名对齐 AP2 的 mandate 词汇，没有任何签名背书（后端 app/app.py 的
-   pact 段注释写明了这一点），所以 UI 上也不要出现“已签名 / 已验证”字样。 */
+/* Mandate display helpers — the backend's /api/pact/create response carries
+   AP2-style fields (intent / payee / amount_cap / expires_at) rendered here.
+   These fields only align on AP2's mandate vocabulary; there is no signature
+   backing them (the pact section of app/app.py says so explicitly), so the
+   UI must never say "signed" / "verified". */
 
-/** 0x 地址缩短成 0x1234…abcd；非地址原样显示；空值显示 —。 */
+/** Shorten a 0x address to 0x1234…abcd; show a non-address as-is; — for empty. */
 function formatPayee(payee) {
   if (payee === null || payee === undefined || payee === '') return '—'
   const text = String(payee)
@@ -28,7 +32,7 @@ function formatPayee(payee) {
   return text
 }
 
-/** ISO 8601 (UTC) → 浏览器本地时间；解析不了就原样显示。 */
+/** ISO 8601 (UTC) → browser-local time; shown as-is if it doesn't parse. */
 function formatLocalTime(iso) {
   if (!iso) return '—'
   const d = new Date(iso)
@@ -36,7 +40,7 @@ function formatLocalTime(iso) {
   return d.toLocaleString()
 }
 
-/** amount_cap 与 amount 同单位（美元），后端默认取 amount。 */
+/** amount_cap is in the same unit as amount (USD); the backend defaults it to amount. */
 function formatCap(cap, currency) {
   if (cap === null || cap === undefined || cap === '') return '—'
   const n = Number(cap)
@@ -64,18 +68,20 @@ function MandateRow({ label, children }) {
   )
 }
 export default function PactConfirmationModal({ agent, task, onConfirm, onReject, onClose }) {
+  const { t } = useLang()
   const [estimatedHours, setEstimatedHours] = useState(task?.estimatedHours ?? 2)
   const [showAdjust, setShowAdjust] = useState(false)
   const [waiting, setWaiting] = useState(false)
   const [stage, setStage] = useState('')
   const [dots, setDots] = useState('')
   const [error, setError] = useState('')
-  /* mandate: /api/pact/create 的返回体，携带 intent / payee / amount_cap /
-     expires_at / content_hash。创建成功后才有值，所以授权凭证区块在点击
-     “确认授权”之前不渲染。 */
+  /* mandate: the response body from /api/pact/create, carrying intent /
+     payee / amount_cap / expires_at / content_hash. Only has a value after
+     creation succeeds, so the mandate block doesn't render before "Confirm
+     authorization" is clicked. */
   const [mandate, setMandate] = useState(null)
-  /* settled: /api/pact/settle 的返回体，用于展示 tx hash（有 explorer_url
-     时渲染成链接）。 */
+  /* settled: the response body from /api/pact/settle, used to show the tx
+     hash (rendered as a link when explorer_url is present). */
   const [settled, setSettled] = useState(null)
   const intervalRef = useRef(null)
   const cancelledRef = useRef(false)
@@ -90,7 +96,7 @@ export default function PactConfirmationModal({ agent, task, onConfirm, onReject
   const handleConfirm = async () => {
     setError('')
     setWaiting(true)
-    setStage('创建 Pact 中')
+    setStage(t('pactModal.stages.creating'))
     cancelledRef.current = false
     let i = 0
     intervalRef.current = setInterval(() => {
@@ -101,7 +107,7 @@ export default function PactConfirmationModal({ agent, task, onConfirm, onReject
     try {
       const pact = await createPact({
         task_id: task?.id || 'task-001',
-        agent_name: agent?.name ?? '客服话术生成器',
+        agent_name: agent?.name ?? t('pactModal.defaultAgentName'),
         creator_id: agent?.creator_id,
         /* asset_id (when provided by demo bootstrap) pins billing to zhang_ai's
            Agent instead of the JOB_DESIGN_ASSET_ID fallback. */
@@ -111,14 +117,15 @@ export default function PactConfirmationModal({ agent, task, onConfirm, onReject
       })
       if (cancelledRef.current) return
       setMandate(pact)
-      setStage('审批中')
+      setStage(t('pactModal.stages.approving'))
 
       const approved = await approvePact(pact.pact_id)
       if (cancelledRef.current) return
-      /* approve 回的是完整 pact（多了 approved_by / approval_method），用它
-         覆盖创建时的快照，凭证区块显示的就是当前状态。 */
+      /* approve returns the full pact (with approved_by / approval_method
+         added) — use it to overwrite the create-time snapshot, so the
+         mandate block always shows current state. */
       if (approved?.pact_id) setMandate(approved)
-      setStage('结算中')
+      setStage(t('pactModal.stages.settling'))
 
       const settlement = await settlePact(pact.pact_id)
       if (cancelledRef.current) return
@@ -131,7 +138,7 @@ export default function PactConfirmationModal({ agent, task, onConfirm, onReject
       /* Stage 2 / WP-E: do NOT navigate here. onConfirm unmounts this modal,
          which used to happen the instant settle resolved — the mandate block
          and the on-chain tx link were on screen for a single frame. The modal
-         now stays in its settled state and the user leaves via 完成 below. */
+         now stays in its settled state and the user leaves via "Done" below. */
       setWaiting(false)
       setStage('')
     } catch (err) {
@@ -141,13 +148,15 @@ export default function PactConfirmationModal({ agent, task, onConfirm, onReject
       }
       setWaiting(false)
       setStage('')
-      setError(err?.message || '请求失败')
+      setError(err?.message || t('pactModal.errors.requestFailed'))
     }
   }
 
-  /* 结算完成后的“完成”按钮：做的正是过去 settle 一返回就自动做的事 —— 把结算
-     结果交给父组件（AnalysisReport 卸载 Modal 并跳转到执行页）。区别只是现在
-     由用户点一下，凭证与链上交易号因此可读。 */
+  /* The "Done" button after settlement completes: does exactly what used to
+     happen automatically the instant settle returned — hands the settlement
+     result to the parent (AnalysisReport unmounts the modal and navigates to
+     the execution page). The only difference is the user now clicks it, so
+     the mandate block and on-chain tx link stay readable. */
   const handleDone = () => {
     onConfirm?.({
       ...settled,
@@ -196,7 +205,7 @@ export default function PactConfirmationModal({ agent, task, onConfirm, onReject
           animation: 'animal-zoom-in 0.3s ease',
         }}
       >
-        {/* 标题 */}
+        {/* Title */}
         <div style={{ textAlign: 'center', marginBottom: 20 }}>
           <div
             style={{
@@ -206,11 +215,11 @@ export default function PactConfirmationModal({ agent, task, onConfirm, onReject
               color: 'var(--text-body)',
             }}
           >
-            📜 Pact 授权确认
+            📜 {t('pactModal.title')}
           </div>
         </div>
 
-        {/* 信息卡片 */}
+        {/* Info card */}
         <div
           style={{
             background: 'rgba(255, 255, 255, 0.55)',
@@ -236,7 +245,7 @@ export default function PactConfirmationModal({ agent, task, onConfirm, onReject
                 color: 'var(--text)',
               }}
             >
-              🤖 {agent?.name ?? '客服话术生成器'}
+              🤖 {agent?.name ?? t('pactModal.defaultAgentName')}
             </span>
             <span
               style={{
@@ -249,7 +258,7 @@ export default function PactConfirmationModal({ agent, task, onConfirm, onReject
                 padding: '3px 11px',
               }}
             >
-              {agent?.creator ?? '@李四'}
+              {agent?.creator ?? t('pactModal.defaultCreator')}
             </span>
           </div>
 
@@ -267,7 +276,7 @@ export default function PactConfirmationModal({ agent, task, onConfirm, onReject
             </div>
           )}
 
-          {/* 费用明细 */}
+          {/* Cost breakdown */}
           <div
             style={{
               background: 'var(--bg)',
@@ -278,14 +287,14 @@ export default function PactConfirmationModal({ agent, task, onConfirm, onReject
               color: 'var(--text-body)',
             }}
           >
-            <div style={{ fontWeight: 800, marginBottom: 8, color: 'var(--text)' }}>💰 费用明细</div>
+            <div style={{ fontWeight: 800, marginBottom: 8, color: 'var(--text)' }}>💰 {t('pactModal.costBreakdown')}</div>
             <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4 }}>
-              <span style={{ color: 'var(--text-secondary)', fontWeight: 700, fontSize: 12 }}>单价</span>
-              <span style={{ fontWeight: 800 }}>${price} / 小时</span>
+              <span style={{ color: 'var(--text-secondary)', fontWeight: 700, fontSize: 12 }}>{t('pactModal.rate')}</span>
+              <span style={{ fontWeight: 800 }}>{t('pactModal.rateValue', { price })}</span>
             </div>
             <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 8 }}>
-              <span style={{ color: 'var(--text-secondary)', fontWeight: 700, fontSize: 12 }}>预估时长</span>
-              <span style={{ fontWeight: 800 }}>{estimatedHours} 小时</span>
+              <span style={{ color: 'var(--text-secondary)', fontWeight: 700, fontSize: 12 }}>{t('pactModal.estimatedDuration')}</span>
+              <span style={{ fontWeight: 800 }}>{t('pactModal.hoursValue', { hours: estimatedHours })}</span>
             </div>
             <div
               style={{
@@ -298,7 +307,7 @@ export default function PactConfirmationModal({ agent, task, onConfirm, onReject
                 color: 'var(--text)',
               }}
             >
-              <span>总限额</span>
+              <span>{t('pactModal.totalCap')}</span>
               <span style={{ color: 'var(--money)', fontWeight: 900, fontSize: 15 }}>${total}</span>
             </div>
           </div>
@@ -306,7 +315,7 @@ export default function PactConfirmationModal({ agent, task, onConfirm, onReject
           {showAdjust && (
             <div style={{ marginTop: 12, fontSize: 14 }}>
               <label style={{ marginRight: 10, color: 'var(--text)', fontWeight: 700, fontSize: 13 }}>
-                调整预估时长 (小时):
+                {t('pactModal.adjustDuration')}
               </label>
               <input
                 type="number"
@@ -335,7 +344,7 @@ export default function PactConfirmationModal({ agent, task, onConfirm, onReject
           )}
         </div>
 
-        {/* 收款方 */}
+        {/* Payee */}
         <div
           style={{
             fontSize: 13,
@@ -347,13 +356,13 @@ export default function PactConfirmationModal({ agent, task, onConfirm, onReject
             borderRadius: 'var(--r)',
           }}
         >
-          <span style={{ fontWeight: 800, color: 'var(--success-active)' }}>📬 收款方钱包：</span>
+          <span style={{ fontWeight: 800, color: 'var(--success-active)' }}>📬 {t('pactModal.payeeWallet')}：</span>
           <code style={{ marginLeft: 8, fontSize: 12.5 }}>
             {walletShort}
           </code>
         </div>
 
-        {/* 授权凭证 — 后端返回的 AP2 风格 mandate 字段。创建成功后才出现。 */}
+        {/* Mandate — AP2-style fields returned by the backend. Only appears after creation succeeds. */}
         {mandate && (
           <div
             style={{
@@ -368,24 +377,25 @@ export default function PactConfirmationModal({ agent, task, onConfirm, onReject
             }}
           >
             <div style={{ fontWeight: 800, marginBottom: 8, color: 'var(--text)' }}>
-              📜 授权凭证
+              📜 {t('pactModal.mandate.title')}
             </div>
 
-            <MandateRow label="授权内容">{mandate.intent || '—'}</MandateRow>
-            <MandateRow label="收款方">
+            <MandateRow label={t('pactModal.mandate.intent')}>{mandate.intent || '—'}</MandateRow>
+            <MandateRow label={t('pactModal.mandate.payee')}>
               <code style={{ fontSize: 12.5 }}>{formatPayee(mandate.payee)}</code>
             </MandateRow>
-            <MandateRow label="授权上限">
+            <MandateRow label={t('pactModal.mandate.amountCap')}>
               {formatCap(mandate.amount_cap, mandate.currency)}
             </MandateRow>
-            <MandateRow label="有效期至">
+            <MandateRow label={t('pactModal.mandate.expiresAt')}>
               {formatLocalTime(mandate.expires_at)}
             </MandateRow>
 
-            {/* 结算完成后的链上交易号。explorer_url 由后端在 x402 结算路径上
-                提供；没有时只显示纯文本，不伪造链接。 */}
+            {/* On-chain tx hash once settlement completes. explorer_url comes
+                from the backend on the x402 settlement path; when absent,
+                only plain text is shown — never a fabricated link. */}
             {settled?.tx_hash && (
-              <MandateRow label="交易哈希">
+              <MandateRow label={t('pactModal.mandate.txHash')}>
                 {settled.explorer_url ? (
                   <a
                     href={settled.explorer_url}
@@ -405,7 +415,7 @@ export default function PactConfirmationModal({ agent, task, onConfirm, onReject
           </div>
         )}
 
-        {/* 钱包确认区 */}
+        {/* Wallet confirmation section */}
         <div
           style={{
             border: '1px dashed rgb(220, 206, 180)',
@@ -423,10 +433,10 @@ export default function PactConfirmationModal({ agent, task, onConfirm, onReject
               fontSize: 13.5,
             }}
           >
-            📱 请在钱包中确认授权
+            📱 {t('pactModal.wallet.confirmInWallet')}
           </div>
 
-          {/* 钱包确认示意占位 */}
+          {/* Wallet confirmation illustrative placeholder */}
           <div
             style={{
               height: 80,
@@ -442,7 +452,7 @@ export default function PactConfirmationModal({ agent, task, onConfirm, onReject
               marginBottom: 12,
             }}
           >
-            [钱包确认界面示意]
+            {t('pactModal.wallet.placeholder')}
           </div>
 
           <ol
@@ -455,9 +465,9 @@ export default function PactConfirmationModal({ agent, task, onConfirm, onReject
               lineHeight: 1.8,
             }}
           >
-            <li>打开你的钱包应用</li>
-            <li>查看 Pact 详情</li>
-            <li>确认签名</li>
+            <li>{t('pactModal.wallet.step1')}</li>
+            <li>{t('pactModal.wallet.step2')}</li>
+            <li>{t('pactModal.wallet.step3')}</li>
           </ol>
 
           {waiting && (
@@ -470,7 +480,7 @@ export default function PactConfirmationModal({ agent, task, onConfirm, onReject
                 textAlign: 'center',
               }}
             >
-              {stage || '等待确认中'}{dots}
+              {stage || t('pactModal.stages.waiting')}{dots}
             </div>
           )}
 
@@ -493,7 +503,7 @@ export default function PactConfirmationModal({ agent, task, onConfirm, onReject
           )}
         </div>
 
-        {/* 按钮行 */}
+        {/* Button row */}
         <div
           style={{
             display: 'flex',
@@ -503,24 +513,24 @@ export default function PactConfirmationModal({ agent, task, onConfirm, onReject
           }}
         >
           {settled ? (
-            /* 结算已完成：授权/调整/拒绝都已无意义，只留一个出口。 */
+            /* Settlement is complete: authorize/adjust/reject no longer apply — one exit only. */
             <PixelButton variant="gold" onClick={handleDone}>
-              ✓ 完成
+              ✓ {t('pactModal.buttons.done')}
             </PixelButton>
           ) : (
             <>
               <PixelButton variant="gold" onClick={handleConfirm} disabled={waiting}>
-                ✓ 确认授权
+                ✓ {t('pactModal.buttons.confirmAuthorization')}
               </PixelButton>
               <PixelButton
                 variant="wood"
                 onClick={() => setShowAdjust((v) => !v)}
                 disabled={waiting}
               >
-                ⚙ 调整限额
+                ⚙ {t('pactModal.buttons.adjustCap')}
               </PixelButton>
               <PixelButton variant="danger" onClick={onReject} disabled={waiting}>
-                ✕ 拒绝
+                ✕ {t('pactModal.buttons.reject')}
               </PixelButton>
             </>
           )}

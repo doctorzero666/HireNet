@@ -1,52 +1,62 @@
 import '../styles/nav.css'
 import { useNavigate, useLocation } from 'react-router-dom'
+import { useLang } from '../i18n/LanguageProvider'
 
-const ROLE_PRESETS = {
-  employer: {
-    label: 'EMPLOYER',
-    links: [
-      { label: '需求分析', to: '/employer' },
-      { label: '我的任务', comingSoon: true },
-      { label: '控制台', to: '/employer/dashboard' },
-    ],
-  },
-  creator: {
-    label: 'CREATOR',
-    links: [
-      { label: '我的 Agent', to: '/creator' },
-      { label: '收益账本', to: '/creator/ledger' },
-    ],
-  },
-  jobseeker: {
-    label: 'JOBSEEKER',
-    links: [
-      { label: '岗位广场', to: '/jobseeker' },
-      { label: '我的资料', to: '/jobseeker/profile' },
-      { label: '投递记录', comingSoon: true },
-    ],
-  },
-  'agent-world': {
-    label: 'AGENT WORLD',
-    links: [
-      { label: '角色选择', to: '/' },
-      { label: '我是创作者', to: '/creator' },
-      { label: '我是雇主', to: '/employer/hub' },
-    ],
-  },
+// The language toggle is rendered once, globally, from App.jsx (fixed
+// position) rather than duplicated inside NavBar — NavBar isn't mounted on
+// every route (RoleSelect, Login, EmployerHub have none), so a single
+// App-level toggle is the only way to guarantee it is present everywhere
+// without a second instance appearing on the pages that do have a NavBar.
+
+function useRolePresets(t) {
+  return {
+    employer: {
+      label: 'EMPLOYER',
+      links: [
+        { label: t('nav.employer.requirementAnalysis'), to: '/employer' },
+        { label: t('nav.employer.myTasks'), comingSoon: true },
+        { label: t('nav.employer.dashboard'), to: '/employer/dashboard' },
+      ],
+    },
+    creator: {
+      label: 'CREATOR',
+      links: [
+        { label: t('nav.creator.myAgents'), to: '/creator' },
+        { label: t('nav.creator.ledger'), to: '/creator/ledger' },
+      ],
+    },
+    jobseeker: {
+      label: 'JOBSEEKER',
+      links: [
+        { label: t('nav.jobseeker.jobBoard'), to: '/jobseeker' },
+        { label: t('nav.jobseeker.myProfile'), to: '/jobseeker/profile' },
+        { label: t('nav.jobseeker.applications'), comingSoon: true },
+      ],
+    },
+    'agent-world': {
+      label: 'AGENT WORLD',
+      links: [
+        { label: t('nav.agentWorld.roleSelect'), to: '/' },
+        { label: t('nav.agentWorld.iAmCreator'), to: '/creator' },
+        { label: t('nav.agentWorld.iAmEmployer'), to: '/employer/hub' },
+      ],
+    },
+  }
 }
 
 /**
- * NavBar — 顶部木条导航
+ * NavBar — top wooden-plank navigation bar
  * props:
  *   role: 'employer' | 'creator' | string  (presets above; otherwise raw label)
- *   links: 覆盖默认 links（可选）
- *   onBack: () => void   覆盖默认回到 /
+ *   links: override the default links (optional)
+ *   onBack: () => void   override the default "back to /"
  */
 export default function NavBar({ role, links, onBack }) {
   const navigate = useNavigate()
   const location = useLocation()
+  const { t } = useLang()
 
-  const preset = ROLE_PRESETS[role]
+  const preset = useRolePresets(t)[role]
   const finalLinks = links ?? preset?.links ?? []
   const roleLabel = preset?.label ?? role
   const handleBack = onBack ?? (() => navigate('/'))
@@ -63,7 +73,7 @@ export default function NavBar({ role, links, onBack }) {
                 key={i}
                 className="nav-link nav-link--disabled"
                 href="#"
-                title="即将上线"
+                title={t('nav.comingSoon')}
                 onClick={(e) => e.preventDefault()}
               >
                 {link.label}
