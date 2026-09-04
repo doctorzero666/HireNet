@@ -439,6 +439,12 @@ def run_decision():
             original_description=sess.get("initial_input", ""),
             on_design=recorder,
         )
+        # Stage 1 / D11a (audit risk 8): /quick has always written this
+        # (app.py:1252) and /decide never did, so GET /api/jobs — which reads
+        # `analysis_sessions[*]["jd_report"]` — showed JDs from the demo
+        # shortcut and nothing from the real conversational flow. Route-level
+        # fix: applies to the v1 and v2 paths alike.
+        sess["jd_report"] = jd_report
 
         # Step 4: Build summary
         summary = _build_decision_summary(tasks, decisions, jd_report)
