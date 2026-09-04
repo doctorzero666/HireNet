@@ -531,3 +531,69 @@ class TestAnalyzeQuick:
         body = resp.get_json()
         assert body is not None, "the error body must stay JSON, not Flask's HTML page"
         assert "error" in body
+
+
+# ──────────────────────────────────────────────────────────────────────────────
+# recommendation: None (audit risk 4)
+# ──────────────────────────────────────────────────────────────────────────────
+
+NULL_RECOMMENDATION_DECISIONS = {
+    "decisions": [
+        {
+            "task_id": "t1",
+            "task_name": "搭建 FAQ 知识库",
+            "task_type": "technical",
+            "evaluations": [],
+            "recommendation": None,
+        }
+    ]
+}
+
+
+class TestNullRecommendationIsTolerated:
+    """`recommendation` is a present key whose value is legitimately None.
+
+    run_resource_decision seeds it as None (agents.py:396) and only overwrites
+    it inside `if top:` — so a task with zero surviving evaluations reaches the
+    consumers as {"recommendation": None}. `.get("recommendation", {})` does not
+    defend against that: the default only fires when the KEY is missing, so the
+    chained .get() hit None and raised AttributeError -> HTTP 500.
+    """
+
+    @pytest.fixture
+    def null_recommendation_stubs(self, monkeypatch):
+        stubs = {
+            "decompose_tasks": CountingStub(result={"tasks": CANNED_TASKS[:1]}),
+            "run_resource_decision": CountingStub(result=NULL_RECOMMENDATION_DECISIONS),
+            "design_job": CountingStub(result=dict(CANNED_JOB_DESIGN)),
+        }
+        monkeypatch.setattr(app_module, "decompose_tasks", stubs["decompose_tasks"])
+        monkeypatch.setattr(app_module, "run_resource_decision", stubs["run_resource_decision"])
+        monkeypatch.setattr(job_design_module, "design_job", stubs["design_job"])
+        return stubs
+
+    def test_decide_returns_200(self, client, fake_llm, null_recommendation_stubs):
+        session_id, _ = start_session(client, fake_llm, response_text=COMPLETE_RESPONSE)
+        resp = client.post("/api/analyze/decide", json={"session_id": session_id})
+        assert resp.status_code == 200, resp.get_data(as_text=True)
+
+    def test_the_task_counts_as_none_of_the_three_buckets(
+        self, client, fake_llm, null_recommendation_stubs
+    ):
+        session_id, _ = start_session(client, fake_llm, response_text=COMPLETE_RESPONSE)
+        summary = client.post(
+            "/api/analyze/decide", json={"session_id": session_id}
+        ).get_json()["summary"]
+        assert summary["task_count"] == 1
+        assert summary["agent_tasks"] == 0
+        assert summary["human_tasks"] == 0
+
+    def test_no_job_is_designed_for_it(self, client, fake_llm, null_recommendation_stubs):
+        session_id, _ = start_session(client, fake_llm, response_text=COMPLETE_RESPONSE)
+        body = client.post("/api/analyze/decide", json={"session_id": session_id}).get_json()
+        assert null_recommendation_stubs["design_job"].call_count == 0
+        assert body["jd_report"]["needs_hiring"] is False
+
+    def test_quick_returns_200_too(self, client, null_recommendation_stubs):
+        resp = client.post("/api/analyze/quick", json={"requirement": QUICK_REQUIREMENT})
+        assert resp.status_code == 200, resp.get_data(as_text=True)

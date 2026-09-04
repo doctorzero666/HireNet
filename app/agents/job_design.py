@@ -104,9 +104,12 @@ def generate_jd_report(decisions: dict, requirement: dict, original_description:
     try block on purpose: a design failure must not trigger billing, and a billing
     failure must propagate (not be swallowed) so no royalty is silently lost.
     """
+    # `(d.get("recommendation") or {})`: a decision may carry recommendation=None
+    # (no evaluations survived), and the two-arg .get default only covers a
+    # missing key, not a present None. See _build_decision_summary in app/app.py.
     human_tasks = [
         d for d in decisions.get("decisions", [])
-        if d.get("recommendation", {}).get("decision") in ("human", "hybrid")
+        if (d.get("recommendation") or {}).get("decision") in ("human", "hybrid")
     ]
 
     if not human_tasks:

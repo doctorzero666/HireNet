@@ -282,17 +282,23 @@ def _build_decision_summary(tasks, decisions, jd_report) -> dict:
     """Build human-readable summary of the decision"""
     all_decisions = decisions.get("decisions", [])
 
+    # `(d.get("recommendation") or {})`, not `d.get("recommendation", {})`:
+    # run_resource_decision seeds the key with None and only overwrites it when
+    # a task has at least one surviving evaluation (agents.py:396, :414). The
+    # two-arg default fires on a MISSING key, not on a present None, so the old
+    # form chained .get() off None -> AttributeError -> HTTP 500 for any task
+    # nothing could be evaluated against.
     agent_count = sum(
         1 for d in all_decisions
-        if d.get("recommendation", {}).get("decision") == "agent"
+        if (d.get("recommendation") or {}).get("decision") == "agent"
     )
     human_count = sum(
         1 for d in all_decisions
-        if d.get("recommendation", {}).get("decision") == "human"
+        if (d.get("recommendation") or {}).get("decision") == "human"
     )
     hybrid_count = sum(
         1 for d in all_decisions
-        if d.get("recommendation", {}).get("decision") == "hybrid"
+        if (d.get("recommendation") or {}).get("decision") == "hybrid"
     )
 
     total = len(all_decisions)
