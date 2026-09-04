@@ -13,7 +13,7 @@
 ![Python](https://img.shields.io/badge/Python-3.11-blue?style=flat-square&logo=python)
 ![Flask](https://img.shields.io/badge/Flask-3.x-lightgrey?style=flat-square&logo=flask)
 ![React](https://img.shields.io/badge/React-18-61DAFB?style=flat-square&logo=react)
-![Tests](https://img.shields.io/badge/tests-1328_passed-brightgreen?style=flat-square)
+![Tests](https://img.shields.io/badge/tests-1387_passed-brightgreen?style=flat-square)
 ![Hackathon](https://img.shields.io/badge/AI×Web3-Hackathon-orange?style=flat-square)
 
 </div>
@@ -182,7 +182,7 @@ HireNet 将传统招聘平台的“岗位匹配”，扩展成了更前置的**�
 | 链上结算 | Mock / Anvil 本地链 / Sepolia 测试网 / x402（Base Sepolia USDC，pay-at-invocation），Provider 接口可插拔 |
 | Agent 协议 | MCP (Model Context Protocol) |
 | 鉴权 | JWT + pbkdf2 |
-| 测试 | pytest 1328 passed |
+| 测试 | pytest 1387 passed |
 
 ```text
 HireNet/
@@ -192,11 +192,15 @@ HireNet/
 │   ├── services/      # 结算提供者/auth/bootstrap
 │   └── storage/       # SQLite DAO
 ├── frontend/          # React SPA（15 个页面）
-├── tests/             # pytest 1328 passed
+├── tests/             # pytest 1387 passed
 ├── docs/              # PRD/UX Spec/Demo 配音脚本
 ├── evals/             # 黄金用例集 + 打分器 + 评测报告
 └── start.sh           # 一键启动
 ```
+
+### 语言 / Language
+
+前端默认展示英文界面，顶部导航栏提供一个切换按钮（中文 / EN），选择结果保存在浏览器本地。需求分析 API 额外接受一个可选的 `lang` 参数（`en` | `zh`，默认 `zh`），用来控制 LLM 生成内容使用的语言。演示数据（Agent、候选人姓名等种子数据）目前仍是中文，暂未做多语言处理。
 
 ### 需求分析流水线：两条实现与它们的评测
 
