@@ -1958,6 +1958,34 @@ PACT_DEFAULT_TTL_HOURS = 24
 # Fields hashed into `content_hash`. Kept as an explicit tuple so a future
 # field addition is a deliberate act (adding one silently would invalidate
 # every in-flight pact's hash at settle time).
+#
+# WHAT THE DIGEST COVERS, AND WHAT IT DOES NOT (Stage 2 / WP-R, review F6)
+# -----------------------------------------------------------------------
+# Covered: the mandate's IDENTITY (`pact_id`, `task_id`, `asset_id`), its
+# CEILING (`amount_cap`, `currency`), its RECIPIENT (`payee`) and its VALIDITY
+# WINDOW (`expires_at`). Those are the terms the enterprise authorized.
+#
+# NOT covered: `amount` — the number actually billed on the legacy rail
+# (`charge_amount_cents` in `pact_settle`) — nor `status` / `approved_by` /
+# `approval_method` / anything written at settle time.
+#
+# `amount` is excluded ON PURPOSE, and it is not a hole:
+#   * it is a settle-time quantity, not an authorization term. The enterprise
+#     approves "up to amount_cap for this task on this asset"; the charge is
+#     whatever the asset costs at settle time and may legitimately move after
+#     approval. Hashing it would invalidate every in-flight pact the moment
+#     the charge was refined, and would force a re-approval for a price CUT.
+#   * it is bounded anyway, by a field that IS hashed. `pact_settle` refuses
+#     `amount > amount_cap` with 409 before any state transition, and the x402
+#     rail hands the same cap to the payer's pre-signing spend check. So
+#     tampering with `amount` cannot raise the charge above the authorized
+#     ceiling — it can only move it WITHIN the ceiling the digest seals.
+#     `test_tampering_with_the_amount_is_still_bounded_by_the_hashed_cap`
+#     (tests/test_pact_mandate.py) is that bound, asserted.
+#   * the digest is unsigned regardless (see the section comment above), so it
+#     detects tampering and bugs — it is not a defence against a party who can
+#     write the row AND recompute the hash.
+# In one line: content_hash bounds the ceiling, not the charge.
 PACT_HASHED_FIELDS = (
     "pact_id",
     "task_id",

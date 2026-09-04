@@ -27,6 +27,16 @@ public API contract):
     settle ran against an asset with no endpoint_url, so the key comes back
     present with the value `None` — again what the route did in memory.
 
+`content_hash` is stored here but computed in app/app.py (`PACT_HASHED_FIELDS`
+/ `_pact_content_hash`). Read it as bounding the CEILING, not the charge: the
+digest covers the mandate's identity, `amount_cap`, `currency`, `payee` and
+`expires_at`, and deliberately NOT `amount`, which is a settle-time quantity.
+A row whose `amount` was edited still passes the integrity check — and is
+still refused by `pact_settle`'s `amount > amount_cap` guard, because the cap
+it is measured against IS hashed. Anything reading this column must not
+conclude that every stored field is sealed. See the long comment beside
+`PACT_HASHED_FIELDS` for the full reasoning.
+
 Known narrowing vs the dict it replaces: `creator_id` is a TEXT column, so a
 client that posts a non-string `creator_id` (the create route does not
 validate that field) no longer gets its exact JSON type echoed back. Every

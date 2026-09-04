@@ -302,6 +302,30 @@ class TestContentHashIntegrity:
         assert resp.status_code == 409
         assert resp.get_json() == {"error": "pact integrity check failed"}
 
+    def test_tampering_with_the_amount_is_still_bounded_by_the_hashed_cap(self, client):
+        """Stage 2 / WP-R (review F6). `amount` is NOT in PACT_HASHED_FIELDS,
+        so raising it leaves content_hash valid — the integrity check passes
+        and the pact reaches the cap check. That check is what makes the
+        exclusion safe: the ceiling it measures against IS hashed, so a
+        tampered charge can only move WITHIN the authorized ceiling.
+        """
+        pact = _create(client, amount=10, amount_cap=10)
+        pact_id = pact["pact_id"]
+        client.post(f"/api/pact/approve/{pact_id}")
+
+        _tamper(client, pact_id, amount=10_000)
+
+        # The digest still verifies (proving `amount` really is outside it)…
+        stored = get_pact(_db(client), pact_id)
+        assert _pact_content_hash(stored) == stored["content_hash"]
+
+        # …and the settle is refused anyway, by the cap.
+        resp = client.post(f"/api/pact/settle/{pact_id}")
+        assert resp.status_code == 409
+        assert resp.get_json() == {"error": "amount exceeds cap"}
+        assert get_pact(_db(client), pact_id)["status"] == "approved"
+        assert "run_id" not in get_pact(_db(client), pact_id)
+
     def test_untampered_pact_settles(self, client):
         pact = _create(client)
         pact_id = pact["pact_id"]
