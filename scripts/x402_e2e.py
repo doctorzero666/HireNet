@@ -90,11 +90,12 @@ DEMO_TOOL = "generate_greeting"
 POLL_TIMEOUT_SECONDS = 180
 POLL_INTERVAL_SECONDS = 5
 
-# The route's own MCP timeout is 5s (app/services/mcp_client.py). A live
-# facilitator round trip is verify + broadcast + (often) wait-for-inclusion, so
-# the pact rail gets a longer one injected through the documented MCP_CLIENT
-# seam. --pact-timeout 0 turns the injection off and uses the shipped default.
-DEFAULT_PACT_TIMEOUT_SECONDS = 120.0
+# The pact route now passes its OWN facilitator-scale timeout (90s by default,
+# X402_PACT_INVOKE_TIMEOUT_S — Stage 2 / WP-R2, review D1), so this script no
+# longer has to inject one and by default does not: `--mode pact` runs the
+# shipped path with nothing substituted. `--pact-timeout <n>` still overrides it
+# through the documented MCP_CLIENT seam if a facilitator needs even longer.
+DEFAULT_PACT_TIMEOUT_SECONDS = 0.0
 DEFAULT_DIRECT_TIMEOUT_SECONDS = 120.0
 
 
@@ -633,21 +634,23 @@ def run_pact(setup: Setup, endpoint_url: str) -> int:
     say(f"provider     : {provider_name}")
 
     if setup.args.pact_timeout > 0:
-        # The ONLY deviation from the shipped path: mcp_client's default
-        # timeout is 5s, which a live facilitator round trip can exceed — and a
-        # timeout on the PAID retry is PaymentOutcomeUnknown, i.e. money in
-        # limbo. Injected through the documented MCP_CLIENT seam; everything
-        # else (payer, gate, facilitator, recorder) is the real thing.
+        # Opt-in only, and the ONLY deviation from the shipped path when it is
+        # used. It overrides (not merely defaults) the timeout the route now
+        # passes for itself; everything else (payer, gate, facilitator,
+        # recorder) is the real thing either way.
         from app.services.mcp_client import call_mcp_tool
 
         def _client(endpoint, tool_name, arguments=None, **kwargs):
-            kwargs.setdefault("timeout", setup.args.pact_timeout)
+            kwargs["timeout"] = setup.args.pact_timeout
             return call_mcp_tool(endpoint, tool_name, arguments, **kwargs)
 
         backend.config["MCP_CLIENT"] = _client
-        say(f"mcp timeout  : {setup.args.pact_timeout}s (injected; shipped default is 5s)")
+        say(f"mcp timeout  : {setup.args.pact_timeout}s (injected, overriding the route)")
     else:
-        say("mcp timeout  : shipped default (5s) — no MCP_CLIENT injection")
+        from app.app import DEFAULT_PACT_INVOKE_TIMEOUT_S
+
+        say(f"mcp timeout  : shipped route default ({DEFAULT_PACT_INVOKE_TIMEOUT_S}s) "
+            "— no MCP_CLIENT injection")
 
     client = backend.test_client()
     task_id = f"x402-e2e-pact-{uuid.uuid4().hex[:8]}"
@@ -760,7 +763,9 @@ def build_parser() -> argparse.ArgumentParser:
                         help="do not delete the temp SQLite database on exit")
     parser.add_argument("--pact-timeout", type=float,
                         default=DEFAULT_PACT_TIMEOUT_SECONDS,
-                        help="pact mode: MCP timeout in seconds; 0 = shipped 5s default")
+                        help=("pact mode: override the MCP timeout, in seconds. "
+                              "0 (default) uses the route's own, which is now 90s "
+                              "(X402_PACT_INVOKE_TIMEOUT_S)"))
     parser.add_argument("--direct-timeout", type=float,
                         default=DEFAULT_DIRECT_TIMEOUT_SECONDS,
                         help="direct mode: MCP timeout in seconds")

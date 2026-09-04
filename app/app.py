@@ -1480,6 +1480,15 @@ def quick_analyze():
 
 # ─── Phase 2 / U1: royalty inspection + settlement ────────────────────────────
 
+# The x402 settlement provider's `name` (app/services/x402_settlement.py), which
+# is also the `settlement_method` the WP-D recorder writes for a run paid on
+# that rail (agent_run_recording.X402_METHOD). The two being the SAME string is
+# the whole of the F1 guards below: a run whose method says x402 may only be
+# advanced by the provider of that name. Defined here rather than beside the
+# WP-E block further down because the royalty routes are the first to need it.
+X402_PROVIDER_NAME = "x402"
+
+
 @main.route("/api/royalty/split", methods=["GET"])
 def royalty_split():
     """Return the 3-way royalty_splits JSON and the charged total for one run.
@@ -1630,7 +1639,8 @@ def royalty_settle():
     # POST asking us to move money, and the caller must be able to tell "did
     # nothing" from the 200 a completed settle returns. The informational keys
     # of the status body are carried along so the refusal is still readable.
-    if run.get("settlement_method") == "x402" and provider_name != "x402":
+    if (run.get("settlement_method") == X402_PROVIDER_NAME
+            and provider_name != X402_PROVIDER_NAME):
         current_app.logger.warning(
             "refusing to settle run %s: it was paid via x402 but the configured "
             "settlement provider is %r, which cannot know anything about that "
@@ -1847,7 +1857,8 @@ def royalty_status(run_id):
         # means — MockSettlementProvider.check_status returns SETTLED for any
         # string — and advancing on its word would mark a creator paid on the
         # strength of a mock. Leave the row alone and say why.
-        if run.get("settlement_method") == "x402" and provider_name != "x402":
+        if (run.get("settlement_method") == X402_PROVIDER_NAME
+                and provider_name != X402_PROVIDER_NAME):
             current_app.logger.warning(
                 "run %s was pre-settled via x402 but the configured settlement "
                 "provider is %r; not advancing. Set HIRENET_SETTLEMENT_PROVIDER=x402 "
@@ -2319,8 +2330,22 @@ def pact_reject(pact_id):
 # There is deliberately NO path that writes an accrued row when the payment did
 # not happen — that would silently switch rails in the middle of a settle.
 
-# The x402 settlement provider's `name` (app/services/x402_settlement.py).
-X402_PROVIDER_NAME = "x402"
+# `X402_PROVIDER_NAME` used to live here; it now sits above the royalty routes
+# (the F1 guards need it first) — see the comment there.
+
+# ── How long the PAID invocation may take (Stage 2 / WP-R2, review D1) ───────
+# `call_mcp_tool`'s 5 s default is sized for an ordinary MCP call. This one is
+# sized for the FACILITATOR: behind the 402 the gate runs `verify` and then
+# `settle`, two separate HTTP round trips, and the x402 package's own
+# facilitator client allows 30 s each. 90 s covers that 60 s pair with headroom.
+#
+# Why it matters more here than anywhere else: the timeout also applies to the
+# PAID retry, and a timeout there is by construction `PaymentOutcomeUnknown` —
+# an authorization on the wire, no answer, the pact frozen at `settling`, and a
+# human reconciliation for money that has probably already moved. Running the
+# rail at 5 s converts an ordinary facilitator slowdown into that.
+PACT_INVOKE_TIMEOUT_ENV = "X402_PACT_INVOKE_TIMEOUT_S"
+DEFAULT_PACT_INVOKE_TIMEOUT_S = 90.0
 
 # mcp_client folds x402 payer exceptions into
 # `{"status": "error", "error": "<ExceptionClassName>: <message>"}` and keeps the
@@ -2343,6 +2368,66 @@ def _settlement_provider_name() -> str:
     if provider is None:
         return ""
     return getattr(provider, "name", provider.__class__.__name__)
+
+
+def _pact_invoke_timeout() -> float:
+    """Seconds the x402 rail allows the paid invocation. See the block above.
+
+    Raises:
+        ValueError: the env var is set to something that is not a positive,
+            finite number of seconds. Same posture as `max_amount_per_payment`:
+            a typo'd ceiling is refused loudly rather than silently replaced by
+            a default, because both numbers bound how money can move.
+    """
+    raw = os.getenv(PACT_INVOKE_TIMEOUT_ENV)
+    if raw is None or raw.strip() == "":
+        return DEFAULT_PACT_INVOKE_TIMEOUT_S
+    try:
+        value = float(raw)
+    except (TypeError, ValueError) as exc:
+        raise ValueError(
+            f"{PACT_INVOKE_TIMEOUT_ENV} must be a number of seconds, got {raw!r}"
+        ) from exc
+    if not math.isfinite(value) or value <= 0:
+        raise ValueError(
+            f"{PACT_INVOKE_TIMEOUT_ENV} must be a positive number of seconds, "
+            f"got {raw!r}"
+        )
+    return value
+
+
+def _post_payment_write_failed(what: str, *, pact_id, run_id, tx_hash, **extra):
+    """The 500 for a pact write that the storage layer refused AFTER payment.
+
+    Call from inside an `except` block — it logs with `exception(...)`, so the
+    traceback is preserved. Stage 2 / WP-R2 (review D3): before this, a
+    `sqlite3.OperationalError` ("database is locked" under more than one worker)
+    on the post-payment writes escaped as a bare Flask 500 whose body said
+    nothing, leaving the operator with a paid authorization and no pointer to
+    it. The money is not lost — the `agent_runs` row and the creator ledger row
+    already carry the normalised hash — but the pact loses its pointer, so the
+    hash and the run id go in the body as well as the log.
+
+    The pact is deliberately NOT walked back to `approved`: it stays `settling`,
+    which is what stops a retry signing a second authorization for a mandate
+    that has already been paid.
+    """
+    current_app.logger.exception(
+        "x402 pact %s: %s failed after the payment went through (run %s, tx %s); "
+        "the pact stays 'settling' and needs manual reconciliation",
+        pact_id, what, run_id, tx_hash,
+    )
+    body = {
+        "error": (
+            f"the payment went through but {what} failed; the pact stays "
+            "'settling' and needs manual reconciliation (see server log)"
+        ),
+        "pact_id": pact_id,
+        "run_id": run_id,
+        "tx_hash": tx_hash,
+    }
+    body.update(extra)
+    return jsonify(body), 500
 
 
 def _x402_explorer_url(tx_hash: str | None) -> str | None:
@@ -2411,6 +2496,15 @@ def _pact_settle_x402(pact: dict, asset: dict | None, asset_id: str,
         current_app.logger.error("x402 payer is misconfigured: %s", exc)
         return jsonify({"error": f"x402 payer is misconfigured: {exc}"}), 500
 
+    # Resolved BEFORE the claim, for the same reason the cap is: a malformed
+    # value must not leave a pact stuck at `settling` over a typo in the
+    # environment. Nothing has been signed at this point.
+    try:
+        invoke_timeout = _pact_invoke_timeout()
+    except ValueError as exc:
+        current_app.logger.error("x402 payer is misconfigured: %s", exc)
+        return jsonify({"error": f"x402 payer is misconfigured: {exc}"}), 500
+
     # Atomic claim: approved → settling. `settling` is neither terminal nor
     # `settled`; it means "an invocation for this mandate is in flight". A
     # concurrent settle sees it and bounces with the same 400 the legacy path
@@ -2432,9 +2526,11 @@ def _pact_settle_x402(pact: dict, asset: dict | None, asset_id: str,
             endpoint_url,
             tool_name,
             {"task_id": pact.get("task_id")},
-            # Only this rail passes max_amount; the legacy call keeps its
-            # 3-argument shape so existing injected fakes are untouched.
+            # Only this rail passes max_amount and timeout; the legacy call
+            # keeps its 3-argument shape so existing injected fakes are
+            # untouched (and 5 s is the right ceiling for an unpaid call).
             max_amount=cap_atomic,
+            timeout=invoke_timeout,
         )
     except Exception as exc:  # noqa: BLE001 - MCP_CLIENT is an injection seam
         # call_mcp_tool never raises, but an injected client might. A raise means
@@ -2475,12 +2571,21 @@ def _pact_settle_x402(pact: dict, asset: dict | None, asset_id: str,
             pact_id, pending.get("nonce"), pending.get("payee"),
             pending.get("amount_atomic"), error_text,
         )
-        update_pact_fields(
-            db_path, pact_id,
-            last_error=error_text,
-            payment_pending=pending,
-            mcp_result=result,
-        )
+        try:
+            update_pact_fields(
+                db_path, pact_id,
+                last_error=error_text,
+                payment_pending=pending,
+                mcp_result=result,
+            )
+        except Exception:  # noqa: BLE001 - any storage failure, e.g. a locked DB
+            # The freeze itself survives — the claim is already committed — but
+            # the nonce would be lost with the exception, so it goes in the body.
+            return _post_payment_write_failed(
+                "writing the reconciliation record",
+                pact_id=pact_id, run_id=None, tx_hash=None,
+                payment_pending=pending,
+            )
         return jsonify({
             "error": "payment outcome unknown; manual reconciliation required",
             "pact_id": pact_id,
@@ -2542,12 +2647,18 @@ def _pact_settle_x402(pact: dict, asset: dict | None, asset_id: str,
         # The pact stays `settling` (claimed, unfinished) and keeps the hash of
         # the payment that DID happen, so the operator has something to
         # reconcile against and a retry cannot sign a second authorization.
-        update_pact_fields(
-            db_path, pact_id,
-            tx_hash=tx_hash,
-            explorer_url=_x402_explorer_url(tx_hash),
-            mcp_result=result,
-        )
+        try:
+            update_pact_fields(
+                db_path, pact_id,
+                tx_hash=tx_hash,
+                explorer_url=_x402_explorer_url(tx_hash),
+                mcp_result=result,
+            )
+        except Exception:  # noqa: BLE001 - any storage failure, e.g. a locked DB
+            return _post_payment_write_failed(
+                "stashing the transaction hash on the pact",
+                pact_id=pact_id, run_id=None, tx_hash=tx_hash,
+            )
         return jsonify({
             "error": (
                 f"paid {raw_atomic!r} atomic USDC units, which is not a "
@@ -2584,12 +2695,18 @@ def _pact_settle_x402(pact: dict, asset: dict | None, asset_id: str,
             "be signed for it",
             pact_id, tx_hash,
         )
-        update_pact_fields(
-            db_path, pact_id,
-            tx_hash=tx_hash,
-            explorer_url=_x402_explorer_url(tx_hash),
-            mcp_result=result,
-        )
+        try:
+            update_pact_fields(
+                db_path, pact_id,
+                tx_hash=tx_hash,
+                explorer_url=_x402_explorer_url(tx_hash),
+                mcp_result=result,
+            )
+        except Exception:  # noqa: BLE001 - any storage failure, e.g. a locked DB
+            return _post_payment_write_failed(
+                "stashing the transaction hash on the pact",
+                pact_id=pact_id, run_id=None, tx_hash=tx_hash,
+            )
         return jsonify({
             "error": f"Failed to record: {str(e)}", "tx_hash": tx_hash,
         }), 500
@@ -2601,15 +2718,23 @@ def _pact_settle_x402(pact: dict, asset: dict | None, asset_id: str,
     # settled_amount is what was actually PAID, in dollar units. Additive:
     # `amount` keeps saying what the pact was created for, which is not the same
     # number whenever the asset's list price differs from the requested amount.
-    finished = transition_pact(
-        db_path, pact_id, "settling", "settled",
-        run_id=result_row["run_id"],
-        royalty_splits=result_row["royalty_splits"],
-        tx_hash=tx_hash,
-        explorer_url=_x402_explorer_url(tx_hash),
-        settled_amount=float(decimal.Decimal(charge_amount_cents) / 100),
-        mcp_result=result,
-    )
+    try:
+        finished = transition_pact(
+            db_path, pact_id, "settling", "settled",
+            run_id=result_row["run_id"],
+            royalty_splits=result_row["royalty_splits"],
+            tx_hash=tx_hash,
+            explorer_url=_x402_explorer_url(tx_hash),
+            settled_amount=float(decimal.Decimal(charge_amount_cents) / 100),
+            mcp_result=result,
+        )
+    except Exception:  # noqa: BLE001 - any storage failure, e.g. a locked DB
+        # The run row (and the creator ledger row) already carry the hash, so
+        # the payment is traceable; only the pact's own pointer is missing.
+        return _post_payment_write_failed(
+            "marking the pact settled",
+            pact_id=pact_id, run_id=result_row["run_id"], tx_hash=tx_hash,
+        )
     if not finished:
         # Unreachable while we hold the claim: only this request can move a
         # pact out of `settling`. If it ever happens something mutated the row

@@ -80,6 +80,7 @@ Two things in that diagram are load-bearing and easy to miss:
 | `HIRENET_SETTLEMENT_PROVIDER` | `mock` | `create_app` → `settlement.get_provider` | Set to `x402` to make `/api/pact/settle` pay at invocation time and to let the status route confirm x402 runs. Any other value leaves the legacy post-hoc path untouched. |
 | `X402_PAYER_PRIVATE_KEY` | unset | `mcp_client` (read, passed down, never stored) | The caller's key. **Unset means a 402 is surfaced as an error, never a silent unpaid retry.** Lives in the untracked `.env`; never printed, never logged, never in an exception message. |
 | `X402_MAX_AMOUNT_PER_PAYMENT` | `1000000` (1 USDC) | `x402_payer.max_amount_per_payment` | Per-payment ceiling in atomic units — the operator's wallet-level brake. A pact's own `amount_cap` may lower it, never raise it. |
+| `X402_PACT_INVOKE_TIMEOUT_S` | `90` | `_pact_settle_x402` → `call_mcp_tool(timeout=…)` | How long the **paid** invocation may take. Sized for the facilitator, not for an MCP call: `verify` and `settle` are two round trips the x402 package allows 30 s each, so 90 s covers the 60 s pair with headroom. `mcp_client`'s 5 s default still governs every unpaid call, including the legacy settle rail. Must be a positive, finite number — a malformed value is a 500 before the pact is claimed, never a silent fallback. |
 | `X402_NETWORK` | `eip155:84532` | gate, payer, provider | CAIP-2 network id. v2 uses CAIP-2; the v1 string `base-sepolia` is not what this code speaks. |
 | `X402_USDC_ADDRESS` | `0x036CbD53842c5426634e7929541eC2318f3dCF7e` | gate, payer, provider | The token. The gate **refuses to boot** against any other address, because it advertises USDC's EIP-712 domain (`name="USDC"`, `version="2"`) and would otherwise be quoting a domain it guessed. |
 | `X402_FACILITATOR_URL` | `https://x402.org/facilitator` | gate | Public, free, no API key for Base Sepolia. Best-effort: a shared testnet convenience service with no SLA. |
@@ -307,10 +308,10 @@ python scripts/x402_e2e.py --mode pact               # the same, through /api/pa
 * Exit code 0 means SETTLED (or a valid dry-run quote). `3` is
   `PaymentOutcomeUnknown` and means *do not re-run*: reconcile the printed
   nonce first (§6).
-* `--mode pact` injects a 120 s MCP timeout through the `MCP_CLIENT` seam
-  because the route's shipped default is 5 s; `--pact-timeout 0` turns that
-  injection off and uses the shipped path exactly. See
-  `x402-first-run.md` §4 for why that default is worth revisiting.
+* `--mode pact` now injects **nothing** by default: the route passes its own
+  90 s timeout (`X402_PACT_INVOKE_TIMEOUT_S`), so the run exercises the shipped
+  path exactly. `--pact-timeout <n>` still overrides it through the documented
+  `MCP_CLIENT` seam if a facilitator needs longer than that.
 
 Running the demo stack with the gate on:
 

@@ -500,18 +500,23 @@ was "fixed" by loosening a check.
   next to a real payment. One cent is simply the smallest chargeable unit and
   the split has nothing to divide. Any demo price above a few cents behaves
   normally. Worth knowing before showing the ledger next to the explorer.
-* **`mcp_client`'s default timeout is 5 s**, and the pact route does not
-  override it. Both live settles finished in ~1.5 s, so it did not bite — but a
-  timeout on the *paid retry* is precisely `PaymentOutcomeUnknown`: an
-  authorization on the wire with no answer, a pact frozen at `settling`, and a
-  human reconciliation. The facilitator's own HTTP client allows 30 s per call
-  (`verify` + `settle` = up to 60 s), so the route's 5 s is the tightest link in
-  the chain. `scripts/x402_e2e.py --mode pact` therefore injects a 120 s client
-  through the documented `MCP_CLIENT` seam — that injection is the **only**
-  deviation from the shipped path in the run above; the payer, the gate, the
-  facilitator, the recorder and the provider are all the real ones. Raising the
-  route's default is a one-line change the owner should make deliberately, so
-  it is reported here rather than slipped into this work package.
+* **The MCP timeout — fixed in the route since this run.** At the time of the
+  run above, `mcp_client`'s 5 s default governed the paid invocation and the
+  pact route did not override it. Both live settles finished in ~1.5 s, so it
+  did not bite — but a timeout on the *paid retry* is precisely
+  `PaymentOutcomeUnknown`: an authorization on the wire with no answer, a pact
+  frozen at `settling`, and a human reconciliation. The facilitator's own HTTP
+  client allows 30 s per call (`verify` + `settle` = up to 60 s), so 5 s was the
+  tightest link in the chain, and `scripts/x402_e2e.py --mode pact` injected a
+  120 s client through the documented `MCP_CLIENT` seam — that injection was the
+  **only** deviation from the shipped path in the run above (the payer, the
+  gate, the facilitator, the recorder and the provider are all the real ones),
+  and it is why the log line above reads `mcp timeout : 120.0s (injected…)`.
+  **`_pact_settle_x402` now passes its own timeout**, `X402_PACT_INVOKE_TIMEOUT_S`,
+  default **90 s** — the facilitator's 60 s pair with headroom — so the seam is
+  no longer needed and the script injects nothing by default. `mcp_client`'s
+  5 s default is unchanged and still governs every unpaid call, the legacy
+  settle rail included.
 * **`check_status` has no confirmation depth.** It returned SETTLED on a
   single-block-old receipt. Correct for a testnet demo; a mainnet deployment
   must wait for depth, as `SepoliaSettlementProvider` already can.

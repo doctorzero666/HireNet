@@ -33,7 +33,12 @@ import httpx
 import pytest
 import requests
 
-from app.app import create_app
+from app import app as app_module
+from app.app import (
+    DEFAULT_PACT_INVOKE_TIMEOUT_S,
+    PACT_INVOKE_TIMEOUT_ENV,
+    create_app,
+)
 from app.mcp_servers.customer_service import create_mcp_app
 from app.services.agent_run_recording import (
     USDC_ATOMIC_PER_CENT,
@@ -91,9 +96,10 @@ def no_real_network(monkeypatch):
 
 @pytest.fixture(autouse=True)
 def clean_x402_env(monkeypatch):
-    """Never inherit the operator's key, cap or contract override."""
+    """Never inherit the operator's key, cap, timeout or contract override."""
     monkeypatch.delenv(PAYER_KEY_ENV, raising=False)
     monkeypatch.delenv(MAX_AMOUNT_ENV, raising=False)
+    monkeypatch.delenv(PACT_INVOKE_TIMEOUT_ENV, raising=False)
     monkeypatch.delenv("X402_USDC_ADDRESS", raising=False)
     monkeypatch.delenv("X402_EXPLORER_TX_URL", raising=False)
 
@@ -667,3 +673,131 @@ def test_the_pact_and_the_run_carry_the_same_normalised_hash(boot, monkeypatch):
     assert run["settlement_meta"]["tx_hash"] == TX_HASH
     rows = {r["party"]: r for r in list_royalties_by_run(h.db_path, body["run_id"])}
     assert rows["creator"]["tx_hash"] == TX_HASH
+
+
+# ---------------------------------------------------------------------------
+# 7. Stage 2 / WP-R2 (review D1): the paid invocation runs on a
+#    facilitator-scale timeout, not on mcp_client's 5 s default.
+#
+# The timeout applies to the PAID retry too, so a timeout there is by
+# construction PaymentOutcomeUnknown — money on the wire with no answer. Behind
+# the 402 the gate makes two facilitator round trips (verify, then settle) that
+# the x402 package allows 30 s each, so anything under a minute is the tightest
+# link in the chain.
+# ---------------------------------------------------------------------------
+
+def test_the_x402_rail_passes_a_facilitator_scale_timeout(boot, monkeypatch):
+    """90 s by default, whatever the env says otherwise, and nothing on legacy."""
+    probe = _McpProbe(payment=_payment())
+    h = boot(provider=_x402_provider(), mcp_client=probe)
+    probe.db_path = h.db_path
+    assert h.settle(h.create_and_approve(amount=1.0)).status_code == 200
+    assert probe.kwargs[0]["timeout"] == DEFAULT_PACT_INVOKE_TIMEOUT_S == 90.0
+
+    # …and the operator can move it without touching the code.
+    monkeypatch.setenv(PACT_INVOKE_TIMEOUT_ENV, "12.5")
+    overridden = _McpProbe(payment=_payment())
+    h2 = boot(provider=_x402_provider(), mcp_client=overridden)
+    overridden.db_path = h2.db_path
+    assert h2.settle(h2.create_and_approve(amount=1.0)).status_code == 200
+    assert overridden.kwargs[0]["timeout"] == 12.5
+
+    # The legacy rail is untouched: no timeout kwarg at all, so mcp_client's
+    # 5 s default still governs the unpaid call. (Also pinned by
+    # test_mock_provider_keeps_the_legacy_order_and_shape's `kwargs == [{}]`.)
+    monkeypatch.delenv(PACT_INVOKE_TIMEOUT_ENV)
+    legacy = _McpProbe(payment=None)
+    h3 = boot(provider=MockSettlementProvider(), mcp_client=legacy)
+    legacy.db_path = h3.db_path
+    assert h3.settle(h3.create_and_approve()).status_code == 200
+    assert "timeout" not in legacy.kwargs[0]
+
+
+def test_a_malformed_invoke_timeout_is_refused_before_anything_is_signed(
+        boot, monkeypatch):
+    """A typo in the environment must not freeze a pact. Same posture as the
+    malformed spend cap: refuse loudly, before the claim, before the signature."""
+    monkeypatch.setenv(PACT_INVOKE_TIMEOUT_ENV, "0")
+    probe = _McpProbe(payment=_payment())
+    h = boot(provider=_x402_provider(), mcp_client=probe)
+    probe.db_path = h.db_path
+
+    pact_id = h.create_and_approve(amount=1.0)
+    resp = h.settle(pact_id)
+
+    assert resp.status_code == 500
+    assert PACT_INVOKE_TIMEOUT_ENV in resp.get_json()["error"]
+    assert probe.calls == []                        # nothing invoked, nothing signed
+    assert h.pact(pact_id)["status"] == "approved"  # the claim never happened
+    assert h.agent_run_count() == 0
+
+
+# ---------------------------------------------------------------------------
+# 8. Stage 2 / WP-R2 (review D3): a storage failure AFTER the payment is a
+#    readable 500, never a bare one.
+#
+# `database is locked` (sqlite3's 5 s default, no WAL, more than one worker) on
+# the post-payment writes used to escape as a Flask 500 with an empty body: the
+# money had moved and the operator was left with no pointer to it. The run row
+# still carries the hash, so the fix is to say so — and to keep the freeze.
+# ---------------------------------------------------------------------------
+
+def test_a_storage_failure_after_the_payment_keeps_the_hash_and_the_freeze(
+        boot, monkeypatch):
+    probe = _McpProbe(payment=_payment())
+    h = boot(provider=_x402_provider(), mcp_client=probe)
+    probe.db_path = h.db_path
+    pact_id = h.create_and_approve(amount=1.0)
+
+    # Fail ONLY the settling → settled write, so the claim and the run row are
+    # both real and only the last statement loses the database.
+    real_transition = app_module.transition_pact
+
+    def _locked_on_settled(db_path, pact_id_, from_status, to_status, **fields):
+        if to_status == "settled":
+            raise sqlite3.OperationalError("database is locked")
+        return real_transition(db_path, pact_id_, from_status, to_status, **fields)
+
+    monkeypatch.setattr(app_module, "transition_pact", _locked_on_settled)
+
+    resp = h.settle(pact_id)
+
+    assert resp.status_code == 500
+    body = resp.get_json()
+    assert "reconciliation" in body["error"]
+    # The two handles on the money that moved.
+    assert body["tx_hash"] == TX_HASH
+    assert body["run_id"]
+    # …and the run row really does carry the hash, so nothing is lost.
+    assert get_agent_run(h.db_path, body["run_id"])["tx_hash"] == TX_HASH
+    # Frozen, not walked back: a retry must not sign a second authorization.
+    assert h.pact(pact_id)["status"] == "settling"
+
+
+def test_a_storage_failure_on_the_unknown_path_still_freezes_the_pact(
+        boot, monkeypatch):
+    """The reconciliation record is the one write that cannot be retried later,
+    so losing it has to surface the nonce instead of a traceback."""
+    h = _unknown_outcome_harness(boot, monkeypatch)
+    pact_id = h.create_and_approve(amount=1.0)
+
+    def _locked(*args, **kwargs):
+        raise sqlite3.OperationalError("database is locked")
+
+    monkeypatch.setattr(app_module, "update_pact_fields", _locked)
+
+    resp = h.settle(pact_id)
+
+    assert resp.status_code == 500
+    body = resp.get_json()
+    assert "reconciliation" in body["error"]
+    assert body["run_id"] is None
+    assert body["tx_hash"] is None
+    # The nonce is the only handle on that authorization; it must reach the
+    # caller even though the row that would have held it was never written.
+    assert body["payment_pending"]["nonce"].startswith("0x")
+    assert body["payment_pending"]["payee"] == CREATOR_WALLET
+    # The facilitator really did settle, and the pact is still frozen.
+    assert h.facilitator.calls == ["supported", "verify", "settle"]
+    assert h.pact(pact_id)["status"] == "settling"
+    assert h.agent_run_count() == 0
