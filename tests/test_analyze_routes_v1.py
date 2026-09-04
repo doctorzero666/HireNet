@@ -41,6 +41,21 @@ def _guard_no_real_llm(no_real_llm_client):
     """
 
 
+@pytest.fixture(autouse=True)
+def _pin_v1(monkeypatch):
+    """This file characterises the v1 pipeline, so it pins the flag to v1.
+
+    Stage 1 / WP3b (D2) put the four analysis routes behind
+    `HIRENET_TASK_AGENT`. Every assertion below is about what v1 does — the
+    exact response keys, which module-level names get called, how a malformed
+    marker payload is swallowed. Running them against v2 does not test a weaker
+    contract, it tests a different one (that is what
+    tests/test_analyze_routes_v2.py is for), so the pipeline is named
+    explicitly rather than inherited from whatever the shell exports.
+    """
+    monkeypatch.setenv("HIRENET_TASK_AGENT", "v1")
+
+
 # ──────────────────────────────────────────────────────────────────────────────
 # Canned LLM output
 # ──────────────────────────────────────────────────────────────────────────────

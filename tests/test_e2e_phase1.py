@@ -29,6 +29,19 @@ CALLER_ID = "phase1_stub_employer"  # create_app 默认 PHASE1_CALLER_ID
 CREATOR_ID = "phase1_stub_creator"  # create_app 默认 PHASE1_CREATOR_ID
 
 
+@pytest.fixture(autouse=True)
+def _pin_v1(monkeypatch):
+    """本文件走 v1 流水线，显式钉死 HIRENET_TASK_AGENT，不看 shell 里导出了什么。
+
+    Stage 1 / WP3b（D2）把四个分析路由放到了 `HIRENET_TASK_AGENT` 开关后面。
+    下面这些 stub（`app.app.decompose_tasks` / `run_resource_decision`）是 v1
+    路径的调用点，v2 路径根本不经过它们——真跑到 v2 上，stub 不生效，测试会去
+    连真实的 Zhipu API。v2 的等价计费断言在
+    tests/test_analyze_routes_v2.py::TestBillingAndUsage 里单独覆盖。
+    """
+    monkeypatch.setenv("HIRENET_TASK_AGENT", "v1")
+
+
 @pytest.fixture
 def app_and_db():
     """起一个用临时库的 app（create_app 内会自动 bootstrap 第一个资产），同时暴露 db_path 以便直接查账本。"""
