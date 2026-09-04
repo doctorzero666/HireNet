@@ -19,6 +19,33 @@ from app.storage.users import create_user, get_user
 
 
 # ──────────────────────────────────────────────────────────────────────────────
+# helpers
+# ──────────────────────────────────────────────────────────────────────────────
+
+# Index of the signature character the tamper helper rewrites. Any index other
+# than the last one works; 10 is comfortably inside the 43-char base64url
+# encoding of a 32-byte HS256 signature.
+_TAMPER_INDEX = 10
+
+
+def tamper_signature(token: str) -> str:
+    """Return `token` with exactly one signature byte changed.
+
+    Do NOT tamper the LAST base64url character: a 32-byte HS256 signature
+    encodes to 43 chars, and the final char carries only 4 significant bits
+    (the remaining 2 are padding). 16 of the 64 base64url characters therefore
+    decode to the same 32 bytes, so a "tampered" token verifies successfully
+    and the test flakes (~7% of runs). A character in the middle always carries
+    6 significant bits, so any different character changes the decoded
+    signature and verification must fail deterministically.
+    """
+    head, mid, sig = token.split(".")
+    original = sig[_TAMPER_INDEX]
+    replacement = "A" if original != "A" else "B"
+    return f"{head}.{mid}.{sig[:_TAMPER_INDEX] + replacement + sig[_TAMPER_INDEX + 1:]}"
+
+
+# ──────────────────────────────────────────────────────────────────────────────
 # hash_password / verify_password
 # ──────────────────────────────────────────────────────────────────────────────
 
@@ -71,10 +98,7 @@ class TestJWT:
 
     def test_verify_rejects_tampered_signature(self):
         tok = create_token("alice", "creator")
-        # Flip the last char of the signature segment.
-        head, mid, sig = tok.split(".")
-        bad_sig = sig[:-1] + ("A" if sig[-1] != "A" else "B")
-        assert verify_token(f"{head}.{mid}.{bad_sig}") is None
+        assert verify_token(tamper_signature(tok)) is None
 
 
 # ──────────────────────────────────────────────────────────────────────────────
@@ -330,8 +354,7 @@ class TestMeRoute:
 
     def test_me_with_tampered_signature_401(self, client):
         token = self._login(client)
-        head, mid, sig = token.split(".")
-        bad = f"{head}.{mid}.{sig[:-1] + ('A' if sig[-1] != 'A' else 'B')}"
+        bad = tamper_signature(token)
         resp = client.get(
             "/api/auth/me",
             headers={"Authorization": f"Bearer {bad}"},
