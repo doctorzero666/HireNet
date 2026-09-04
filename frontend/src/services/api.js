@@ -225,10 +225,15 @@ export async function approvePact(pactId) {
 }
 
 export async function settlePact(pactId) {
-  /* Two-step settle: pact/settle creates the agent_run + accrued ledger
-     rows; royalty/settle then drives the settlement provider to produce a
-     real tx_hash. Backend pact/settle never returns tx_hash, so without the
-     second call there's nothing to surface on the Etherscan card. */
+  /* Two-step settle on the legacy rails: pact/settle creates the agent_run +
+     accrued ledger rows; royalty/settle then drives the settlement provider to
+     produce a real tx_hash. Backend pact/settle returns no tx_hash there, so
+     without the second call there's nothing to surface on the Etherscan card.
+
+     On the x402 rail (Stage 2 / WP-E) pact/settle pays the creator at
+     invocation time and returns tx_hash + explorer_url itself; the second call
+     is then skipped — the run is already 'settling' and /royalty/settle
+     answers 409 for it. */
   const pactRes = await fetch(`${API_BASE}/pact/settle/${pactId}`, {
     method: 'POST',
     headers: buildHeaders(),
@@ -239,8 +244,8 @@ export async function settlePact(pactId) {
   }
   const pact = await pactRes.json()
 
-  let tx_hash = null
-  if (pact.run_id) {
+  let tx_hash = pact.tx_hash || null
+  if (!tx_hash && pact.run_id) {
     /* tx_hash is decorative — if the provider hiccups we still let the
        caller render royalty splits from the pact-settle response. */
     try {
@@ -264,9 +269,15 @@ export async function settlePact(pactId) {
     agent_name: pact.agent_name,
     task_id: pact.task_id,
     tx_hash,
-    /* mcp_result is the post-billing tool invocation result; null when the
-       asset has no endpoint_url, error dict on failure, success dict with
-       preview/total/tool on a real MCP call. */
+    /* explorer_url / settled_amount exist only on the x402 rail, where the
+       backend settles the pact through a paid invocation. Null everywhere else
+       so consumers only ever see one shape. settled_amount is what was actually
+       paid (dollars); `amount` stays the amount the pact was created for. */
+    explorer_url: pact.explorer_url || null,
+    settled_amount: pact.settled_amount ?? null,
+    /* mcp_result is the tool invocation result; null when the asset has no
+       endpoint_url, error dict on failure, success dict with preview/total/tool
+       on a real MCP call. */
     mcp_result: pact.mcp_result || null,
   }
 }

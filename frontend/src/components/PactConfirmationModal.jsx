@@ -7,7 +7,8 @@ import { createPact, approvePact, settlePact } from '../services/api'
  * props:
  *   agent: { name, creator, wallet, pricePerHour }
  *   task: { id, name, description, estimatedHours }
- *   onConfirm: () => void
+ *   onConfirm: (settlement) => void   // 由结算完成后的“完成”按钮触发，不再在
+ *                                     // settle 返回时自动触发（WP-E）
  *   onReject: () => void
  *   onClose: () => void
  */
@@ -127,12 +128,12 @@ export default function PactConfirmationModal({ agent, task, onConfirm, onReject
         clearInterval(intervalRef.current)
         intervalRef.current = null
       }
-      onConfirm?.({
-        ...settlement,
-        agent_name: agent?.name,
-        creator: agent?.creator,
-        hours: estimatedHours,
-      })
+      /* Stage 2 / WP-E: do NOT navigate here. onConfirm unmounts this modal,
+         which used to happen the instant settle resolved — the mandate block
+         and the on-chain tx link were on screen for a single frame. The modal
+         now stays in its settled state and the user leaves via 完成 below. */
+      setWaiting(false)
+      setStage('')
     } catch (err) {
       if (intervalRef.current) {
         clearInterval(intervalRef.current)
@@ -142,6 +143,18 @@ export default function PactConfirmationModal({ agent, task, onConfirm, onReject
       setStage('')
       setError(err?.message || '请求失败')
     }
+  }
+
+  /* 结算完成后的“完成”按钮：做的正是过去 settle 一返回就自动做的事 —— 把结算
+     结果交给父组件（AnalysisReport 卸载 Modal 并跳转到执行页）。区别只是现在
+     由用户点一下，凭证与链上交易号因此可读。 */
+  const handleDone = () => {
+    onConfirm?.({
+      ...settled,
+      agent_name: agent?.name,
+      creator: agent?.creator,
+      hours: estimatedHours,
+    })
   }
 
   // Closing the modal mid-flow must not navigate (user backed out) and must
@@ -489,19 +502,28 @@ export default function PactConfirmationModal({ agent, task, onConfirm, onReject
             flexWrap: 'wrap',
           }}
         >
-          <PixelButton variant="gold" onClick={handleConfirm} disabled={waiting}>
-            ✓ 确认授权
-          </PixelButton>
-          <PixelButton
-            variant="wood"
-            onClick={() => setShowAdjust((v) => !v)}
-            disabled={waiting}
-          >
-            ⚙ 调整限额
-          </PixelButton>
-          <PixelButton variant="danger" onClick={onReject} disabled={waiting}>
-            ✕ 拒绝
-          </PixelButton>
+          {settled ? (
+            /* 结算已完成：授权/调整/拒绝都已无意义，只留一个出口。 */
+            <PixelButton variant="gold" onClick={handleDone}>
+              ✓ 完成
+            </PixelButton>
+          ) : (
+            <>
+              <PixelButton variant="gold" onClick={handleConfirm} disabled={waiting}>
+                ✓ 确认授权
+              </PixelButton>
+              <PixelButton
+                variant="wood"
+                onClick={() => setShowAdjust((v) => !v)}
+                disabled={waiting}
+              >
+                ⚙ 调整限额
+              </PixelButton>
+              <PixelButton variant="danger" onClick={onReject} disabled={waiting}>
+                ✕ 拒绝
+              </PixelButton>
+            </>
+          )}
         </div>
       </div>
     </div>
