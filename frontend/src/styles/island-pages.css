@@ -226,9 +226,11 @@
   border: 2px solid transparent;
   cursor: pointer;
 }
+/* No translateY on hover: lifting the card moves its own hit area out from
+   under a pointer resting near the bottom edge, which produces an
+   enter/leave loop and a visible flicker. Depth is carried by the shadow. */
 .role-card:hover {
-  transform: translateY(-4px);
-  box-shadow: 0 8px 24px rgba(114, 93, 66, 0.15);
+  box-shadow: 0 10px 28px rgba(114, 93, 66, 0.22);
 }
 .role-card.ent:hover { border-color: var(--app-teal); }
 .role-card.cre:hover { border-color: var(--app-green); }
@@ -598,7 +600,7 @@
   transition: all 0.3s ease;
   box-shadow: var(--elev-sm);
 }
-.metric:hover { transform: translateY(-2px); box-shadow: var(--elev-base); }
+.metric:hover { box-shadow: var(--elev-lg); }
 .metric .mk {
   font-size: 11px;
   font-weight: 700;
@@ -679,8 +681,7 @@
 }
 .agent-card:hover {
   border-color: #19c8b9;
-  transform: translateY(-2px);
-  box-shadow: var(--elev-base);
+  box-shadow: var(--elev-lg);
 }
 
 .agent-card__head {

@@ -73,15 +73,14 @@ export default function EmployerDashboard() {
                 justifyContent: 'space-between',
                 flexWrap: 'wrap',
                 gap: 12,
+                boxShadow: 'var(--elev-sm)',
                 transition: 'all 0.3s ease',
               }}
               onMouseEnter={(e) => {
-                e.currentTarget.style.transform = 'translateY(-2px)'
-                e.currentTarget.style.boxShadow = 'var(--elev-base)'
+                e.currentTarget.style.boxShadow = 'var(--elev-lg)'
               }}
               onMouseLeave={(e) => {
-                e.currentTarget.style.transform = 'translateY(0)'
-                e.currentTarget.style.boxShadow = 'none'
+                e.currentTarget.style.boxShadow = 'var(--elev-sm)'
               }}
             >
               <div>

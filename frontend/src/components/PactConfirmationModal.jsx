@@ -480,7 +480,10 @@ export default function PactConfirmationModal({ agent, task, onConfirm, onReject
                 textAlign: 'center',
               }}
             >
-              {stage || t('pactModal.stages.waiting')}{dots}
+              {stage || t('pactModal.stages.waiting')}
+              {/* Fixed-width slot: the animated dots must not shift the
+                  centred text left/right every 400ms. */}
+              <span style={{ display: 'inline-block', width: '2ch', textAlign: 'left' }}>{dots}</span>
             </div>
           )}
 
