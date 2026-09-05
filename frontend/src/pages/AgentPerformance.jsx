@@ -28,19 +28,21 @@ function formatAmount(amountCents, currency) {
 export default function AgentPerformance() {
   const { agentId } = useParams()
   const navigate = useNavigate()
-  const { t } = useLang()
+  const { t, lang } = useLang()
   const CALLS = useCalls(t)
   const [earnings, setEarnings] = useState(null)
   const [earnError, setEarnError] = useState('')
 
+  // No dedicated loading spinner here — on a language switch the previously
+  // loaded earnings stay on screen until the re-fetch resolves.
   useEffect(() => {
     let cancelled = false
     fetchCreatorEarnings()
-      .then((data) => { if (!cancelled) setEarnings(data) })
+      .then((data) => { if (!cancelled) { setEarnings(data); setEarnError('') } })
       .catch((e) => { if (!cancelled) setEarnError(e.message || t('agentPerformance.errors.earningsFailed')) })
     return () => { cancelled = true }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [])
+  }, [lang])
 
   // Pick the top accrued bucket as the headline. The full breakdown is rendered
   // below it so multi-currency creators see all their buckets.

@@ -49,17 +49,24 @@ export default function JobDetail() {
   const { jobId } = useParams()
   const navigate = useNavigate()
   const location = useLocation()
-  const { t } = useLang()
+  const { t, lang } = useLang()
 
   const [job, setJob] = useState(location.state?.job || null)
-  const [loading, setLoading] = useState(!location.state?.job)
   const [error, setError] = useState('')
   const [applying, setApplying] = useState(false)
   const [applyError, setApplyError] = useState('')
   const [candidateId, setCandidateId] = useState(null)
+  // `loadedLang` records which language `job` reflects — either the
+  // language already active when JobSeekerHome passed it via router state,
+  // or the language of the last fetch this effect made. `loading` is
+  // derived from it (never toggled by a synchronous setState in the effect)
+  // so a language switch re-shows the spinner and forces a re-fetch even
+  // though `job` is already populated.
+  const [loadedLang, setLoadedLang] = useState(() => (location.state?.job ? lang : null))
+  const loading = loadedLang !== lang
 
   useEffect(() => {
-    if (job) return
+    if (loadedLang === lang) return
     let cancelled = false
     fetchJobs()
       .then((data) => {
@@ -69,19 +76,21 @@ export default function JobDetail() {
           const id = pick(j, ['job_id', 'id', 'jd_id'])
           return String(id) === String(jobId)
         })
-        if (found) setJob(found)
+        if (found) { setJob(found); setError('') }
         else setError(t('jobDetail.errors.notFound'))
-        setLoading(false)
+        setLoadedLang(lang)
       })
       .catch((e) => {
         if (cancelled) return
         setError(e.message || t('jobDetail.errors.loadFailed'))
-        setLoading(false)
+        setLoadedLang(lang)
       })
     return () => { cancelled = true }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [job, jobId])
+  }, [jobId, lang])
 
+  // candidateId is only used as an opaque id for the apply call — it isn't
+  // localised content, so this stays mount-only on purpose.
   useEffect(() => {
     let cancelled = false
     fetchCandidates()

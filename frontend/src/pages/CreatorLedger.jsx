@@ -54,11 +54,14 @@ function shortHash(h) {
 
 export default function CreatorLedger() {
   const navigate = useNavigate()
-  const { t } = useLang()
+  const { t, lang } = useLang()
   const [ledger, setLedger] = useState(null)
   const [earnings, setEarnings] = useState(null)
   const [error, setError] = useState('')
 
+  // No dedicated loading spinner on this page, so on a language switch the
+  // previously loaded ledger/earnings stay on screen until the re-fetch
+  // resolves; the error banner clears once a fresh attempt succeeds.
   useEffect(() => {
     let cancelled = false
     Promise.all([fetchCreatorLedger(), fetchCreatorEarnings()])
@@ -66,11 +69,12 @@ export default function CreatorLedger() {
         if (cancelled) return
         setLedger(l)
         setEarnings(e)
+        setError('')
       })
       .catch((e) => { if (!cancelled) setError(e.message || t('creatorLedger.errors.loadFailed')) })
     return () => { cancelled = true }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [])
+  }, [lang])
 
   const entries = ledger?.entries ?? []
   const callCount = earnings?.call_count ?? entries.length

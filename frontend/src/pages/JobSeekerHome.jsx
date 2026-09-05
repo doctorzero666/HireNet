@@ -47,27 +47,38 @@ function salaryText(job) {
 
 export default function JobSeekerHome() {
   const navigate = useNavigate()
-  const { t } = useLang()
+  const { t, lang } = useLang()
   const [jobs, setJobs] = useState([])
-  const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
+  // `loadedLang` records which language the data on hand was fetched for;
+  // `loading` is derived from it rather than a separate flag toggled from
+  // inside the effect, so switching languages shows the spinner again
+  // (loadedLang !== lang) without ever calling setState synchronously in
+  // the effect body itself.
+  const [loadedLang, setLoadedLang] = useState(null)
+  const loading = loadedLang !== lang
 
+  // Jobs are localised server-side (WP-I18N-2), so a language toggle must
+  // re-fetch, not just re-render with stale strings. `cancelled` guards
+  // against a slow request from the previous language landing after a
+  // faster one from the new language.
   useEffect(() => {
     let cancelled = false
     fetchJobs()
       .then((data) => {
         if (cancelled) return
         setJobs(normalizeJobs(data))
-        setLoading(false)
+        setError('')
+        setLoadedLang(lang)
       })
       .catch((e) => {
         if (cancelled) return
         setError(e.message || t('jobSeekerHome.errors.loadFailed'))
-        setLoading(false)
+        setLoadedLang(lang)
       })
     return () => { cancelled = true }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [])
+  }, [lang])
 
   return (
     <Scene>

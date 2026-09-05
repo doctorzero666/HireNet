@@ -15,7 +15,7 @@ import { useLang } from '../i18n/LanguageProvider'
  * sense, and the capsule is hidden entirely. Demo mode lights it back up.
  */
 export default function IdentitySwitcher() {
-  const { t } = useLang()
+  const { t, lang } = useLang()
   const ROLE_LABELS = {
     enterprise: t('identitySwitcher.roles.enterprise'),
     creator: t('identitySwitcher.roles.creator'),
@@ -28,6 +28,10 @@ export default function IdentitySwitcher() {
   const [switching, setSwitching] = useState(false)
   const jwtActive = hasJwtToken()
 
+  // Identity name/role fields are localised server-side, so re-fetch when
+  // the language toggle moves. No dedicated loading indicator on this
+  // floating capsule — the previous identities stay displayed until the
+  // re-fetch resolves.
   useEffect(() => {
     if (jwtActive) return  // skip fetch when real auth is in play
     let cancelled = false
@@ -36,6 +40,7 @@ export default function IdentitySwitcher() {
         if (cancelled) return
         setIdentities(data?.identities ?? [])
         setCurrent(data?.current ?? null)
+        setError('')
       })
       .catch((e) => {
         if (cancelled) return
@@ -43,7 +48,7 @@ export default function IdentitySwitcher() {
       })
     return () => { cancelled = true }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [jwtActive])
+  }, [jwtActive, lang])
 
   if (jwtActive) return null
 

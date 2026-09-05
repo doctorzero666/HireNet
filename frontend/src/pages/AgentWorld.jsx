@@ -46,26 +46,32 @@ function AgentCard({ skill }) {
 }
 
 export default function AgentWorld() {
-  const { t } = useLang()
+  const { t, lang } = useLang()
   const [skills, setSkills] = useState([])
-  const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
+  // See JobSeekerHome for the pattern: `loading` is derived from whether the
+  // skills list on hand was fetched for the current language.
+  const [loadedLang, setLoadedLang] = useState(null)
+  const loading = loadedLang !== lang
 
+  // Skill name/description/creator fields are localised server-side, so
+  // switching languages must re-fetch the listing.
   useEffect(() => {
     let cancelled = false
     fetchSkillsList()
       .then((data) => {
         if (cancelled) return
         setSkills(Array.isArray(data?.skills) ? data.skills : [])
+        setError(null)
       })
       .catch((err) => {
         if (!cancelled) setError(err?.message || 'load failed')
       })
       .finally(() => {
-        if (!cancelled) setLoading(false)
+        if (!cancelled) setLoadedLang(lang)
       })
     return () => { cancelled = true }
-  }, [])
+  }, [lang])
 
   return (
     <Scene>

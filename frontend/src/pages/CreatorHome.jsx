@@ -17,10 +17,15 @@ function formatAmount(amountCents, currency) {
 
 export default function CreatorHome() {
   const navigate = useNavigate()
-  const { t } = useLang()
+  const { t, lang } = useLang()
   const [earnings, setEarnings] = useState(null)
   const [agents, setAgents] = useState(null)
 
+  // Agent name/creator fields are localised server-side. No dedicated
+  // loading indicator here (agents === null already drives the "loading"
+  // copy on first mount) — on a language switch we keep the previously
+  // loaded list on screen until the re-fetch resolves rather than reverting
+  // to the loading placeholder.
   useEffect(() => {
     let cancelled = false
     fetchCreatorEarnings()
@@ -30,7 +35,7 @@ export default function CreatorHome() {
       .then((data) => { if (!cancelled) setAgents(Array.isArray(data?.skills) ? data.skills : []) })
       .catch(() => { if (!cancelled) setAgents([]) })
     return () => { cancelled = true }
-  }, [])
+  }, [lang])
 
   // Real ledger data is keyed by (currency, chain), not per agent. Until a
   // per-asset breakdown exists, every card shows the same global totals — the

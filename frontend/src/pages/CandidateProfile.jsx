@@ -28,14 +28,23 @@ function asList(value) {
 
 export default function CandidateProfile() {
   const navigate = useNavigate()
-  const { t } = useLang()
+  const { t, lang } = useLang()
   const [profile, setProfile] = useState(null)
-  const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
+  // See JobSeekerHome for the pattern: `loading` is derived from whether the
+  // profile on hand was fetched for the current language, so no effect ever
+  // calls setState synchronously on its own body.
+  const [loadedLang, setLoadedLang] = useState(null)
+  const loading = loadedLang !== lang
   const [analysis, setAnalysis] = useState(null)
   const [analyzing, setAnalyzing] = useState(false)
   const [analyzeError, setAnalyzeError] = useState('')
 
+  // Profile fields are localised server-side, so re-fetch on language
+  // change. `analysis` (the on-demand AI strengths writeup below) is left
+  // alone — like an analysis session, its text is generated once in
+  // whatever language was active at the time and isn't retroactively
+  // re-translated.
   useEffect(() => {
     let cancelled = false
     fetchCandidates()
@@ -48,16 +57,17 @@ export default function CandidateProfile() {
       .then((data) => {
         if (cancelled) return
         setProfile(data?.profile || data?.candidate || data)
-        setLoading(false)
+        setError('')
+        setLoadedLang(lang)
       })
       .catch((e) => {
         if (cancelled) return
         setError(e.message || t('candidateProfile.errors.loadFailed'))
-        setLoading(false)
+        setLoadedLang(lang)
       })
     return () => { cancelled = true }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [])
+  }, [lang])
 
   const name = pick(profile, ['name', 'display_name', 'candidate_name'], t('candidateProfile.defaultName'))
   const headline = pick(profile, ['headline', 'title', 'role', 'current_role'], '')

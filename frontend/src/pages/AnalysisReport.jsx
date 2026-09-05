@@ -31,14 +31,17 @@ export default function AnalysisReport() {
   const { sessionId } = useParams()
   const location = useLocation()
   const navigate = useNavigate()
-  const { t } = useLang()
+  const { t, lang } = useLang()
   const result = location.state
   const [pactTask, setPactTask] = useState(null)
   const [jdTask, setJdTask] = useState(null)
   /* Demo agent metadata for the Pact modal. Null until server responds;
      fetchDemoAgent returns null on 404 (TESTING / bootstrap off), in which
      case we fall back to the existing hardcoded values below so the demo
-     flow degrades cleanly instead of blocking on a missing endpoint. */
+     flow degrades cleanly instead of blocking on a missing endpoint.
+     Unlike `result` (the analyze session's own LLM output, whose language is
+     fixed at generation time by design), this is bootstrap metadata fetched
+     independently of the session — so it re-fetches on a language switch. */
   const [demoAgent, setDemoAgent] = useState(null)
 
   useEffect(() => {
@@ -47,7 +50,7 @@ export default function AnalysisReport() {
       .then((agent) => { if (!cancelled) setDemoAgent(agent) })
       .catch(() => { /* swallow — modal falls back to hardcoded demo data */ })
     return () => { cancelled = true }
-  }, [])
+  }, [lang])
 
   if (!result) {
     return (
