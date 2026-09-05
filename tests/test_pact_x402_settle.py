@@ -543,9 +543,12 @@ def test_mock_provider_keeps_the_legacy_order_and_shape(boot):
     assert body["status"] == "settled"
     # The agent_run row was already committed when the MCP client ran.
     assert probe.runs_at_call_time == 1
-    # …and the legacy call keeps its 3-argument shape.
+    # …and the legacy call keeps its 3-argument shape. `lang` (WP-I18N-2) is
+    # the ONE keyword this rail passes — "zh" here, the default when the
+    # request says nothing, which `call_mcp_tool` does not put on the wire at
+    # all. None of the WP-E keys (max_amount, timeout) appear.
     assert probe.calls[0] == (MCP_ENDPOINT, TOOL, {"task_id": TASK_ID})
-    assert probe.kwargs == [{}]
+    assert probe.kwargs == [{"lang": "zh"}]
     # charge_amount still comes from the pact's own amount (dollars -> cents).
     assert get_agent_run(h.db_path, body["run_id"])["charge_amount"] == 100
     # Additive keys are x402-only: the legacy body is unchanged.

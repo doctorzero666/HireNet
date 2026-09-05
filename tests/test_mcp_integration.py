@@ -92,11 +92,15 @@ class _RecordingMcpClient:
     def __init__(self):
         self.calls = []
 
-    def __call__(self, endpoint_url, tool_name, arguments=None, timeout=5.0):
+    def __call__(self, endpoint_url, tool_name, arguments=None, timeout=5.0, **kwargs):
+        # **kwargs absorbs the keyword-only extensions the settle paths pass
+        # (`max_amount` on the x402 rail, `lang` since WP-I18N-2) — recorded
+        # so a test can assert on them.
         self.calls.append({
             "endpoint_url": endpoint_url,
             "tool_name": tool_name,
             "arguments": arguments,
+            **kwargs,
         })
         return {
             "status": "ok",
@@ -107,7 +111,7 @@ class _RecordingMcpClient:
         }
 
 
-def _failing_mcp_client(endpoint_url, tool_name, arguments=None, timeout=5.0):
+def _failing_mcp_client(endpoint_url, tool_name, arguments=None, timeout=5.0, **kwargs):
     """Mirrors call_mcp_tool's behaviour when the remote refuses — never raises."""
     return {
         "status": "error",

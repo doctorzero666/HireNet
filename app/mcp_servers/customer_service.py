@@ -1,12 +1,28 @@
 """Demo MCP server: customer service script generator.
 
 Standalone Flask app on :5002. Three tools, 120 lines of canned demo
-scripts (presale 40 + after-sale 50 + complaint 30). Importable as a Python
-module for tests; runnable as `python app/mcp_servers/customer_service.py`
-for end-to-end demo.
+scripts (presale 40 + after-sale 50 + complaint 30) in EACH language.
+Importable as a Python module for tests; runnable as
+`python app/mcp_servers/customer_service.py` for end-to-end demo.
 
 Wire shape mirrors the MCP tool-call convention so the main backend can
 talk to a real MCP server later without rewriting the client.
+
+WP-I18N-2 / D-F — language selection
+────────────────────────────────────
+This is the most visible Chinese left in an English demo: `pact_settle` calls
+one of these tools and `ExecutionPage.jsx` renders the returned items verbatim
+as the "Agent Output Preview" — the climax of the pact-settle flow. So each
+canned set has an English twin, chosen by an optional `lang`:
+
+  * `POST /mcp/tools/call` — `arguments.lang`, or `?lang=` on the URL;
+  * `POST /mcp/tools/list` — `?lang=`.
+
+Absent (every existing caller) means Chinese, and the Chinese lists below are
+byte-identical to what they were. `_pick` is four lines rather than an import
+of `app.agents.lang_support` on purpose: this file is a STANDALONE Flask app
+that is also run as a script, where `app.*` is not importable until the
+`sys.path` fix-up at the bottom has run.
 """
 from __future__ import annotations
 
@@ -151,47 +167,229 @@ _COMPLAINTS = [
 ]
 
 
+#: Same 40 / 50 / 30 scripts, written for an English-speaking shop. A
+#: translation of the demo content, not a different demo: the offers, numbers
+#: and policies match line for line, so the two sets stay comparable.
+_GREETINGS_EN = [
+    "Hello and welcome! How can I help you today?",
+    "Hi there, thanks for reaching out — I'm your personal support assistant~",
+    "Hello! Which of our products would you like to hear about today?",
+    "Welcome to our store! Just tell me any time if you have a question.",
+    "Hello dear customer, what can I do for you?",
+    "Hello, thanks for following us — do you have any questions?",
+    "Hi~ I'm Nora from support, happy to help!",
+    "Thanks for getting in touch — tell me what you need and I'll handle it right away.",
+    "Hello, are you looking for product features or for pricing?",
+    "Hi, welcome! Anything you'd like to confirm before you order?",
+    "Hello, we have a promotion running — would you like to hear about it?",
+    "Hi, are you a returning customer? There's a loyalty discount for you~",
+    "Hello, new members get a 50 yuan voucher on sign-up — shall I tell you more?",
+    "Welcome! Tell me your budget and I'll help you pick.",
+    "Hi, I noticed you've been browsing a while — ask me anything.",
+    "Hello, every item in our store comes with 7-day no-questions-asked returns.",
+    "Hi there, is this your first time buying this product?",
+    "Hello, would you like me to walk you through our best sellers?",
+    "Hi, order today and you still get 30 off when you spend 200~",
+    "Hello, the style you're looking at is in stock and can ship by SF Express.",
+    "Welcome — one moment, I'll check stock for you right away.",
+    "Hello, we've held the item for you for 30 minutes.",
+    "Hi, add it to your cart and check out now to lock in the discounted price.",
+    "Hello, which courier would you like us to use?",
+    "Hi, would you like me to add a gift-wrap note?",
+    "Hello, support is open until 23:59 — order tonight and it ships tomorrow morning.",
+    "Hi there, this one is our best seller this month — highly recommended.",
+    "Hello, the colour you were watching is back in stock today — shall I reserve it?",
+    "Hi, today only: order this one and get a refill of the same item free.",
+    "Hello, could you tell me how you'll use it? I'll recommend the right size.",
+    "Hi, store members get free shipping as well~",
+    "Hello, is this a gift or for yourself?",
+    "Hi, take a look in your cart — I've already picked out a coupon for you.",
+    "Hello, today's livestream has an even lower price — worth a look.",
+    "Hi, would you like me to look up your past orders or your tracking?",
+    "Hello, we guarantee authenticity — ten times your money back if it isn't genuine.",
+    "Hi, save it for now and I'll remind you when the promotion starts.",
+    "Hello, this bundle is 198 yuan for a limited time, down from 358.",
+    "Hi, would you like me to send you the details link?",
+    "Hello and thanks for visiting — do ask, whether or not you order.",
+]
+
+_FAQ_EN = [
+    "Q: How soon do you ship? A: Within 24 hours of payment, public holidays excepted.",
+    "Q: Which couriers do you use? A: SF Express by default, ZTO for remote areas.",
+    "Q: How do I return or exchange? A: 7 days, no reason needed, with a voucher towards postage.",
+    "Q: How are member tiers calculated? A: Spend 500 yuan in total to reach Silver.",
+    "Q: Do you issue invoices? A: Yes, e-invoices — just add a note to your order.",
+    "Q: What payment methods do you take? A: WeChat Pay, Alipay, credit card, Huabei instalments.",
+    "Q: Can I pay in instalments? A: Yes — 3/6/12 months interest-free on selected items.",
+    "Q: Do the sizes run small? A: One size small; we suggest ordering a size up.",
+    "Q: Can I change the delivery address? A: Any time before it ships.",
+    "Q: Is shipping free? A: Free over 99 yuan, remote areas excepted.",
+    "Q: How long is the warranty? A: One year on the main unit, three months on accessories.",
+    "Q: How do I claim warranty? A: Contact support with your order number and a video.",
+    "Q: Do you have physical stores? A: Experience stores in Beijing, Shanghai and Shenzhen.",
+    "Q: Can I collect in store? A: Yes — choose in-store pickup at checkout.",
+    "Q: What if it's out of stock? A: Reserve a restock and we ship the moment it arrives.",
+    "Q: Can I pre-order? A: Yes, with a 30% deposit.",
+    "Q: How do I use points? A: 100 points is worth 1 yuan — tick the box at checkout.",
+    "Q: Can coupons be combined? A: Spend-and-save coupons stack with discount coupons.",
+    "Q: How do I enter the prize draw? A: You get an entry automatically when you order.",
+    "Q: What if there's a quality problem? A: Send a photo to support and we compensate you first.",
+    "Q: Can you drop-ship? A: Yes — just note the recipient when you order.",
+    "Q: Is gift wrapping charged? A: Basic gift boxes are free.",
+    "Q: Can I get a business invoice? A: Yes, just give us your tax number.",
+    "Q: How fast is delivery? A: Next-day in Beijing, Shanghai, Guangzhou and Shenzhen.",
+    "Q: Do you do same-city delivery? A: Instant courier is available in Beijing and Shanghai.",
+    "Q: Do you offer installation? A: Installation can be booked in the Shanghai area.",
+    "Q: Who pays return postage? A: We do for quality issues; the buyer does for change of mind.",
+    "Q: How do I activate my membership card? A: It activates automatically after your order.",
+    "Q: How do I track my parcel? A: Log in → My Orders → Track shipment.",
+    "Q: What if my size is sold out? A: Add it to your wishlist for first notice on restock.",
+    "Q: Can I request an invoice later? A: Yes, up to 90 days after purchase.",
+    "Q: When is member day? A: The 18th of every month — double points.",
+    "Q: Do points expire? A: Points are valid for 12 months from the date earned.",
+    "Q: What are the support hours? A: 9:00-22:00, every day.",
+    "Q: Is there a trial? A: Selected items come with a 30-day money-back trial.",
+    "Q: How do I become a reseller? A: Apply once your total purchases reach 5000 yuan.",
+    "Q: Can items be customised? A: Engraving, gift boxes and greeting cards are available.",
+    "Q: Is there English-language support? A: Yes, on weekdays.",
+    "Q: Do you ship overseas? A: Hong Kong, Macau, Taiwan and Southeast Asia are open.",
+    "Q: How does group buying work? A: Start a group of 3 and everyone gets 20% off.",
+    "Q: What if delivery is late? A: Not arrived after 7 days? Claim a compensation voucher.",
+    "Q: How do I get the new-customer offer? A: New-customer pricing applies for 7 days after sign-up.",
+    "Q: Can one order ship in several parcels? A: One order can be split into at most 3 parcels.",
+    "Q: Is cash on delivery available? A: In selected areas only.",
+    "Q: Can a bundle be split? A: Bundle pricing can't be split — order the items separately.",
+    "Q: What if the group buy doesn't fill? A: Automatic refund to the original method within 24 hours.",
+    "Q: Can gift cards be refunded? A: Yes, within 7 days while still unactivated.",
+    "Q: Do you offer accompanied delivery? A: Bookable in Beijing and Shanghai.",
+    "Q: Do you take trade-ins? A: Trade-in is supported for some categories.",
+    "Q: What do members get? A: Free shipping, a dedicated agent and a birthday gift.",
+]
+
+_COMPLAINTS_EN = [
+    "I'm very sorry for the trouble. Let me verify this for you right away — one moment.",
+    "Hello, I've logged your feedback; a specialist will reply within 30 minutes.",
+    "My sincere apologies for the disruption; I'm starting the after-sales process now.",
+    "Thank you for the patient feedback — we'll fix the process straight away.",
+    "I'm really sorry. Send me the order number and I'll coordinate with the warehouse at once.",
+    "I'm sorry — I've moved you into the VIP priority queue, please hold.",
+    "Your feedback matters. It's with a supervisor now, with a reply expected within the hour.",
+    "Thank you for flagging this — we've credited you a 50 yuan voucher with no minimum spend.",
+    "I completely understand how you feel; I'll stay on this until it is resolved.",
+    "I've opened a return/exchange request for you; it should complete within 3 working days.",
+    "I'm very sorry — we cover the postage on quality issues, so please do send it back.",
+    "I've booked an on-site service visit for you; you'll get the time by text.",
+    "My sincere apologies — we'll compensate your loss up front.",
+    "It's with the QC team for review; you'll hear the outcome within 24 hours.",
+    "Thanks for the heads-up — we're pulling the affected batch from sale immediately.",
+    "Please send a photo of the problem and I'll come back with a plan within 10 minutes.",
+    "Hello, the store manager is handling your case personally — please hold.",
+    "Again, I'm very sorry; extra compensation has been prepared for you, please check.",
+    "You've been moved into the priority queue; expect a reply within 30 minutes.",
+    "We've logged the issue and are working through it with the supplier.",
+    "Thank you very much for the feedback — we've upgraded you to lifetime VIP.",
+    "I'm sorry about this experience; we're fixing the logistics step right now.",
+    "A replacement of the same item is on its way — and no need to send the original back.",
+    "Please share the specifics and we'll come back with an outcome within the hour.",
+    "Thank you for the chance to put this right — compensation doubled, and an agent assigned.",
+    "I'm truly sorry — we've reshipped the same item and added a gift.",
+    "Hello, I've opened a fast-track case; it will be resolved within 24 hours.",
+    "We sincerely apologise for the trouble caused, and we take full responsibility.",
+    "Your case is now expedited after-sales and will be closed within 1 working day.",
+    "Your feedback matters a great deal; the issue has been raised with the quality committee.",
+]
+
+
+#: `{"zh": ..., "en": ...}` -> the requested side. Local rather than imported
+#: from `app.agents.lang_support` — see the module docstring.
+def _pick(node, lang):
+    if isinstance(node, dict) and "zh" in node:
+        return node.get(lang if lang == "en" else "zh", node["zh"])
+    return node
+
+
+def _request_lang(args=None):
+    """`arguments.lang`, else `?lang=`, else None (Chinese)."""
+    raw = (args or {}).get("lang") or request.args.get("lang")
+    return "en" if raw == "en" else None
+
+
 _TOOLS = [
     {
         "name": "generate_greeting",
-        "description": "生成客服欢迎语 / 售前话术。",
+        "description": {
+            "zh": "生成客服欢迎语 / 售前话术。",
+            "en": "Generate customer-service greetings and pre-sales scripts.",
+        },
         "input_schema": {
             "type": "object",
             "properties": {
-                "task_id": {"type": "string", "description": "任务 ID（用于去重 / 审计）"},
+                "task_id": {
+                    "type": "string",
+                    "description": {
+                        "zh": "任务 ID（用于去重 / 审计）",
+                        "en": "Task ID (used for de-duplication / audit)",
+                    },
+                },
                 "limit": {"type": "integer", "minimum": 1, "maximum": 40},
+                "lang": {"type": "string", "enum": ["zh", "en"]},
             },
         },
     },
     {
         "name": "generate_faq",
-        "description": "生成售后 / 常见问题话术。",
+        "description": {
+            "zh": "生成售后 / 常见问题话术。",
+            "en": "Generate after-sales and FAQ scripts.",
+        },
         "input_schema": {
             "type": "object",
             "properties": {
                 "task_id": {"type": "string"},
                 "limit": {"type": "integer", "minimum": 1, "maximum": 50},
+                "lang": {"type": "string", "enum": ["zh", "en"]},
             },
         },
     },
     {
         "name": "generate_complaint_response",
-        "description": "生成投诉回复话术。",
+        "description": {
+            "zh": "生成投诉回复话术。",
+            "en": "Generate complaint-response scripts.",
+        },
         "input_schema": {
             "type": "object",
             "properties": {
                 "task_id": {"type": "string"},
                 "limit": {"type": "integer", "minimum": 1, "maximum": 30},
+                "lang": {"type": "string", "enum": ["zh", "en"]},
             },
         },
     },
 ]
 
 
+def _localized_tools(lang):
+    """`_TOOLS` with every bilingual `description` resolved for `lang`."""
+    tools = []
+    for tool in _TOOLS:
+        properties = {
+            key: ({**spec, "description": _pick(spec["description"], lang)}
+                  if isinstance(spec.get("description"), dict) else spec)
+            for key, spec in tool["input_schema"]["properties"].items()
+        }
+        tools.append({
+            **tool,
+            "description": _pick(tool["description"], lang),
+            "input_schema": {**tool["input_schema"], "properties": properties},
+        })
+    return tools
+
+
 _DATA = {
-    "generate_greeting": _GREETINGS,
-    "generate_faq": _FAQ,
-    "generate_complaint_response": _COMPLAINTS,
+    "generate_greeting": {"zh": _GREETINGS, "en": _GREETINGS_EN},
+    "generate_faq": {"zh": _FAQ, "en": _FAQ_EN},
+    "generate_complaint_response": {"zh": _COMPLAINTS, "en": _COMPLAINTS_EN},
 }
 
 
@@ -209,7 +407,7 @@ def create_mcp_app() -> Flask:
 
     @app.post("/mcp/tools/list")
     def list_tools():
-        return jsonify({"tools": _TOOLS}), 200
+        return jsonify({"tools": _localized_tools(_request_lang())}), 200
 
     @app.post("/mcp/tools/call")
     def call_tool():
@@ -219,7 +417,7 @@ def create_mcp_app() -> Flask:
         if name not in _DATA:
             return jsonify({"error": f"Unknown tool: {name!r}"}), 400
 
-        items = _DATA[name]
+        items = _pick(_DATA[name], _request_lang(args))
         # caller may cap the size; default returns the full canned set so
         # downstream "total" reflects what the asset can actually produce.
         limit = args.get("limit")

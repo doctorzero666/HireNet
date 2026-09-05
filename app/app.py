@@ -2722,11 +2722,14 @@ def _pact_settle_x402(pact: dict, asset: dict | None, asset_id: str,
             endpoint_url,
             tool_name,
             {"task_id": pact.get("task_id")},
-            # Only this rail passes max_amount and timeout; the legacy call
-            # keeps its 3-argument shape so existing injected fakes are
-            # untouched (and 5 s is the right ceiling for an unpaid call).
+            # Only this rail passes max_amount and timeout (5 s is the right
+            # ceiling for an unpaid call, which is what the legacy path makes).
             max_amount=cap_atomic,
             timeout=invoke_timeout,
+            # WP-I18N-2 / D-F: the tool's canned output is what ExecutionPage
+            # renders as the "Agent Output Preview", so it must be in the
+            # caller's language.
+            lang=resolve_request_lang(request),
         )
     except Exception as exc:  # noqa: BLE001 - MCP_CLIENT is an injection seam
         # call_mcp_tool never raises, but an injected client might. A raise means
@@ -3104,6 +3107,8 @@ def pact_settle(pact_id):
             asset["endpoint_url"],
             tool_name,
             {"task_id": pact.get("task_id")},
+            # WP-I18N-2 / D-F, same as the x402 rail above.
+            lang=resolve_request_lang(request),
         )
     else:
         mcp_result = None

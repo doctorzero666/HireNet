@@ -12,9 +12,10 @@ Two responsibilities:
 Designed to be injectable: pact_settle reads
 `current_app.config.get("MCP_CLIENT", call_mcp_tool)`, so tests pass a fake
 without touching the network. Mirrors the SETTLEMENT_PROVIDER pattern in
-app/services/mock_settlement.py. Note the two call shapes: the legacy settle
-path calls the injected client with three positional arguments, while the WP-E
-x402 path also passes `max_amount=` — a fake used on that path must accept it.
+app/services/mock_settlement.py. Note the call shapes: the legacy settle path
+calls the injected client with three positional arguments plus `lang=`
+(WP-I18N-2), while the WP-E x402 path also passes `max_amount=` — the simplest
+fake takes `(endpoint_url, tool_name, arguments=None, **kwargs)`.
 
 ────────────────────────────────────────────────────────────────────────────
 Stage 2 / WP-C: paying for the invocation (x402)
@@ -89,10 +90,16 @@ _ALLOWED_SCHEMES = {"http", "https"}
 # Order matters: first match wins, so the more specific keywords come first.
 # Default falls through to "generate_greeting" — the most generic of the
 # three demo tools.
+#
+# WP-I18N-2: the English keywords sit alongside the Chinese ones rather than
+# replacing them. In an English session the pact's `agent_name` (and, once a
+# creator registers an English asset, `asset_name`) is English, so a
+# Chinese-only table would silently route every task to the default tool.
 _TOOL_KEYWORDS: list[tuple[tuple[str, ...], str]] = [
     (("投诉", "complaint", "complain"), "generate_complaint_response"),
-    (("faq", "问答", "常见问题", "售后"), "generate_faq"),
-    (("greeting", "欢迎", "售前", "客服"), "generate_greeting"),
+    (("faq", "问答", "常见问题", "售后", "after-sale", "after sales"), "generate_faq"),
+    (("greeting", "欢迎", "售前", "客服", "pre-sale", "presale",
+      "customer service", "support"), "generate_greeting"),
 ]
 
 _DEFAULT_TOOL = "generate_greeting"
@@ -179,6 +186,7 @@ def call_mcp_tool(
     *,
     session: Any = None,
     max_amount: int | None = None,
+    lang: str | None = None,
 ) -> dict[str, Any]:
     """POST to the MCP server, return a small summary safe to put on a pact.
 
@@ -209,6 +217,13 @@ def call_mcp_tool(
     `session` is a TEST SEAM: any object with `.request(method, url, json=,
     headers=, **kwargs)`. Defaults to the `requests` module, i.e. real HTTP.
 
+    `lang` (WP-I18N-2 / D-F) is forwarded to the MCP server as `arguments.lang`
+    so the demo servers return their English canned set. Only "en" is sent —
+    any other value (including None, every pre-WP-I18N-2 caller) leaves
+    `arguments` exactly as the caller built it, so the request body on the
+    wire is unchanged and the server falls back to Chinese. An explicit
+    `arguments["lang"]` from the caller always wins.
+
     `max_amount` is a per-invocation spend ceiling in USDC atomic units, applied
     at the signing point instead of the `X402_MAX_AMOUNT_PER_PAYMENT` default.
     None (every pre-WP-E caller) keeps that env-configured default. Stage 2 /
@@ -238,7 +253,10 @@ def call_mcp_tool(
         )
 
     target = endpoint_url.rstrip("/") + "/mcp/tools/call"
-    payload = {"name": tool_name, "arguments": arguments or {}}
+    tool_arguments = dict(arguments or {})
+    if lang == "en" and "lang" not in tool_arguments:
+        tool_arguments["lang"] = lang
+    payload = {"name": tool_name, "arguments": tool_arguments}
     http = session if session is not None else requests
 
     # Read the key here and pass it down as an argument; x402_payer never keeps

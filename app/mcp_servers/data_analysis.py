@@ -1,6 +1,15 @@
 """Demo MCP server: data analysis agent.
 
-Standalone Flask app on :5003. Three tools for demo.
+Standalone Flask app on :5003. Three tools for demo, with a Chinese and an
+English canned set for each.
+
+WP-I18N-2 / D-F: the language is chosen by an optional `lang` —
+`arguments.lang` (or `?lang=`) on `POST /mcp/tools/call`, `?lang=` on
+`POST /mcp/tools/list`. Absent means Chinese, and the Chinese content below is
+byte-identical to what it was. `_pick` is local rather than imported from
+`app.agents.lang_support` because this file is a standalone Flask app that is
+also run as a script, where `app.*` is not importable until the `sys.path`
+fix-up at the bottom has run.
 """
 import os
 
@@ -12,41 +21,99 @@ from flask_cors import CORS
 # find which SkillAsset — and therefore which creator wallet — gets paid.
 ASSET_ENDPOINT_URL = os.getenv("HIRENET_MCP_ENDPOINT_URL", "http://localhost:5003")
 
+#: `{"zh": ..., "en": ...}` -> the requested side. See the module docstring
+#: for why this is not `app.agents.lang_support.pick`.
+def _pick(node, lang):
+    if isinstance(node, dict) and "zh" in node:
+        return node.get(lang if lang == "en" else "zh", node["zh"])
+    return node
+
+
+def _request_lang(args=None):
+    """`arguments.lang`, else `?lang=`, else None (Chinese)."""
+    raw = (args or {}).get("lang") or request.args.get("lang")
+    return "en" if raw == "en" else None
+
+
 _TOOLS = [
     {
         "name": "analyze_trend",
-        "description": "分析数据趋势，输出关键指标变化方向",
+        "description": {
+            "zh": "分析数据趋势，输出关键指标变化方向",
+            "en": "Analyse data trends and report which way the key metrics are moving",
+        },
         "input_schema": {
             "type": "object",
             "properties": {
                 "task_id": {"type": "string"},
-                "metric": {"type": "string", "description": "要分析的指标名"},
+                "metric": {
+                    "type": "string",
+                    "description": {"zh": "要分析的指标名", "en": "Name of the metric to analyse"},
+                },
+                "lang": {"type": "string", "enum": ["zh", "en"]},
             },
         },
     },
     {
         "name": "detect_anomaly",
-        "description": "检测数据中的异常值",
+        "description": {
+            "zh": "检测数据中的异常值",
+            "en": "Detect outliers in the data",
+        },
         "input_schema": {
             "type": "object",
             "properties": {
                 "task_id": {"type": "string"},
-                "threshold": {"type": "number", "description": "异常阈值（标准差倍数）"},
+                "threshold": {
+                    "type": "number",
+                    "description": {
+                        "zh": "异常阈值（标准差倍数）",
+                        "en": "Anomaly threshold, in multiples of the standard deviation",
+                    },
+                },
+                "lang": {"type": "string", "enum": ["zh", "en"]},
             },
         },
     },
     {
         "name": "generate_report",
-        "description": "生成数据分析报告摘要",
+        "description": {
+            "zh": "生成数据分析报告摘要",
+            "en": "Generate a data-analysis report summary",
+        },
         "input_schema": {
             "type": "object",
             "properties": {
                 "task_id": {"type": "string"},
-                "format": {"type": "string", "description": "报告格式：summary / full"},
+                "format": {
+                    "type": "string",
+                    "description": {
+                        "zh": "报告格式：summary / full",
+                        "en": "Report format: summary / full",
+                    },
+                },
+                "lang": {"type": "string", "enum": ["zh", "en"]},
             },
         },
     },
 ]
+
+
+def _localized_tools(lang):
+    """`_TOOLS` with every bilingual `description` resolved for `lang`."""
+    tools = []
+    for tool in _TOOLS:
+        properties = {
+            key: ({**spec, "description": _pick(spec["description"], lang)}
+                  if isinstance(spec.get("description"), dict) else spec)
+            for key, spec in tool["input_schema"]["properties"].items()
+        }
+        tools.append({
+            **tool,
+            "description": _pick(tool["description"], lang),
+            "input_schema": {**tool["input_schema"], "properties": properties},
+        })
+    return tools
 
 _TRENDS = [
     "📈 销售额环比增长 12.3%，连续 3 个月上升，建议加大营销投入。",
@@ -87,10 +154,49 @@ TOP 3 增长品类：智能家居(+32%)、运动户外(+28%)、美妆(+22%)
 建议：增加客服团队应对增长，预计 Q3 咨询量翻倍""",
 ]
 
+_TRENDS_EN = [
+    "📈 Revenue is up 12.3% month over month, rising for 3 months straight — consider spending more on marketing.",
+    "📉 Churn fell from 5.2% to 3.8%; the retention strategy is working.",
+    "📊 User activity is up 23% year over year, peaking between 20:00 and 22:00.",
+    "📈 Average order value rose from $42 to $58, driven largely by the promotion.",
+    "📉 The return rate fell 1.5 percentage points — quality control is clearly paying off.",
+]
+
+_ANOMALIES_EN = [
+    "⚠️ 3 outliers detected: orders #8823 / #9012 / #9156 fall outside 3σ on amount — manual review recommended.",
+    "⚠️ User 'wang_dev' jumped from a Shanghai login IP to an overseas one, raising a security alert.",
+    "✅ The distribution looks normal, with no significant outliers (p > 0.05).",
+    "⚠️ Response latency spiked to 8.2s between 14:30 and 15:00 (normally < 1s) — a slow database query is the likely cause.",
+    "⚠️ Unusual refund pattern: 3 accounts filed 12 refund requests within 10 minutes.",
+]
+
+_REPORTS_EN = [
+    """📋 Weekly summary (2026-W23)
+
+Key metrics:
+· GMV: $128,450 (+8.2% WoW)
+· Orders: 3,421 (+5.1%)
+· New users: 892 (+12.7%)
+· Repeat-purchase rate: 34.2% (+1.3pp)
+
+Highlight: strong new-user growth, mostly from short-video channels
+Risk: support response time went from 2.1min to 4.8min — worth watching""",
+    """📋 Monthly summary (2026-05)
+
+Key metrics:
+· Monthly GMV: $542,000 (+15.3% MoM)
+· Monthly active users: 28,400 (+9.1%)
+· Average order value: $55.80 (+6.2%)
+· Return rate: 4.1% (-0.8pp)
+
+Top 3 growth categories: smart home (+32%), sports & outdoors (+28%), beauty (+22%)
+Recommendation: grow the support team ahead of demand — enquiries are projected to double in Q3""",
+]
+
 _DATA = {
-    "analyze_trend": _TRENDS,
-    "detect_anomaly": _ANOMALIES,
-    "generate_report": _REPORTS,
+    "analyze_trend": {"zh": _TRENDS, "en": _TRENDS_EN},
+    "detect_anomaly": {"zh": _ANOMALIES, "en": _ANOMALIES_EN},
+    "generate_report": {"zh": _REPORTS, "en": _REPORTS_EN},
 }
 
 
@@ -104,7 +210,7 @@ def create_app() -> Flask:
 
     @app.post("/mcp/tools/list")
     def list_tools():
-        return jsonify({"tools": _TOOLS}), 200
+        return jsonify({"tools": _localized_tools(_request_lang())}), 200
 
     @app.post("/mcp/tools/call")
     def call_tool():
@@ -113,7 +219,7 @@ def create_app() -> Flask:
         args = body.get("arguments") or {}
         if name not in _DATA:
             return jsonify({"error": f"Unknown tool: {name!r}"}), 400
-        items = _DATA[name]
+        items = _pick(_DATA[name], _request_lang(args))
         limit = args.get("limit")
         if isinstance(limit, int) and limit > 0:
             items = items[:limit]
