@@ -66,7 +66,7 @@ export default function AgentPerformance() {
           marginTop: 10,
           marginBottom: 20,
         }}>
-          Agent ID：<code>{agentId}</code>
+          {t('agentPerformance.agentIdLabel')} <code>{agentId}</code>
         </p>
 
         {/* 4 metric cards */}

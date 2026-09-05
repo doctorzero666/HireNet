@@ -89,9 +89,15 @@ DECOMPOSE_RETRIES = 1
 MAX_TASK_REPAIR_CALLS = 2
 
 #: Shown to the employer when even the forced extraction failed to produce a
-#: valid requirement. One sentence, Chinese, no jargon, and the agent stops
-#: calling the model after it.
-EXTRACTION_FAILED_MESSAGE = "抱歉，我没能从这段对话里整理出结构化的需求，请换一种说法重新描述一下你的项目。"
+#: valid requirement. One sentence, no jargon, and the agent stops calling the
+#: model after it. Bilingual per D-D; `pick(..., None)` (or any `lang` not in
+#: `SUPPORTED_LANGS`) is the original Chinese string, byte-identical to
+#: pre-i18n behaviour.
+EXTRACTION_FAILED_MESSAGE = {
+    "zh": "抱歉，我没能从这段对话里整理出结构化的需求，请换一种说法重新描述一下你的项目。",
+    "en": "Sorry, I wasn't able to extract a structured requirement from this "
+    "conversation. Please try describing your project again in a different way.",
+}
 
 #: Recorded as the evaluation reason when a resource evaluation cannot be
 #: parsed. Byte-identical to the fallback v1's routes already use
@@ -442,7 +448,7 @@ class TaskAnalysisAgent:
             # D3: forced extraction already failed. Repeating the same LLM calls
             # would spend money to produce the same failure, so return the same
             # message without calling the model at all.
-            return self._payload(EXTRACTION_FAILED_MESSAGE)
+            return self._payload(pick(EXTRACTION_FAILED_MESSAGE, self.lang))
         self.state["history"].append({"role": "user", "content": message})
         return self._advance()
 
@@ -600,7 +606,7 @@ class TaskAnalysisAgent:
 
         if requirement is None:
             logger.warning("forced extraction failed; the agent will stop calling the LLM")
-            return self._payload(EXTRACTION_FAILED_MESSAGE)
+            return self._payload(pick(EXTRACTION_FAILED_MESSAGE, self.lang))
 
         self.state["requirement"] = requirement
         # The employer's last visible turn is still the model's own words; the

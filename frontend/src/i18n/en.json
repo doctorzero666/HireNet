@@ -6,7 +6,8 @@
   "common": {
     "languageToggle": {
       "ariaLabel": "Switch language"
-    }
+    },
+    "listSeparator": "; "
   },
   "nav": {
     "comingSoon": "Coming soon",
@@ -210,6 +211,7 @@
     "ariaLabel": "JD preview",
     "draftTitle": "JD Draft",
     "publishedPrefix": "Published to the job board",
+    "publishedId": "(job_id: {id})",
     "done": "Done",
     "publishing": "Publishing…",
     "publish": "Publish to job board",
@@ -223,8 +225,8 @@
       "salary": "Negotiable"
     },
     "headings": {
-      "company": "Company",
-      "salary": "Salary",
+      "company": "Company:",
+      "salary": "Salary:",
       "summary": "Role Summary",
       "responsibilities": "Core Responsibilities",
       "requirements": "Requirements",
@@ -259,6 +261,8 @@
     "success": "Application sent",
     "delivered": "Your resume has been delivered",
     "appliedToPrefix": "Successfully applied to ",
+    "quoteOpen": "\"",
+    "quoteClose": "\"",
     "appliedGeneric": "Successfully applied to this role",
     "matchScoreLabel": "Match score",
     "coverLetterLabel": "Cover letter drafted by AI",
@@ -333,6 +337,7 @@
   },
   "agentPerformance": {
     "title": "Agent Performance",
+    "agentIdLabel": "Agent ID:",
     "recentCalls": "Recent Calls",
     "earningsBreakdown": "Earnings Breakdown",
     "fromPrefix": "From",
@@ -428,7 +433,7 @@
     "creatorLabel": "creator",
     "platformLabel": "platform",
     "taxLabel": "tax",
-    "royaltyRecord": "Royalty record",
+    "royaltyRecord": "Royalty record:",
     "onChain": "Verifiable on-chain",
     "viewOnExplorer": "View on explorer",
     "acceptedSettled": "Accepted — settlement complete",
@@ -464,7 +469,7 @@
     "hoursValue": "{hours} hrs",
     "totalCap": "Total cap",
     "adjustDuration": "Adjust estimated duration (hours):",
-    "payeeWallet": "Payee wallet",
+    "payeeWallet": "Payee wallet:",
     "mandate": {
       "title": "Authorization Mandate",
       "intent": "Authorized for",

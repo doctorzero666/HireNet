@@ -75,7 +75,14 @@ export default function ApplicationResult() {
             lineHeight: 1.65,
           }}>
             {jobTitle
-              ? <>{t('applicationResult.appliedToPrefix')}「<strong style={{ color: 'var(--text)' }}>{jobTitle}</strong>」</>
+              ? (
+                <>
+                  {t('applicationResult.appliedToPrefix')}
+                  {t('applicationResult.quoteOpen')}
+                  <strong style={{ color: 'var(--text)' }}>{jobTitle}</strong>
+                  {t('applicationResult.quoteClose')}
+                </>
+              )
               : t('applicationResult.appliedGeneric')}
             {jobId && <span style={{ display: 'block', fontSize: 12, marginTop: 4, color: 'var(--text-disabled)' }}>JOB · {jobId}</span>}
           </div>

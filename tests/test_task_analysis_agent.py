@@ -41,6 +41,7 @@ from app.agents.task_analysis import (
 )
 from app.services.validation import parse_llm_json, validate
 from tests.conftest import FakeLLMClient
+from tests.test_i18n_helpers import assert_no_cjk
 
 
 @pytest.fixture(autouse=True)
@@ -370,14 +371,31 @@ def test_failed_forced_extraction_tells_the_user_and_stops_calling_the_llm():
 
     assert client.call_count == 3, "clarify + forced extraction + one repair"
     assert result["is_complete"] is False
-    assert result["response"] == EXTRACTION_FAILED_MESSAGE
+    # No `lang` -> byte-identical to the pre-i18n Chinese string.
+    assert (
+        result["response"]
+        == EXTRACTION_FAILED_MESSAGE["zh"]
+        == "抱歉，我没能从这段对话里整理出结构化的需求，请换一种说法重新描述一下你的项目。"
+    )
 
     # The fake raises on an unscripted call, so this asserts "no further LLM
     # calls" as hard as it can be asserted.
     again = agent.reply("那我再说一遍")
-    assert again["response"] == EXTRACTION_FAILED_MESSAGE
+    assert again["response"] == EXTRACTION_FAILED_MESSAGE["zh"]
     assert again["is_complete"] is False
     assert client.call_count == 3
+
+
+def test_failed_forced_extraction_message_is_english_when_lang_is_en():
+    """WP-I18N: an English session sees the English extraction-failed message."""
+    client = FakeLLMClient(CLARIFYING_QUESTION, "我还是不知道", "依然不是 JSON")
+    agent = build_agent(client, max_turns=1, lang="en")
+
+    result = agent.start("x")
+
+    assert result["is_complete"] is False
+    assert result["response"] == EXTRACTION_FAILED_MESSAGE["en"]
+    assert_no_cjk(result["response"], "extraction-failed message (lang=en)")
 
 
 def test_forced_extraction_runs_at_most_once():
@@ -898,7 +916,7 @@ def test_the_give_up_flag_survives_serialisation():
         agent.to_state(), llm_client=FakeLLMClient(), model=MODEL
     )
     # An unscripted call on the new fake would raise; silence proves no call.
-    assert restored.reply("再试试")["response"] == EXTRACTION_FAILED_MESSAGE
+    assert restored.reply("再试试")["response"] == EXTRACTION_FAILED_MESSAGE["zh"]
 
 
 # ──────────────────────────────────────────────────────────────────────────────
@@ -1090,7 +1108,7 @@ def test_a_forced_extraction_that_returns_the_template_does_not_complete():
     result = agent.start("我们要做一个企业官网改版")
 
     assert result["is_complete"] is False
-    assert result["response"] == EXTRACTION_FAILED_MESSAGE
+    assert result["response"] == EXTRACTION_FAILED_MESSAGE["zh"]
 
 
 # ── marker ordering (a) ───────────────────────────────────────────────────────

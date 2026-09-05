@@ -70,7 +70,7 @@ export default function JdModal({ task, decision, jdReport, onClose }) {
         {error && <div style={ERROR_BOX}>{error}</div>}
         {published && (
           <div style={SUCCESS_BOX}>
-            ✅ {t('jdModal.publishedPrefix')}（job_id：<code>{published.job_id}</code>）
+            ✅ {t('jdModal.publishedPrefix')} {t('jdModal.publishedId', { id: published.job_id })}
           </div>
         )}
 
@@ -130,8 +130,8 @@ function buildJdMarkdown(task, decision, jobDesign, t) {
   const lines = [
     `# ${title}`,
     '',
-    `**${t('jdModal.headings.company')}：** ${company}`,
-    salary ? `**${t('jdModal.headings.salary')}：** ${salary}` : '',
+    `**${t('jdModal.headings.company')}** ${company}`,
+    salary ? `**${t('jdModal.headings.salary')}** ${salary}` : '',
     '',
     summary ? `## ${t('jdModal.headings.summary')}\n\n${summary}` : '',
     responsibilities.length

@@ -356,7 +356,7 @@ export default function PactConfirmationModal({ agent, task, onConfirm, onReject
             borderRadius: 'var(--r)',
           }}
         >
-          <span style={{ fontWeight: 800, color: 'var(--success-active)' }}>📬 {t('pactModal.payeeWallet')}：</span>
+          <span style={{ fontWeight: 800, color: 'var(--success-active)' }}>📬 {t('pactModal.payeeWallet')}</span>
           <code style={{ marginLeft: 8, fontSize: 12.5 }}>
             {walletShort}
           </code>

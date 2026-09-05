@@ -6,7 +6,8 @@
   "common": {
     "languageToggle": {
       "ariaLabel": "切换语言"
-    }
+    },
+    "listSeparator": "；"
   },
   "nav": {
     "comingSoon": "即将上线",
@@ -210,6 +211,7 @@
     "ariaLabel": "JD 预览",
     "draftTitle": "JD 草稿",
     "publishedPrefix": "已发布到岗位广场",
+    "publishedId": "（job_id：{id}）",
     "done": "完成",
     "publishing": "发布中…",
     "publish": "发布到岗位广场",
@@ -223,8 +225,8 @@
       "salary": "面议"
     },
     "headings": {
-      "company": "公司",
-      "salary": "薪资",
+      "company": "公司：",
+      "salary": "薪资：",
       "summary": "岗位简介",
       "responsibilities": "核心职责",
       "requirements": "任职要求",
@@ -259,6 +261,8 @@
     "success": "投递成功",
     "delivered": "你的简历已经送达",
     "appliedToPrefix": "已成功投递",
+    "quoteOpen": "「",
+    "quoteClose": "」",
     "appliedGeneric": "已成功投递该岗位",
     "matchScoreLabel": "匹配度评分",
     "coverLetterLabel": "AI 为你起草的求职信",
@@ -333,6 +337,7 @@
   },
   "agentPerformance": {
     "title": "Agent 性能面板",
+    "agentIdLabel": "Agent ID：",
     "recentCalls": "最近调用记录",
     "earningsBreakdown": "收益明细",
     "fromPrefix": "来自",
@@ -428,7 +433,7 @@
     "creatorLabel": "创作者",
     "platformLabel": "平台",
     "taxLabel": "税费",
-    "royaltyRecord": "版税记录",
+    "royaltyRecord": "版税记录：",
     "onChain": "链上可查",
     "viewOnExplorer": "在区块浏览器查看",
     "acceptedSettled": "已验收 — 结算完成",
@@ -464,7 +469,7 @@
     "hoursValue": "{hours} 小时",
     "totalCap": "总限额",
     "adjustDuration": "调整预估时长 (小时):",
-    "payeeWallet": "收款方钱包",
+    "payeeWallet": "收款方钱包：",
     "mandate": {
       "title": "授权凭证",
       "intent": "授权内容",

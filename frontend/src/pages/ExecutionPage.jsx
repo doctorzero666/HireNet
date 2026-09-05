@@ -347,7 +347,7 @@ function ResultView({ execution, accepted, onAccept, onRetry }) {
             fontWeight: 600,
           }}
         >
-          {t('executionPage.royaltyRecord')}：<code>#{e.royaltyId}</code>
+          {t('executionPage.royaltyRecord')} <code>#{e.royaltyId}</code>
         </div>
       </div>
 

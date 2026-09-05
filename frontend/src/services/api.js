@@ -1,3 +1,6 @@
+import en from '../i18n/en.json'
+import zh from '../i18n/zh.json'
+
 const API_BASE = '/api'
 const TOKEN_KEY = 'hn_token'
 
@@ -148,7 +151,7 @@ export async function applyToJob({ candidate_id, job_design }) {
     cover_letter: letter.cover_letter || '',
     subject: letter.subject || '',
     match_score: letter.match_score,
-    reason: matchPoints.join('；'),
+    reason: matchPoints.join(currentLang === 'en' ? en.common.listSeparator : zh.common.listSeparator),
     key_match_points: matchPoints,
   }
 }
