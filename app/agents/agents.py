@@ -325,9 +325,18 @@ CAREER_STRATEGY_SYSTEM_PROMPT = """你是 HireNet 的 Career Strategy Agent，�
 
 
 class CareerStrategyAgent:
-    def __init__(self):
+    """Multi-turn career-strategy conversation.
+
+    `lang` (WP-I18N-2 / D-E) is stored on the instance and applied to every
+    LLM call this agent makes, the same way `RequirementAnalysisAgent` does
+    it: `with_lang_messages` at request time, never on the prompt constant.
+    Absent -> byte-identical to the pre-i18n wire format.
+    """
+
+    def __init__(self, lang: str | None = None):
         self.client = get_llm_client()
         self.history = []
+        self.lang = lang
 
     def start(self, initial_input: str) -> str:
         """开始职业策略对话"""
@@ -345,7 +354,10 @@ class CareerStrategyAgent:
     def _call_llm(self) -> str:
         resp = self.client.chat.completions.create(
             model=get_model(),
-            messages=self.history,
+            # `self.history` is the conversation we keep appending to; the
+            # directive is applied to a COPY at request time so it is never
+            # accumulated into the stored history turn after turn.
+            messages=with_lang_messages(self.history, self.lang),
             temperature=0.5,
         )
         assistant_msg = resp.choices[0].message.content
@@ -382,7 +394,10 @@ class CareerStrategyAgent:
   "avoid": "需要规避的陷阱或常见误区",
   "encouragement": "个性化的鼓励语（不要套话）"
 }"""
-        messages = list(self.history) + [{"role": "user", "content": force_prompt}]
+        messages = with_lang_messages(
+            list(self.history) + [{"role": "user", "content": force_prompt}],
+            self.lang,
+        )
         resp = self.client.chat.completions.create(
             model=get_model(),
             messages=messages,

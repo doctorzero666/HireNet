@@ -10,7 +10,7 @@ import uuid
 from datetime import datetime
 from openai import OpenAI
 
-from app.agents.lang_support import localize, pick
+from app.agents.lang_support import localize, pick, with_lang_messages
 
 
 # ─── In-memory application store (demo) ───────────────────────────────────────
@@ -154,9 +154,17 @@ COVER_LETTER_PROMPT = """你是求职助手，根据候选人背景和岗位要�
 }"""
 
 
-def generate_cover_letter(candidate_profile: dict, job_design: dict) -> dict:
+def generate_cover_letter(
+    candidate_profile: dict, job_design: dict, lang: str | None = None
+) -> dict:
     """
     Generate a customized cover letter for a candidate applying to a job.
+
+    `lang` (WP-I18N-2 / D-E): "en" appends the output-language directive to the
+    system prompt at request time, exactly as `job_design.design_job` does.
+    `COVER_LETTER_PROMPT` itself is NOT touched, and `with_lang_messages` is a
+    no-op for any other value — so with `lang` absent the messages list sent to
+    the model is byte-identical to what it was before this change.
     """
     client = _get_llm()
 
@@ -182,12 +190,16 @@ def generate_cover_letter(candidate_profile: dict, job_design: dict) -> dict:
 
 请生成投递材料。"""
 
-    resp = client.chat.completions.create(
-        model=_get_model(),
-        messages=[
+    messages = with_lang_messages(
+        [
             {"role": "system", "content": COVER_LETTER_PROMPT},
             {"role": "user", "content": prompt},
         ],
+        lang,
+    )
+    resp = client.chat.completions.create(
+        model=_get_model(),
+        messages=messages,
         temperature=0.4,
     )
 

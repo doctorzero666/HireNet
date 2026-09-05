@@ -99,6 +99,9 @@ GENERIC_JOBSEEKER_NAME = {"zh": "求职者", "en": "Job seeker"}
 #: `POST /api/jobs/publish` default when the client sends no `job_title`.
 DEMO_JOB_TITLE_FALLBACK = {"zh": "Demo 岗位", "en": "Demo role"}
 
+#: `/api/mcp`'s own, shorter variant of the evaluation-failure reason.
+MCP_EVALUATION_TIMEOUT_REASON = {"zh": "评估超时", "en": "Evaluation timed out"}
+
 
 def asset_display_field(asset: dict, field: str, lang: str | None = None) -> str:
     """`name` / `description` of a `skill_assets` row in the requested language.
@@ -891,7 +894,7 @@ def apply_to_job():
                    "capability_summary": ""}
 
     try:
-        cover_letter_result = generate_cover_letter(profile, job_design)
+        cover_letter_result = generate_cover_letter(profile, job_design, lang=lang)
     except Exception as e:
         return jsonify({"error": f"Cover letter generation failed: {e}"}), 500
 
@@ -928,8 +931,15 @@ def career_start():
     if not message:
         return jsonify({"error": "message is required"}), 400
 
+    # WP-I18N-2 / D-E: same session-scoped `lang` contract the analysis routes
+    # use — /start decides it, /reply and /generate reuse it unless the request
+    # states its own. An unsupported value is a 400, as elsewhere.
+    lang = resolve_request_lang(request)
+    if lang is None:
+        return jsonify({"error": "unsupported lang"}), 400
+
     session_id = secrets.token_hex(8)
-    agent = CareerStrategyAgent()
+    agent = CareerStrategyAgent(lang=lang)
     response = agent.start(message)
 
     is_complete = agent.is_complete(response)
@@ -942,7 +952,7 @@ def career_start():
         except Exception:
             is_complete = False
 
-    career_sessions[session_id] = {"agent": agent, "strategy": strategy}
+    career_sessions[session_id] = {"agent": agent, "strategy": strategy, "lang": lang}
 
     return jsonify({
         "session_id": session_id,
@@ -963,7 +973,12 @@ def career_reply():
         return jsonify({"error": "Session not found"}), 404
 
     sess = career_sessions[session_id]
+    lang = resolve_request_lang(request, sess.get("lang"))
+    if lang is None:
+        return jsonify({"error": "unsupported lang"}), 400
+    sess["lang"] = lang
     agent = sess["agent"]
+    agent.lang = lang
     response = agent.reply(message)
 
     is_complete = agent.is_complete(response)
@@ -994,10 +1009,15 @@ def career_generate():
     session_id = data.get("session_id")
     if session_id not in career_sessions:
         return jsonify({"error": "Session not found"}), 404
-    agent = career_sessions[session_id]["agent"]
+    sess = career_sessions[session_id]
+    lang = resolve_request_lang(request, sess.get("lang"))
+    if lang is None:
+        return jsonify({"error": "unsupported lang"}), 400
+    agent = sess["agent"]
+    agent.lang = lang
     try:
         strategy = agent.force_generate_strategy()
-        career_sessions[session_id]["strategy"] = strategy
+        sess["strategy"] = strategy
         return jsonify({"success": True, "strategy": strategy})
     except Exception:
         # Same rule as the analysis routes (D11b): the exception goes to the
@@ -1387,11 +1407,19 @@ def analyze_candidate():
         return jsonify({"error": "profile (object) is required"}), 400
 
     from app.agents.agents import get_llm_client, get_model
+    from app.agents.lang_support import with_lang_messages
+
+    # WP-I18N-2 / D-E: the prompt used to end its first line with
+    # "用中文输出" — a hard-coded demand for Chinese that no `lang` could
+    # override. That clause is gone; the language is now stated the same way
+    # every other LLM call in the app states it, through `with_lang_messages`
+    # (a no-op unless lang == "en"). The rest of the prompt is unchanged.
+    lang = resolve_request_lang(request)
     client = get_llm_client()
     profile_json = json.dumps(profile, ensure_ascii=False, indent=2)
     prompt = (
         "你是 HireNet 的求职顾问。下面是一位求职者的资料 JSON，"
-        "请基于这份资料，用中文输出 3-5 条最有说服力的求职优势。\n"
+        "请基于这份资料，输出 3-5 条最有说服力的求职优势。\n"
         "要求：\n"
         "1. 每条以 '- ' 开头，控制在 30 字以内。\n"
         "2. 必须基于资料里的事实（技能 / 经历 / 偏好），不要编造。\n"
@@ -1401,7 +1429,7 @@ def analyze_candidate():
     try:
         resp = client.chat.completions.create(
             model=get_model(),
-            messages=[{"role": "user", "content": prompt}],
+            messages=with_lang_messages([{"role": "user", "content": prompt}], lang),
             temperature=0.4,
         )
         text = (resp.choices[0].message.content or "").strip()
@@ -1494,17 +1522,25 @@ def mcp_endpoint():
         tool_name = params.get("name", "")
         arguments = params.get("arguments", {})
 
+        # WP-I18N-2 / D-E: every tool takes an optional `lang` in its
+        # arguments. Absent -> DEFAULT_LANG, i.e. exactly today's behaviour
+        # for every existing MCP client. An unsupported value is a JSON-RPC
+        # invalid-params error rather than a silent fallback.
+        tool_lang = normalize_lang(arguments.get("lang"))
+        if tool_lang is None:
+            return err(-32602, "unsupported lang")
+
         try:
             if tool_name == "hirenet_get_jobs":
                 from app.agents.application_agent import get_demo_jobs
-                jobs = get_demo_jobs()
+                jobs = get_demo_jobs(tool_lang)
                 text = json.dumps(jobs, ensure_ascii=False, indent=2)
 
             elif tool_name == "hirenet_analyze_requirements":
                 description = arguments.get("description", "")
                 if not description:
                     return err(-32602, "description is required")
-                agent = RequirementAnalysisAgent()
+                agent = RequirementAnalysisAgent(lang=tool_lang)
                 response = agent.start(description)
                 text = response
 
@@ -1513,7 +1549,7 @@ def mcp_endpoint():
                 from app.agents.agents import evaluate_resource_for_task
                 job_title = arguments.get("job_title", "")
                 requirements = arguments.get("requirements", "")
-                resources = get_all_resources()
+                resources = get_all_resources(tool_lang)
                 human_resources = [r for r in resources if r["type"] == "human"]
                 task = {
                     "id": "mcp_match",
@@ -1527,9 +1563,13 @@ def mcp_endpoint():
                 matches = []
                 for resource in human_resources:
                     try:
-                        eval_result = evaluate_resource_for_task(resource, task)
+                        eval_result = evaluate_resource_for_task(resource, task, lang=tool_lang)
                     except Exception:
-                        eval_result = {"confidence": 0.5, "reason": "评估超时", "strengths": []}
+                        eval_result = {
+                            "confidence": 0.5,
+                            "reason": pick(MCP_EVALUATION_TIMEOUT_REASON, tool_lang),
+                            "strengths": [],
+                        }
                     matches.append({
                         "candidate": resource,
                         "match_score": round(eval_result.get("confidence", 0) * 100),
@@ -1542,7 +1582,7 @@ def mcp_endpoint():
                 background = arguments.get("background", "")
                 if not background:
                     return err(-32602, "background is required")
-                agent = CareerStrategyAgent()
+                agent = CareerStrategyAgent(lang=tool_lang)
                 agent.start(background)
                 strategy = agent.force_generate_strategy()
                 text = json.dumps(strategy, ensure_ascii=False, indent=2)
