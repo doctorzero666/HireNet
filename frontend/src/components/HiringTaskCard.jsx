@@ -1,15 +1,15 @@
 import PixelButton from './PixelButton'
 import { useLang } from '../i18n/LanguageProvider'
-import { translateBackend } from '../i18n/backendStrings'
 
 /**
  * HiringTaskCard — card for a task that needs a human hire
  */
 export default function HiringTaskCard({ task, decision, onGenerateJD }) {
-  const { t, lang } = useLang()
+  /* Backend-emitted strings are already in the request's language. */
+  const { t } = useLang()
   const rec = decision?.recommendation ?? {}
-  const reason = rec.reason ? translateBackend(rec.reason, lang) : t('hiringTaskCard.fallbackReason')
-  const salary = translateBackend(rec.cost_hint, lang) ?? '—'
+  const reason = rec.reason || t('hiringTaskCard.fallbackReason')
+  const salary = rec.cost_hint ?? '—'
   const hours = task?.estimated_hours ?? '—'
 
   return (

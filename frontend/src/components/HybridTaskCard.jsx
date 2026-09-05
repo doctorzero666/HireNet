@@ -1,15 +1,14 @@
 import { useLang } from '../i18n/LanguageProvider'
-import { translateBackend } from '../i18n/backendStrings'
 
 /**
  * HybridTaskCard — card for a human + Agent collaboration task
  */
 export default function HybridTaskCard({ task, decision }) {
-  const { t, lang } = useLang()
+  /* Backend-emitted strings are already in the request's language. */
+  const { t } = useLang()
   const rec = decision?.recommendation ?? {}
-  const rawDivision = rec.reason ?? rec.resource
-  const division = rawDivision ? translateBackend(rawDivision, lang) : t('hybridTaskCard.fallbackDivision')
-  const cost = translateBackend(rec.cost_hint, lang) ?? '—'
+  const division = (rec.reason ?? rec.resource) || t('hybridTaskCard.fallbackDivision')
+  const cost = rec.cost_hint ?? '—'
   const hours = task?.estimated_hours ?? '—'
 
   return (

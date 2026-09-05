@@ -284,6 +284,9 @@ export async function settlePact(pactId) {
   const pact = await pactRes.json()
 
   let tx_hash = pact.tx_hash || null
+  /* Which rail settled it — decides the block explorer when the backend did
+     not hand us an explorer_url (ExecutionPage.explorerHref). */
+  let settlement_method = null
   if (!tx_hash && pact.run_id) {
     /* tx_hash is decorative — if the provider hiccups we still let the
        caller render royalty splits from the pact-settle response. */
@@ -296,6 +299,7 @@ export async function settlePact(pactId) {
       if (royRes.ok) {
         const roy = await royRes.json()
         tx_hash = roy.tx_hash || null
+        settlement_method = roy.settlement_method || null
       }
     } catch { /* swallow — caller still gets royalty_splits */ }
   }
@@ -308,6 +312,7 @@ export async function settlePact(pactId) {
     agent_name: pact.agent_name,
     task_id: pact.task_id,
     tx_hash,
+    settlement_method,
     /* explorer_url / settled_amount exist only on the x402 rail, where the
        backend settles the pact through a paid invocation. Null everywhere else
        so consumers only ever see one shape. settled_amount is what was actually

@@ -7,12 +7,21 @@ be unit-tested with synthetic evaluations and no LLM.
 
 Two hard constraints on this file:
 
-1. **The Chinese strings are a UI contract, not prose.**
+1. **The strings are a UI contract, not prose.**
    `frontend/src/components/{AgentTaskCard,HiringTaskCard,HybridTaskCard}.jsx`
    render `recommendation.reason` and `recommendation.cost_hint` verbatim, and
-   WP4 compares v1 against v2 on the same golden cases. Every string emitted
-   below is byte-identical to the v1 branch it replaces — see the `v1:` comment
-   on each branch for the source line.
+   WP4 compares v1 against v2 on the same golden cases. Every Chinese string
+   emitted below is byte-identical to the v1 branch it replaces — see the
+   `v1:` comment on each branch for the source line.
+
+   WP-I18N-2 / D-D: each is now a `{"zh": ..., "en": ...}` node resolved by
+   `decide(..., lang=...)` at emit time. The frontend used to pattern-match
+   these Chinese strings back into English (`frontend/src/i18n/backendStrings.js`);
+   that layer is deleted in the same change, because two mechanisms for one
+   job drift — a new string gets added to the backend and nobody adds the
+   matching pattern, which is exactly how `_build_decision_summary`'s verdict
+   ended up untranslated. `lang` absent still emits exactly the Chinese
+   string, so the v1 wire format is unchanged.
 
 2. **`decide()` never returns None.**
    v1 left `recommendation` as `None` when a task had zero evaluations
@@ -26,6 +35,7 @@ v1 is left untouched; this module is used by the v2 `TaskAnalysisAgent` only.
 from typing import Mapping
 
 from app.agents.candidate_profile import DEMO_AGENTS
+from app.agents.lang_support import pick
 
 # ─── Thresholds (v1: app/agents/agents.py:415, :422, :434) ────────────────────
 
@@ -40,23 +50,47 @@ HUMAN_CONFIDENCE_THRESHOLD = 0.6
 HYBRID_AGENT_CONFIDENCE_THRESHOLD = 0.5
 
 
-# ─── Emitted strings (all byte-identical to v1) ───────────────────────────────
+# ─── Emitted strings (the `zh` side is byte-identical to v1) ─────────────────
 
 #: v1 `agents.py:427`, `:446` — the same literal on both human branches.
-HUMAN_COST_HINT = "需要评估薪资"
+HUMAN_COST_HINT = {"zh": "需要评估薪资", "en": "Salary to be assessed"}
 
 #: v1 `agents.py:440`.
-HYBRID_COST_HINT = "混合成本"
+HYBRID_COST_HINT = {"zh": "混合成本", "en": "Blended cost"}
 
 #: v1 `agents.py:438`.
-HYBRID_REASON = "建议人机协同：Agent 完成基础部分，人工处理复杂判断"
+HYBRID_REASON = {
+    "zh": "建议人机协同：Agent 完成基础部分，人工处理复杂判断",
+    "en": (
+        "Recommended: human + agent collaboration — the agent handles the "
+        "basics, a human handles complex judgment calls"
+    ),
+}
 
 #: v1 `agents.py:445` — also the D5 zero-evaluation recommendation.
-HUMAN_FALLBACK_REASON = "此任务需要人类处理，建议招聘"
+HUMAN_FALLBACK_REASON = {
+    "zh": "此任务需要人类处理，建议招聘",
+    "en": "This task needs a human — hiring is recommended",
+}
 
 #: v1 `agents.py:420` — the default of the demo cost lookup when the resource id
 #: is not a demo agent (e.g. the top resource is a human).
-UNKNOWN_COST_HINT = "未知"
+UNKNOWN_COST_HINT = {"zh": "未知", "en": "Unknown"}
+
+#: v1 `agents.py:419`. `{name}` is the winning resource's name (already in the
+#: session's language — the resource pool is built with the same `lang`, see
+#: `candidate_profile.get_all_resources`); `{pct}` is the pre-formatted
+#: confidence, e.g. "85%".
+AGENT_RECOMMENDATION_REASON = {
+    "zh": "推荐使用 {name}，置信度 {pct}",
+    "en": "Recommended: {name} (confidence {pct})",
+}
+
+#: v1 `agents.py:426`.
+HUMAN_RECOMMENDATION_REASON = {
+    "zh": "建议招聘 {name} 类型人才，置信度 {pct}",
+    "en": "Hire a {name}-type candidate (confidence {pct})",
+}
 
 
 def _default_cost_lookup() -> dict[str, str]:
@@ -78,6 +112,19 @@ def _default_cost_lookup() -> dict[str, str]:
 DEFAULT_COST_LOOKUP: dict[str, str] = _default_cost_lookup()
 
 
+def format_recommendation_reason(
+    template: dict, resource_name: str, confidence: float, lang: str | None = None
+) -> str:
+    """Fill one of the two `*_RECOMMENDATION_REASON` templates.
+
+    `confidence` is formatted with the v1 `:.0%` spec, so the Chinese output is
+    byte-identical to the f-string it replaces (`agents.py:419`, `:426`).
+    Shared with `app/agents/agents.py`'s v1 branch so the two pipelines cannot
+    drift apart.
+    """
+    return pick(template, lang).format(name=resource_name, pct=f"{confidence:.0%}")
+
+
 def sort_evaluations(evaluations: list[dict]) -> list[dict]:
     """Return the evaluations sorted by confidence, highest first (v1 `agents.py:408-410`).
 
@@ -91,6 +138,7 @@ def decide(
     evaluations: list[dict],
     task: dict | None = None,
     cost_lookup: Mapping[str, str] | None = None,
+    lang: str | None = None,
 ) -> dict:
     """Pick the executor for one task from its resource evaluations.
 
@@ -104,6 +152,9 @@ def decide(
             here changes v1-identical behaviour and belongs in its own commit.
         cost_lookup: resource id → cost hint. Defaults to the demo-agent
             fixtures (`DEFAULT_COST_LOOKUP`).
+        lang: WP-I18N-2 / D-D — which side of the bilingual strings above to
+            emit. Absent (or anything other than "en") gives the Chinese
+            strings, byte-identical to v1.
 
     Returns:
         `{"decision": "agent"|"human"|"hybrid", "reason": str, "cost_hint": str}`
@@ -120,8 +171,8 @@ def decide(
         # and JD stages. The strings are v1's no-agent branch (`agents.py:442-447`).
         return {
             "decision": "human",
-            "reason": HUMAN_FALLBACK_REASON,
-            "cost_hint": HUMAN_COST_HINT,
+            "reason": pick(HUMAN_FALLBACK_REASON, lang),
+            "cost_hint": pick(HUMAN_COST_HINT, lang),
         }
 
     top = ranked[0]
@@ -133,8 +184,10 @@ def decide(
         return {
             "decision": "agent",
             "resource": top,
-            "reason": f"推荐使用 {top['resource_name']}，置信度 {top_confidence:.0%}",
-            "cost_hint": lookup.get(top["resource_id"], UNKNOWN_COST_HINT),
+            "reason": format_recommendation_reason(
+                AGENT_RECOMMENDATION_REASON, top["resource_name"], top_confidence, lang
+            ),
+            "cost_hint": lookup.get(top["resource_id"], pick(UNKNOWN_COST_HINT, lang)),
         }
 
     if top_type == "human" and top_confidence >= HUMAN_CONFIDENCE_THRESHOLD:
@@ -142,8 +195,10 @@ def decide(
         return {
             "decision": "human",
             "resource": top,
-            "reason": f"建议招聘 {top['resource_name']} 类型人才，置信度 {top_confidence:.0%}",
-            "cost_hint": HUMAN_COST_HINT,
+            "reason": format_recommendation_reason(
+                HUMAN_RECOMMENDATION_REASON, top["resource_name"], top_confidence, lang
+            ),
+            "cost_hint": pick(HUMAN_COST_HINT, lang),
         }
 
     # Nobody cleared their own bar. v1 `agents.py:430-447`: if the best *agent*
@@ -156,14 +211,14 @@ def decide(
         return {
             "decision": "hybrid",
             "resource": top,
-            "reason": HYBRID_REASON,
-            "cost_hint": HYBRID_COST_HINT,
+            "reason": pick(HYBRID_REASON, lang),
+            "cost_hint": pick(HYBRID_COST_HINT, lang),
         }
 
     # v1 `agents.py:442-447`
     return {
         "decision": "human",
         "resource": top,
-        "reason": HUMAN_FALLBACK_REASON,
-        "cost_hint": HUMAN_COST_HINT,
+        "reason": pick(HUMAN_FALLBACK_REASON, lang),
+        "cost_hint": pick(HUMAN_COST_HINT, lang),
     }

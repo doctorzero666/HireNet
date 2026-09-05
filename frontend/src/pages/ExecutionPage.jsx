@@ -20,9 +20,40 @@ function demoExecution(t) {
     platformShare: 10.8,
     tax: 5.4,
     txHash: null,
+    explorerUrl: null,
+    settlementMethod: null,
+    chain: null,
     royaltyId: 'RL-2026-0608-0042',
     mcpResult: null,
   }
+}
+
+/* Block-explorer bases, by settlement rail. The x402 rail settles USDC on
+   Base Sepolia (chain id 84532) — Etherscan does not index it, so the old
+   hard-coded sepolia.etherscan.io link 404'd for every x402 tx. Rails with no
+   public explorer (anvil, mock, the "demo-preset" bootstrap hashes) get no
+   link at all rather than a broken one. */
+const EXPLORER_TX_BASE = {
+  baseSepolia: 'https://sepolia.basescan.org/tx/',
+  sepolia: 'https://sepolia.etherscan.io/tx/',
+}
+
+/* The backend already computes the right URL for x402 settlements
+   (`explorer_url`, from X402_EXPLORER_TX_URL) and both the pact-settle and the
+   royalty-status responses carry it — prefer it, so the operator's configured
+   explorer wins. Only when it is absent do we derive one from the rail. */
+function explorerHref(e) {
+  if (e.explorerUrl) return e.explorerUrl
+  if (!e.txHash) return null
+  const method = String(e.settlementMethod || '').toLowerCase()
+  const chain = String(e.chain || '').toLowerCase()
+  if (method === 'x402' || chain === 'eip155:84532' || chain.includes('base')) {
+    return `${EXPLORER_TX_BASE.baseSepolia}${e.txHash}`
+  }
+  if (method === 'sepolia' || chain === 'eip155:11155111' || chain.includes('sepolia')) {
+    return `${EXPLORER_TX_BASE.sepolia}${e.txHash}`
+  }
+  return null
 }
 
 // royalty_splits amounts come from the backend as integer cents (basis points);
@@ -46,6 +77,9 @@ function buildExecution(taskId, data, demo) {
     platformShare: centsToDollars(splits.platform?.amount),
     tax: centsToDollars(splits.tax?.amount),
     txHash: data.tx_hash || null,
+    explorerUrl: data.explorer_url || null,
+    settlementMethod: data.settlement_method || null,
+    chain: data.charge_chain || data.chain || null,
     royaltyId: data.run_id || demo.royaltyId,
     mcpResult: data.mcp_result || null,
   }
@@ -64,6 +98,9 @@ export default function ExecutionPage() {
      verify button is the only way to surface a tx_hash for runs that came in
      without one (preset records, page refresh). */
   const [settledTxHash, setSettledTxHash] = useState(null)
+  /* /royalty/settle also tells us WHICH rail settled the run, which is what
+     picks the block explorer when no explorer_url came back. */
+  const [settledMeta, setSettledMeta] = useState(null)
 
   async function handleAccept() {
     /* Idempotent: backend /royalty/settle short-circuits when the run is
@@ -77,15 +114,26 @@ export default function ExecutionPage() {
         if (res?.tx_hash && !execution.txHash) {
           setSettledTxHash(res.tx_hash)
         }
+        if (res?.settlement_method || res?.explorer_url) {
+          setSettledMeta({
+            settlementMethod: res.settlement_method || null,
+            explorerUrl: res.explorer_url || null,
+          })
+        }
       } catch { /* silent — see comment above */ }
     }
     setAccepted(true)
   }
 
   const effectiveTxHash = execution.txHash || settledTxHash
-  const renderedExecution = effectiveTxHash === execution.txHash
+  const renderedExecution = (effectiveTxHash === execution.txHash && !settledMeta)
     ? execution
-    : { ...execution, txHash: effectiveTxHash }
+    : {
+        ...execution,
+        txHash: effectiveTxHash,
+        settlementMethod: settledMeta?.settlementMethod ?? execution.settlementMethod,
+        explorerUrl: settledMeta?.explorerUrl ?? execution.explorerUrl,
+      }
 
   return (
     <Scene>
@@ -303,9 +351,10 @@ function ResultView({ execution, accepted, onAccept, onRetry }) {
         </div>
       </div>
 
-      {/* On-chain tx_hash card — only shown when there's a real tx_hash.
-          Sepolia testnet has a public explorer; clicking jumps straight to
-          Etherscan to see the receipt / value / input data. */}
+      {/* On-chain tx_hash card — only shown when there's a real tx_hash. The
+          explorer link is rendered only when we can name a real explorer for
+          the rail that settled it (see `explorerHref`); the hash itself is
+          always shown, so an anvil / mock / preset run still displays it. */}
       {e.txHash && (
         <div
           style={{
@@ -325,20 +374,22 @@ function ResultView({ execution, accepted, onAccept, onRetry }) {
           <div style={{ marginBottom: 8 }}>
             <code style={{ fontSize: 12.5 }}>{txShort}</code>
           </div>
-          <a
-            href={`https://sepolia.etherscan.io/tx/${e.txHash}`}
-            target="_blank"
-            rel="noopener noreferrer"
-            style={{
-              fontSize: 12.5,
-              fontWeight: 800,
-              color: 'var(--success-active)',
-              textDecoration: 'none',
-              borderBottom: '1.5px dashed var(--success-active)',
-            }}
-          >
-            {t('executionPage.viewOnEtherscan')} →
-          </a>
+          {explorerHref(e) && (
+            <a
+              href={explorerHref(e)}
+              target="_blank"
+              rel="noopener noreferrer"
+              style={{
+                fontSize: 12.5,
+                fontWeight: 800,
+                color: 'var(--success-active)',
+                textDecoration: 'none',
+                borderBottom: '1.5px dashed var(--success-active)',
+              }}
+            >
+              {t('executionPage.viewOnExplorer')} →
+            </a>
+          )}
         </div>
       )}
 

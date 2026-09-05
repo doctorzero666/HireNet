@@ -508,7 +508,7 @@ def test_one_unparseable_evaluation_becomes_the_confidence_zero_fallback():
 
     failed = [e for e in decision["evaluations"] if e["resource_id"] == "agent_code"][0]
     assert failed["confidence"] == 0
-    assert failed["reason"] == EVALUATION_FALLBACK_REASON == "评估超时，使用默认分数"
+    assert failed["reason"] == EVALUATION_FALLBACK_REASON["zh"] == "评估超时，使用默认分数"
     assert failed["resource_name"] == "代码生成 Agent"
     assert failed["resource_type"] == "agent"
     assert decision["recommendation"]["decision"] == "human", "a failed eval never wins"

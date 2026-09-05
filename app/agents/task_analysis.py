@@ -47,7 +47,7 @@ import jsonschema
 import app.agents.agents as agents_module
 from app.agents import candidate_profile
 from app.agents.decision_policy import decide, sort_evaluations
-from app.agents.lang_support import with_lang_messages
+from app.agents.lang_support import pick, with_lang_messages
 from app.agents.pricing import estimate_cost_usd
 from app.agents.prompts import load_prompt, render_prompt
 from app.services.validation import (
@@ -95,8 +95,13 @@ EXTRACTION_FAILED_MESSAGE = "抱歉，我没能从这段对话里整理出结构
 
 #: Recorded as the evaluation reason when a resource evaluation cannot be
 #: parsed. Byte-identical to the fallback v1's routes already use
-#: (`app/app.py:378-379`, `:485-486`, `:524-525`).
-EVALUATION_FALLBACK_REASON = "评估超时，使用默认分数"
+#: (`app/app.py` — which imports this very constant since WP-I18N-2, so the
+#: two cannot drift). Bilingual per D-D; `pick(..., None)` is the original
+#: Chinese string.
+EVALUATION_FALLBACK_REASON = {
+    "zh": "评估超时，使用默认分数",
+    "en": "Evaluation timed out — using a default score",
+}
 
 #: v1's fallback also carried `confidence: 0.5`, which lets a *failed* evaluation
 #: out-score a real one and win the task. Stage 1 scores a failed evaluation 0:
@@ -534,7 +539,9 @@ class TaskAnalysisAgent:
                 # reads it — every JD so far was written from an empty description.
                 "task_description": task.get("description", ""),
                 "evaluations": evaluations,
-                "recommendation": decide(evaluations, task, cost_lookup=self.cost_lookup),
+                "recommendation": decide(
+                    evaluations, task, cost_lookup=self.cost_lookup, lang=self.lang
+                ),
             }
             for key in ("estimated_hours", "requires_judgment", "is_recurring"):
                 if key in task:
@@ -782,7 +789,7 @@ class TaskAnalysisAgent:
             )
             evaluation = {
                 "confidence": EVALUATION_FALLBACK_CONFIDENCE,
-                "reason": EVALUATION_FALLBACK_REASON,
+                "reason": pick(EVALUATION_FALLBACK_REASON, self.lang),
                 "strengths": [],
             }
 

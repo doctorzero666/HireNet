@@ -171,11 +171,6 @@
       "needsHiring": "需招人",
       "hybrid": "人机协同"
     },
-    "summary": {
-      "agentOnly": "无需招聘，所有任务可由 Agent 完成",
-      "humanOnly": "建议招聘，当前 Agent 无法满足需求",
-      "hybrid": "建议混合方案：{agentTasks} 个任务用 Agent，{humanTasks} 个任务需要人类"
-    },
     "lost": {
       "eyebrow": "报告丢失",
       "title": "报告丢失",
@@ -434,8 +429,8 @@
     "platformLabel": "平台",
     "taxLabel": "税费",
     "royaltyRecord": "版税记录",
-    "onChain": "链上可查 (Sepolia)",
-    "viewOnEtherscan": "在 Etherscan 查看",
+    "onChain": "链上可查",
+    "viewOnExplorer": "在区块浏览器查看",
     "acceptedSettled": "已验收 — 结算完成",
     "downloading": "下载中...",
     "downloadScript": "下载话术表",

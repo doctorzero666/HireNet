@@ -3,7 +3,6 @@ import Icon from './Icon'
 import Ribbon from './Ribbon'
 import { publishJob } from '../services/api'
 import { useLang } from '../i18n/LanguageProvider'
-import { translateBackend } from '../i18n/backendStrings'
 
 /**
  * JdModal — Markdown JD preview + publish to the job pool.
@@ -13,7 +12,7 @@ import { translateBackend } from '../i18n/backendStrings'
  * /api/analyze/decide and lets the user publish it via POST /api/jobs/publish.
  */
 export default function JdModal({ task, decision, jdReport, onClose }) {
-  const { t, lang } = useLang()
+  const { t } = useLang()
   const [publishing, setPublishing] = useState(false)
   const [error, setError] = useState('')
   const [published, setPublished] = useState(null) // { job_id }
@@ -22,8 +21,8 @@ export default function JdModal({ task, decision, jdReport, onClose }) {
   // otherwise fall back to a JD built from the task + decision fields.
   const jobDesign = useMemo(() => findJobDesign(task, jdReport), [task, jdReport])
   const jdMarkdown = useMemo(
-    () => buildJdMarkdown(task, decision, jobDesign, t, lang),
-    [task, decision, jobDesign, t, lang],
+    () => buildJdMarkdown(task, decision, jobDesign, t),
+    [task, decision, jobDesign, t],
   )
 
   useEffect(() => {
@@ -111,14 +110,14 @@ function findJobDesign(task, jdReport) {
   )
 }
 
-function buildJdMarkdown(task, decision, jobDesign, t, lang) {
+function buildJdMarkdown(task, decision, jobDesign, t) {
   if (jobDesign?.markdown) return jobDesign.markdown
 
   const title = jobDesign?.job_title ?? task?.name ?? t('jdModal.fallback.title')
   const company = jobDesign?.company ?? t('jdModal.fallback.company')
   const summary = jobDesign?.summary ?? task?.description ?? ''
   const salary = jobDesign?.salary
-    ?? translateBackend(decision?.recommendation?.cost_hint, lang)
+    ?? decision?.recommendation?.cost_hint
     ?? t('jdModal.fallback.salary')
   const responsibilities = jobDesign?.core_responsibilities ?? []
   /* Match the JD agent's output schema (required_skills / nice_to_have_skills).

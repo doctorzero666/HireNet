@@ -13,38 +13,25 @@ import { fetchDemoAgent } from '../services/api'
 import { useLang } from '../i18n/LanguageProvider'
 
 /**
- * Layer 2 (WP-I18N spec §2) — `summary.verdict` is composed from the
- * structured fields (`verdict_type`, `agent_tasks`, `human_tasks`) when
- * `lang === "en"` instead of pattern-translating the Chinese prose the
- * backend sends. `lang === "zh"` (or a legacy plain-string summary) still
- * renders the backend's verdict text verbatim.
+ * WP-I18N-2 / D-D — `summary.verdict` is rendered verbatim.
+ *
+ * It used to be recomposed here from `verdict_type` / `agent_tasks` /
+ * `human_tasks` whenever `lang === 'en'`, because the backend only ever sent
+ * Chinese for this one field. The backend emits it in the request's language
+ * now (`app/app.py: VERDICT_*`), so that third translation mechanism is gone.
+ * The string branch stays for a legacy summary that was a plain string.
  */
-function summaryVerdictText(summary, lang, t) {
+function summaryVerdictText(summary) {
   if (!summary) return null
   if (typeof summary === 'string') return summary
-  if (lang !== 'en') return summary.verdict ?? null
-
-  const agentTasks = summary.agent_tasks ?? 0
-  const humanTasks = summary.human_tasks ?? 0
-  switch (summary.verdict_type) {
-    case 'agent_only':
-      return t('analysisReport.summary.agentOnly')
-    case 'human_only':
-      return t('analysisReport.summary.humanOnly')
-    case 'hybrid':
-      return t('analysisReport.summary.hybrid', { agentTasks, humanTasks })
-    default:
-      // Unrecognised verdict_type: fall back to the raw backend text rather
-      // than showing nothing.
-      return summary.verdict ?? null
-  }
+  return summary.verdict ?? null
 }
 
 export default function AnalysisReport() {
   const { sessionId } = useParams()
   const location = useLocation()
   const navigate = useNavigate()
-  const { t, lang } = useLang()
+  const { t } = useLang()
   const result = location.state
   const [pactTask, setPactTask] = useState(null)
   const [jdTask, setJdTask] = useState(null)
@@ -107,7 +94,7 @@ export default function AnalysisReport() {
     { agent: 0, human: 0, hybrid: 0 },
   )
 
-  const summaryText = summaryVerdictText(result.summary, lang, t)
+  const summaryText = summaryVerdictText(result.summary)
 
   return (
     <Scene>

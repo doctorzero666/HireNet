@@ -1,6 +1,5 @@
 import PixelButton from './PixelButton'
 import { useLang } from '../i18n/LanguageProvider'
-import { translateBackend } from '../i18n/backendStrings'
 
 /**
  * AgentTaskCard — card for a task an Agent can complete
@@ -10,10 +9,13 @@ import { translateBackend } from '../i18n/backendStrings'
  *   onLaunch?: () => void
  */
 export default function AgentTaskCard({ task, decision, onLaunch }) {
-  const { t, lang } = useLang()
+  /* `rec.reason` / `rec.cost_hint` are rendered verbatim: since WP-I18N-2 the
+     backend emits them in the request's language (app/agents/decision_policy.py),
+     so there is nothing left to translate on this side. */
+  const { t } = useLang()
   const rec = decision?.recommendation ?? {}
   const resource = rec.resource?.resource_name ?? rec.resource ?? t('taskCard.matching')
-  const cost = translateBackend(rec.cost_hint, lang) ?? '—'
+  const cost = rec.cost_hint ?? '—'
   const hours = task?.estimated_hours ?? '—'
 
   return (
@@ -73,7 +75,7 @@ export default function AgentTaskCard({ task, decision, onLaunch }) {
         </div>
         {rec.reason && (
           <div style={{ color: 'var(--text-body)' }}>
-            {translateBackend(rec.reason, lang)}
+            {rec.reason}
           </div>
         )}
       </div>

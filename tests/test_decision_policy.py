@@ -92,7 +92,7 @@ def test_human_branch_above_threshold():
         "decision": "human",
         "resource": FULLSTACK(0.82),
         "reason": "建议招聘 张伟（全栈工程师） 类型人才，置信度 82%",
-        "cost_hint": HUMAN_COST_HINT,
+        "cost_hint": HUMAN_COST_HINT["zh"],
     }
     assert rec["cost_hint"] == "需要评估薪资"
 
@@ -109,8 +109,8 @@ def test_hybrid_when_agent_misses_its_bar_but_clears_the_hybrid_bar():
     assert rec == {
         "decision": "hybrid",
         "resource": CODE_AGENT(0.65),
-        "reason": HYBRID_REASON,
-        "cost_hint": HYBRID_COST_HINT,
+        "reason": HYBRID_REASON["zh"],
+        "cost_hint": HYBRID_COST_HINT["zh"],
     }
     assert rec["reason"] == "建议人机协同：Agent 完成基础部分，人工处理复杂判断"
     assert rec["cost_hint"] == "混合成本"
@@ -133,8 +133,8 @@ def test_human_fallback_when_nobody_clears_any_bar():
     assert rec == {
         "decision": "human",
         "resource": FULLSTACK(0.45),
-        "reason": HUMAN_FALLBACK_REASON,
-        "cost_hint": HUMAN_COST_HINT,
+        "reason": HUMAN_FALLBACK_REASON["zh"],
+        "cost_hint": HUMAN_COST_HINT["zh"],
     }
     assert rec["reason"] == "此任务需要人类处理，建议招聘"
 
@@ -142,7 +142,7 @@ def test_human_fallback_when_nobody_clears_any_bar():
 def test_human_fallback_when_only_a_weak_human_was_evaluated():
     rec = decide([PM(0.2)], TASK)
     assert rec["decision"] == "human"
-    assert rec["reason"] == HUMAN_FALLBACK_REASON
+    assert rec["reason"] == HUMAN_FALLBACK_REASON["zh"]
 
 
 # ─── D5: never None, even with nothing to go on ───────────────────────────────
@@ -206,7 +206,7 @@ def test_sort_does_not_mutate_the_caller_list():
 
 def test_agent_with_no_known_cost_falls_back_to_the_v1_default_hint():
     rec = decide([make_eval("agent_unlisted", "未登记 Agent", "agent", 0.9)], TASK)
-    assert rec["cost_hint"] == UNKNOWN_COST_HINT == "未知"
+    assert rec["cost_hint"] == UNKNOWN_COST_HINT["zh"] == "未知"
 
 
 def test_default_cost_lookup_mirrors_the_demo_fixtures():
@@ -227,7 +227,7 @@ def test_cost_lookup_is_injectable():
 
 def test_injected_lookup_replaces_rather_than_extends_the_default():
     rec = decide([CODE_AGENT(0.9)], TASK, cost_lookup={})
-    assert rec["cost_hint"] == UNKNOWN_COST_HINT
+    assert rec["cost_hint"] == UNKNOWN_COST_HINT["zh"]
 
 
 def test_task_argument_does_not_change_the_v1_policy_outcome():

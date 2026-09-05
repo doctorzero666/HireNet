@@ -7,7 +7,7 @@ import os
 import uuid
 from openai import OpenAI
 
-from app.agents.lang_support import with_lang_messages
+from app.agents.lang_support import pick, with_lang_messages
 from app.services.validation import parse_llm_json
 
 
@@ -120,6 +120,35 @@ def design_job(
     return job_design
 
 
+#: `jd_report.message` when the decision engine routed every task to an Agent.
+NO_HIRING_MESSAGE = {
+    "zh": "所有任务均可由 Agent 完成，无需招聘",
+    "en": "Every task can be handled by an Agent — no hiring needed",
+}
+
+#: The five `water_interpretation` bands, highest score first.
+WATER_INTERPRETATION_VERY_HIGH = {
+    "zh": "JD 描述与实际需求高度一致，信息可信度高",
+    "en": "The JD matches the real requirement closely — high confidence in the posting",
+}
+WATER_INTERPRETATION_HIGH = {
+    "zh": "JD 描述较为准确，有少量优化空间",
+    "en": "The JD is broadly accurate, with a little room to tighten it",
+}
+WATER_INTERPRETATION_MEDIUM = {
+    "zh": "JD 存在中等程度失真，已进行关键修正",
+    "en": "The JD was moderately distorted; the key points have been corrected",
+}
+WATER_INTERPRETATION_LOW = {
+    "zh": "原始 JD 存在较多水分，本次进行了大幅优化",
+    "en": "The original JD was substantially inflated and has been heavily rewritten",
+}
+WATER_INTERPRETATION_VERY_LOW = {
+    "zh": "原始需求描述严重失真，建议重新沟通确认",
+    "en": "The original description was severely distorted — talk it through again before posting",
+}
+
+
 def generate_jd_report(
     decisions: dict,
     requirement: dict,
@@ -151,7 +180,7 @@ def generate_jd_report(
     if not human_tasks:
         return {
             "needs_hiring": False,
-            "message": "所有任务均可由 Agent 完成，无需招聘",
+            "message": pick(NO_HIRING_MESSAGE, lang),
             "job_designs": [],
         }
 
@@ -213,19 +242,27 @@ def generate_jd_report(
         "needs_hiring": True,
         "job_count": len(job_designs),
         "average_water_score": round(avg_water_score),
-        "water_interpretation": _interpret_water_score(avg_water_score),
+        "water_interpretation": _interpret_water_score(avg_water_score, lang),
         "job_designs": job_designs,
     }
 
 
-def _interpret_water_score(score: float) -> str:
+def _interpret_water_score(score: float, lang: str | None = None) -> str:
+    """One of five fixed sentences for the JD "water" (inflation) score.
+
+    WP-I18N-2 / D-D: bilingual like the decision-policy strings — the report
+    these land in is part of the /api/analyze/decide and /quick responses, so
+    an English session must not get Chinese here. `lang` absent gives exactly
+    the pre-change Chinese sentence.
+    """
     if score >= 85:
-        return "JD 描述与实际需求高度一致，信息可信度高"
+        band = WATER_INTERPRETATION_VERY_HIGH
     elif score >= 70:
-        return "JD 描述较为准确，有少量优化空间"
+        band = WATER_INTERPRETATION_HIGH
     elif score >= 50:
-        return "JD 存在中等程度失真，已进行关键修正"
+        band = WATER_INTERPRETATION_MEDIUM
     elif score >= 30:
-        return "原始 JD 存在较多水分，本次进行了大幅优化"
+        band = WATER_INTERPRETATION_LOW
     else:
-        return "原始需求描述严重失真，建议重新沟通确认"
+        band = WATER_INTERPRETATION_VERY_LOW
+    return pick(band, lang)

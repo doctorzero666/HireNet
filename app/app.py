@@ -15,7 +15,10 @@ from dotenv import load_dotenv
 from app.agents.agents import RequirementAnalysisAgent, decompose_tasks, run_resource_decision, CareerStrategyAgent
 from app.agents.job_design import generate_jd_report
 from app.agents.lang_support import localize, normalize_lang, pick, resolve_request_lang
-from app.agents.task_analysis import TaskAnalysisAgent
+from app.agents.task_analysis import (
+    EVALUATION_FALLBACK_REASON as EVALUATION_TIMEOUT_REASON,
+    TaskAnalysisAgent,
+)
 from app.services.auth import login_required
 from app.storage.analysis_traces import build_trace, insert_trace
 from app.storage.db import init_db
@@ -86,14 +89,6 @@ DEMO_IDENTITIES = {
 # Same `{"zh", "en"}` shape as the seed literals so `pick()` is the only thing
 # a call site needs, and `pick(x, None)` still yields the exact Chinese string
 # these were before.
-
-#: The `reason` a v1 route puts on an evaluation when the LLM call blew up.
-#: Byte-identical duplicate of `app.agents.task_analysis.EVALUATION_FALLBACK_REASON`
-#: (the v2 constant); the two are unified when the decision policy goes bilingual.
-EVALUATION_TIMEOUT_REASON = {
-    "zh": "评估超时，使用默认分数",
-    "en": "Evaluation timed out — using a default score",
-}
 
 #: `capability_summary` when building a candidate profile raised.
 NO_PROFILE_DETAIL = {"zh": "暂无详细信息", "en": "No details available yet"}
@@ -538,7 +533,7 @@ def run_decision():
         sess["jd_report"] = jd_report
 
         # Step 4: Build summary
-        summary = _build_decision_summary(tasks, decisions, jd_report)
+        summary = _build_decision_summary(tasks, decisions, jd_report, lang=lang)
 
         # NO automatic publication here. Analysing a requirement is not the same
         # act as posting a job to the public board: publication goes through
@@ -563,7 +558,29 @@ def run_decision():
         return jsonify({"error": "analysis failed"}), 500
 
 
-def _build_decision_summary(tasks, decisions, jd_report) -> dict:
+#: `summary.verdict` (WP-I18N-2 / D-D). The frontend used to recompose an
+#: English sentence from `verdict_type` / `agent_tasks` / `human_tasks`
+#: (`AnalysisReport.jsx`) because this string was never translated — a
+#: third, bespoke mechanism on top of the two that already existed. The
+#: backend emits it natively now and that recomposition is deleted.
+VERDICT_AGENT_ONLY = {
+    "zh": "无需招聘，所有任务可由 Agent 完成",
+    "en": "No hiring needed — every task can be done by an Agent",
+}
+VERDICT_HUMAN_ONLY = {
+    "zh": "建议招聘，当前 Agent 无法满足需求",
+    "en": "Hiring recommended — no current Agent can meet this need",
+}
+VERDICT_HYBRID = {
+    "zh": "建议混合方案：{agent_tasks} 个任务用 Agent，{human_tasks} 个任务需要人类",
+    "en": (
+        "Recommended: a mixed plan — {agent_tasks} task(s) via Agent, "
+        "{human_tasks} task(s) need a human"
+    ),
+}
+
+
+def _build_decision_summary(tasks, decisions, jd_report, lang: str | None = None) -> dict:
     """Build human-readable summary of the decision"""
     all_decisions = decisions.get("decisions", [])
 
@@ -589,13 +606,15 @@ def _build_decision_summary(tasks, decisions, jd_report) -> dict:
     total = len(all_decisions)
 
     if human_count == 0 and hybrid_count == 0:
-        verdict = "无需招聘，所有任务可由 Agent 完成"
+        verdict = pick(VERDICT_AGENT_ONLY, lang)
         verdict_type = "agent_only"
     elif agent_count == 0:
-        verdict = "建议招聘，当前 Agent 无法满足需求"
+        verdict = pick(VERDICT_HUMAN_ONLY, lang)
         verdict_type = "human_only"
     else:
-        verdict = f"建议混合方案：{agent_count} 个任务用 Agent，{human_count + hybrid_count} 个任务需要人类"
+        verdict = pick(VERDICT_HYBRID, lang).format(
+            agent_tasks=agent_count, human_tasks=human_count + hybrid_count
+        )
         verdict_type = "hybrid"
 
     return {
@@ -1599,7 +1618,7 @@ def quick_analyze():
         )
         # store jd_report in session for job listing
         analysis_sessions[session_id]["jd_report"] = jd_report
-        summary = _build_decision_summary(tasks, decisions, jd_report)
+        summary = _build_decision_summary(tasks, decisions, jd_report, lang=lang)
         # Same rule as /decide: no automatic publication. See the comment there.
         return jsonify({
             "session_id": session_id,

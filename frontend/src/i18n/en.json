@@ -171,11 +171,6 @@
       "needsHiring": "Needs hiring",
       "hybrid": "Human + Agent"
     },
-    "summary": {
-      "agentOnly": "No hiring needed — every task can be done by an Agent",
-      "humanOnly": "Hiring recommended — no current Agent can meet this need",
-      "hybrid": "Recommended: a mixed plan — {agentTasks} task(s) via Agent, {humanTasks} task(s) need a human"
-    },
     "lost": {
       "eyebrow": "Report lost",
       "title": "Report lost",
@@ -434,8 +429,8 @@
     "platformLabel": "platform",
     "taxLabel": "tax",
     "royaltyRecord": "Royalty record",
-    "onChain": "Verifiable on-chain (Sepolia)",
-    "viewOnEtherscan": "View on Etherscan",
+    "onChain": "Verifiable on-chain",
+    "viewOnExplorer": "View on explorer",
     "acceptedSettled": "Accepted — settlement complete",
     "downloading": "Downloading...",
     "downloadScript": "Download script",

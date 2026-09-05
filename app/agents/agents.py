@@ -8,7 +8,17 @@ import os
 import json
 from openai import OpenAI
 from app.agents.candidate_profile import DEMO_AGENTS, get_all_resources
-from app.agents.lang_support import with_lang_messages
+from app.agents.decision_policy import (
+    AGENT_RECOMMENDATION_REASON,
+    HUMAN_COST_HINT,
+    HUMAN_FALLBACK_REASON,
+    HUMAN_RECOMMENDATION_REASON,
+    HYBRID_COST_HINT,
+    HYBRID_REASON,
+    UNKNOWN_COST_HINT,
+    format_recommendation_reason,
+)
+from app.agents.lang_support import pick, with_lang_messages
 
 
 # ─── LLM Client (Zhipu GLM-4, OpenAI-compatible) ──────────────────────────────
@@ -434,18 +444,29 @@ def run_resource_decision(tasks: list[dict], lang: str | None = None) -> dict:
         top = task_result["evaluations"][0] if task_result["evaluations"] else None
         if top:
             if top["resource_type"] == "agent" and top.get("confidence", 0) >= 0.7:
+                # WP-I18N-2 / D-D: the same bilingual constants the v2 policy
+                # uses, so the two pipelines cannot drift. `lang` absent emits
+                # the exact Chinese f-string this replaced.
                 task_result["recommendation"] = {
                     "decision": "agent",
                     "resource": top,
-                    "reason": f"推荐使用 {top['resource_name']}，置信度 {top['confidence']:.0%}",
-                    "cost_hint": DEMO_AGENTS.get(top["resource_id"], {}).get("cost_per_task", "未知"),
+                    "reason": format_recommendation_reason(
+                        AGENT_RECOMMENDATION_REASON,
+                        top["resource_name"], top["confidence"], lang,
+                    ),
+                    "cost_hint": DEMO_AGENTS.get(top["resource_id"], {}).get(
+                        "cost_per_task", pick(UNKNOWN_COST_HINT, lang)
+                    ),
                 }
             elif top["resource_type"] == "human" and top.get("confidence", 0) >= 0.6:
                 task_result["recommendation"] = {
                     "decision": "human",
                     "resource": top,
-                    "reason": f"建议招聘 {top['resource_name']} 类型人才，置信度 {top['confidence']:.0%}",
-                    "cost_hint": "需要评估薪资",
+                    "reason": format_recommendation_reason(
+                        HUMAN_RECOMMENDATION_REASON,
+                        top["resource_name"], top["confidence"], lang,
+                    ),
+                    "cost_hint": pick(HUMAN_COST_HINT, lang),
                 }
             else:
                 # Check if any agent can do it at lower threshold
@@ -456,15 +477,15 @@ def run_resource_decision(tasks: list[dict], lang: str | None = None) -> dict:
                     task_result["recommendation"] = {
                         "decision": "hybrid",
                         "resource": top,
-                        "reason": "建议人机协同：Agent 完成基础部分，人工处理复杂判断",
-                        "cost_hint": "混合成本",
+                        "reason": pick(HYBRID_REASON, lang),
+                        "cost_hint": pick(HYBRID_COST_HINT, lang),
                     }
                 else:
                     task_result["recommendation"] = {
                         "decision": "human",
                         "resource": top,
-                        "reason": "此任务需要人类处理，建议招聘",
-                        "cost_hint": "需要评估薪资",
+                        "reason": pick(HUMAN_FALLBACK_REASON, lang),
+                        "cost_hint": pick(HUMAN_COST_HINT, lang),
                     }
 
         decisions.append(task_result)
