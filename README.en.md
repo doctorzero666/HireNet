@@ -13,7 +13,7 @@
 ![Python](https://img.shields.io/badge/Python-3.11-blue?style=flat-square&logo=python)
 ![Flask](https://img.shields.io/badge/Flask-3.x-lightgrey?style=flat-square&logo=flask)
 ![React](https://img.shields.io/badge/React-18-61DAFB?style=flat-square&logo=react)
-![Tests](https://img.shields.io/badge/tests-1387_passed-brightgreen?style=flat-square)
+![Tests](https://img.shields.io/badge/tests-1617_passed-brightgreen?style=flat-square)
 ![Hackathon](https://img.shields.io/badge/AI×Web3-Hackathon-orange?style=flat-square)
 
 </div>
@@ -182,7 +182,7 @@ Later extensions could include company subscriptions, private agent hosting, age
 | On-chain settlement | Mock / local Anvil chain / Sepolia testnet / x402 (Base Sepolia USDC, pay-at-invocation) via a pluggable provider interface |
 | Agent protocol | MCP (Model Context Protocol) |
 | Auth | JWT + pbkdf2 |
-| Tests | 1387 passing pytest tests |
+| Tests | 1617 passing pytest tests |
 
 ```text
 HireNet/
@@ -192,7 +192,7 @@ HireNet/
 │   ├── services/      # Settlement providers, auth, bootstrap
 │   └── storage/       # SQLite DAO
 ├── frontend/          # React SPA (15 pages)
-├── tests/             # 1387 passing pytest tests
+├── tests/             # 1617 passing pytest tests
 ├── docs/              # PRD, UX spec, demo voiceover script
 ├── evals/             # Golden set, scorer, evaluation reports
 └── start.sh           # One-command startup

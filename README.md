@@ -13,7 +13,7 @@
 ![Python](https://img.shields.io/badge/Python-3.11-blue?style=flat-square&logo=python)
 ![Flask](https://img.shields.io/badge/Flask-3.x-lightgrey?style=flat-square&logo=flask)
 ![React](https://img.shields.io/badge/React-18-61DAFB?style=flat-square&logo=react)
-![Tests](https://img.shields.io/badge/tests-1616_passed-brightgreen?style=flat-square)
+![Tests](https://img.shields.io/badge/tests-1617_passed-brightgreen?style=flat-square)
 ![Hackathon](https://img.shields.io/badge/AI×Web3-Hackathon-orange?style=flat-square)
 
 </div>
@@ -182,7 +182,7 @@ HireNet 将传统招聘平台的“岗位匹配”，扩展成了更前置的**�
 | 链上结算 | Mock / Anvil 本地链 / Sepolia 测试网 / x402（Base Sepolia USDC，pay-at-invocation），Provider 接口可插拔 |
 | Agent 协议 | MCP (Model Context Protocol) |
 | 鉴权 | JWT + pbkdf2 |
-| 测试 | pytest 1616 passed |
+| 测试 | pytest 1617 passed |
 
 ```text
 HireNet/
@@ -192,7 +192,7 @@ HireNet/
 │   ├── services/      # 结算提供者/auth/bootstrap
 │   └── storage/       # SQLite DAO
 ├── frontend/          # React SPA（15 个页面）
-├── tests/             # pytest 1616 passed
+├── tests/             # pytest 1617 passed
 ├── docs/              # PRD/UX Spec/Demo 配音脚本
 ├── evals/             # 黄金用例集 + 打分器 + 评测报告
 └── start.sh           # 一键启动
