@@ -32,13 +32,48 @@ function buildHeaders(extra = {}) {
   return h
 }
 
+/* ── Request language (WP-I18N-2 / D-A) ──────────────────────────────────
+   The backend now localises everything it serialises — seed data, decision
+   strings, MCP demo content — from the `lang` the request carries, instead
+   of the client pattern-matching Chinese back into English afterwards. So
+   EVERY request states its language: `?lang=` on the URL (the only place a
+   GET can put it) and `lang` in the body for POSTs that take one.
+
+   `setApiLang` is called by <LanguageProvider> whenever the toggle moves,
+   so this module never has to import React state. Until it is called,
+   `currentLang` is null and requests go out exactly as they did before —
+   which the backend reads as "unlabelled", i.e. today's Chinese default. */
+let currentLang = null
+
+export function setApiLang(lang) {
+  currentLang = (lang === 'en' || lang === 'zh') ? lang : null
+}
+
+export function getApiLang() { return currentLang }
+
+/* `${API_BASE}${path}` with `lang` appended. Used for every request, GET and
+   POST alike, so a route can always read the language off the query string
+   even when its body is schema-validated and cannot carry extra keys. */
+function apiUrl(path) {
+  if (!currentLang) return `${API_BASE}${path}`
+  return `${API_BASE}${path}${path.includes('?') ? '&' : '?'}lang=${currentLang}`
+}
+
+/* Body-level `lang` for POSTs. An explicit per-call value always wins, so
+   the analyze routes can still pin a session's language independently of
+   the toggle's current position. */
+function withLang(body) {
+  if (!currentLang || (body && body.lang !== undefined)) return body
+  return { ...body, lang: currentLang }
+}
+
 export async function startAnalysis(message, lang) {
   const body = { message }
   if (lang) body.lang = lang
-  const res = await fetch(`${API_BASE}/analyze/start`, {
+  const res = await fetch(apiUrl('/analyze/start'), {
     method: 'POST',
     headers: buildHeaders(),
-    body: JSON.stringify(body),
+    body: JSON.stringify(withLang(body)),
   })
   if (!res.ok) throw new Error(`API error: ${res.status}`)
   return res.json()
@@ -47,20 +82,20 @@ export async function startAnalysis(message, lang) {
 export async function replyAnalysis(sessionId, message, lang) {
   const body = { session_id: sessionId, message }
   if (lang) body.lang = lang
-  const res = await fetch(`${API_BASE}/analyze/reply`, {
+  const res = await fetch(apiUrl('/analyze/reply'), {
     method: 'POST',
     headers: buildHeaders(),
-    body: JSON.stringify(body),
+    body: JSON.stringify(withLang(body)),
   })
   if (!res.ok) throw new Error(`API error: ${res.status}`)
   return res.json()
 }
 
 export async function runDecision(sessionId) {
-  const res = await fetch(`${API_BASE}/analyze/decide`, {
+  const res = await fetch(apiUrl('/analyze/decide'), {
     method: 'POST',
     headers: buildHeaders(),
-    body: JSON.stringify({ session_id: sessionId }),
+    body: JSON.stringify(withLang({ session_id: sessionId })),
   })
   if (!res.ok) throw new Error(`API error: ${res.status}`)
   return res.json()
@@ -69,19 +104,19 @@ export async function runDecision(sessionId) {
 /* ── JobSeeker endpoints ── */
 
 export async function fetchJobs() {
-  const res = await fetch(`${API_BASE}/jobs`, { headers: buildHeaders() })
+  const res = await fetch(apiUrl('/jobs'), { headers: buildHeaders() })
   if (!res.ok) throw new Error(`API error: ${res.status}`)
   return res.json()
 }
 
 export async function fetchCandidates() {
-  const res = await fetch(`${API_BASE}/candidates`, { headers: buildHeaders() })
+  const res = await fetch(apiUrl('/candidates'), { headers: buildHeaders() })
   if (!res.ok) throw new Error(`API error: ${res.status}`)
   return res.json()
 }
 
 export async function fetchCandidateProfile(candidateId) {
-  const res = await fetch(`${API_BASE}/candidates/${candidateId}/profile`, {
+  const res = await fetch(apiUrl(`/candidates/${candidateId}/profile`), {
     headers: buildHeaders(),
   })
   if (!res.ok) throw new Error(`API error: ${res.status}`)
@@ -94,10 +129,10 @@ export async function applyToJob({ candidate_id, job_design }) {
      returns { application, cover_letter: {...} } with cover_letter as a
      dict; ApplicationResult reads cover_letter / match_score / reason at the
      top level, so we flatten before returning. */
-  const res = await fetch(`${API_BASE}/apply`, {
+  const res = await fetch(apiUrl('/apply'), {
     method: 'POST',
     headers: buildHeaders(),
-    body: JSON.stringify({ candidate_id, job_design }),
+    body: JSON.stringify(withLang({ candidate_id, job_design })),
   })
   if (!res.ok) {
     const body = await res.json().catch(() => ({}))
@@ -121,7 +156,7 @@ export async function applyToJob({ candidate_id, job_design }) {
 /* ── Demo identity ── */
 
 export async function fetchIdentities() {
-  const res = await fetch(`${API_BASE}/demo/identities`, { headers: buildHeaders() })
+  const res = await fetch(apiUrl('/demo/identities'), { headers: buildHeaders() })
   if (!res.ok) throw new Error(`API error: ${res.status}`)
   const data = await res.json()
   if (data?.current?.id && !currentIdentityId) {
@@ -132,10 +167,10 @@ export async function fetchIdentities() {
 }
 
 export async function setIdentity(identityId) {
-  const res = await fetch(`${API_BASE}/demo/identity`, {
+  const res = await fetch(apiUrl('/demo/identity'), {
     method: 'POST',
     headers: buildHeaders(),
-    body: JSON.stringify({ identity_id: identityId }),
+    body: JSON.stringify(withLang({ identity_id: identityId })),
   })
   if (!res.ok) throw new Error(`API error: ${res.status}`)
   const data = await res.json()
@@ -169,10 +204,10 @@ export async function publishJob({
   if (salary_range && typeof salary_range === 'object') payload.salary_range = salary_range
   if (typeof work_type === 'string' && work_type) payload.work_type = work_type
 
-  const res = await fetch(`${API_BASE}/jobs/publish`, {
+  const res = await fetch(apiUrl('/jobs/publish'), {
     method: 'POST',
     headers: buildHeaders(),
-    body: JSON.stringify(payload),
+    body: JSON.stringify(withLang(payload)),
   })
   if (!res.ok) {
     const body = await res.json().catch(() => ({}))
@@ -182,10 +217,10 @@ export async function publishJob({
 }
 
 export async function analyzeCandidate(profile) {
-  const res = await fetch(`${API_BASE}/candidate/analyze`, {
+  const res = await fetch(apiUrl('/candidate/analyze'), {
     method: 'POST',
     headers: buildHeaders(),
-    body: JSON.stringify({ profile }),
+    body: JSON.stringify(withLang({ profile })),
   })
   if (!res.ok) {
     const body = await res.json().catch(() => ({}))
@@ -204,10 +239,10 @@ export async function createPact({ task_id, agent_name, creator_id, asset_id, am
      bootstrapped customer-service Agent's asset_id so royalty lands on
      zhang_ai, not the Phase 1 stub. */
   if (asset_id) payload.asset_id = asset_id
-  const res = await fetch(`${API_BASE}/pact/create`, {
+  const res = await fetch(apiUrl('/pact/create'), {
     method: 'POST',
     headers: buildHeaders(),
-    body: JSON.stringify(payload),
+    body: JSON.stringify(withLang(payload)),
   })
   if (!res.ok) {
     const body = await res.json().catch(() => ({}))
@@ -217,7 +252,7 @@ export async function createPact({ task_id, agent_name, creator_id, asset_id, am
 }
 
 export async function approvePact(pactId) {
-  const res = await fetch(`${API_BASE}/pact/approve/${pactId}`, {
+  const res = await fetch(apiUrl(`/pact/approve/${pactId}`), {
     method: 'POST',
     headers: buildHeaders(),
   })
@@ -238,7 +273,7 @@ export async function settlePact(pactId) {
      invocation time and returns tx_hash + explorer_url itself; the second call
      is then skipped — the run is already 'settling' and /royalty/settle
      answers 409 for it. */
-  const pactRes = await fetch(`${API_BASE}/pact/settle/${pactId}`, {
+  const pactRes = await fetch(apiUrl(`/pact/settle/${pactId}`), {
     method: 'POST',
     headers: buildHeaders(),
   })
@@ -253,10 +288,10 @@ export async function settlePact(pactId) {
     /* tx_hash is decorative — if the provider hiccups we still let the
        caller render royalty splits from the pact-settle response. */
     try {
-      const royRes = await fetch(`${API_BASE}/royalty/settle`, {
+      const royRes = await fetch(apiUrl('/royalty/settle'), {
         method: 'POST',
         headers: buildHeaders(),
-        body: JSON.stringify({ run_id: pact.run_id }),
+        body: JSON.stringify(withLang({ run_id: pact.run_id })),
       })
       if (royRes.ok) {
         const roy = await royRes.json()
@@ -292,7 +327,7 @@ export async function settlePact(pactId) {
    Returns null on 404 (e.g. TESTING path) so callers can gracefully degrade
    to hardcoded demo data. */
 export async function fetchDemoAgent() {
-  const res = await fetch(`${API_BASE}/demo/agent`, { headers: buildHeaders() })
+  const res = await fetch(apiUrl('/demo/agent'), { headers: buildHeaders() })
   if (res.status === 404) return null
   if (!res.ok) throw new Error(`API error: ${res.status}`)
   return res.json()
@@ -302,10 +337,10 @@ export async function fetchDemoAgent() {
    flow; ExecutionPage's accept-delivery button also calls it so a preset/refreshed run
    without tx_hash still surfaces one on user sign-off. */
 export async function settleRoyalty(runId) {
-  const res = await fetch(`${API_BASE}/royalty/settle`, {
+  const res = await fetch(apiUrl('/royalty/settle'), {
     method: 'POST',
     headers: buildHeaders(),
-    body: JSON.stringify({ run_id: runId }),
+    body: JSON.stringify(withLang({ run_id: runId })),
   })
   if (!res.ok) {
     const body = await res.json().catch(() => ({}))
@@ -337,7 +372,10 @@ export async function registerSkillAsset({
   if (endpoint_url) payload.endpoint_url = endpoint_url
   if (wallet_address) payload.wallet_address = wallet_address
 
-  const res = await fetch(`${API_BASE}/skills/register`, {
+  /* URL-only `lang`: this body is schema-validated
+     (app/services/skill_registration.py rejects unknown fields with a 400),
+     so it must stay exactly the registration payload. */
+  const res = await fetch(apiUrl('/skills/register'), {
     method: 'POST',
     headers: buildHeaders(),
     body: JSON.stringify(payload),
@@ -353,7 +391,7 @@ export async function fetchSkillsList() {
   /* Returns { skills: [{ id, name, description, type, creator_id,
      creator_name, price_amount (USD basis points), price_currency,
      mcp_endpoint, call_count, created_at }, …] } — the Agent World index. */
-  const res = await fetch(`${API_BASE}/skills/list`, { headers: buildHeaders() })
+  const res = await fetch(apiUrl('/skills/list'), { headers: buildHeaders() })
   if (!res.ok) throw new Error(`API error: ${res.status}`)
   return res.json()
 }
@@ -361,7 +399,7 @@ export async function fetchSkillsList() {
 /* ── Creator earnings ── */
 
 export async function fetchCreatorEarnings() {
-  const res = await fetch(`${API_BASE}/creator/earnings`, { headers: buildHeaders() })
+  const res = await fetch(apiUrl('/creator/earnings'), { headers: buildHeaders() })
   if (!res.ok) throw new Error(`API error: ${res.status}`)
   return res.json()
 }
@@ -369,7 +407,7 @@ export async function fetchCreatorEarnings() {
 export async function fetchCreatorLedger() {
   /* Per-run ledger view. Returns { creator_id, entries, settled_totals,
      accrued_totals }. entries are sorted newest-first by created_at. */
-  const res = await fetch(`${API_BASE}/creator/ledger`, { headers: buildHeaders() })
+  const res = await fetch(apiUrl('/creator/ledger'), { headers: buildHeaders() })
   if (!res.ok) throw new Error(`API error: ${res.status}`)
   return res.json()
 }
@@ -377,10 +415,10 @@ export async function fetchCreatorLedger() {
 /* ── Phase 2 / U6: JWT auth ── */
 
 export async function login(user_id, password) {
-  const res = await fetch(`${API_BASE}/auth/login`, {
+  const res = await fetch(apiUrl('/auth/login'), {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ user_id, password }),
+    body: JSON.stringify(withLang({ user_id, password })),
   })
   if (!res.ok) {
     const body = await res.json().catch(() => ({}))
@@ -403,7 +441,7 @@ export function logout() {
 
 export async function fetchMe() {
   /* Returns { user } or throws on 401 — caller decides whether to redirect. */
-  const res = await fetch(`${API_BASE}/auth/me`, { headers: buildHeaders() })
+  const res = await fetch(apiUrl('/auth/me'), { headers: buildHeaders() })
   if (!res.ok) {
     if (res.status === 401) {
       logout()  // stale / invalid token — clear it

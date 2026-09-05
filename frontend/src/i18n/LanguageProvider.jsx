@@ -1,6 +1,7 @@
 import { createContext, useCallback, useContext, useEffect, useState } from 'react'
 import en from './en.json'
 import zh from './zh.json'
+import { setApiLang } from '../services/api'
 
 /**
  * WP-I18N — bilingual UI provider.
@@ -9,6 +10,14 @@ import zh from './zh.json'
  * persists in localStorage("hirenet.lang") and is read/written inside
  * try/catch since a private-browsing tab (or a locked-down embed) can throw
  * on localStorage access — losing the preference must never crash the app.
+ *
+ * WP-I18N-2: the same choice is pushed into the API layer (`setApiLang`), so
+ * every outgoing request states its language and the backend can serialise
+ * seed data, decision strings and MCP demo content in it. That is done
+ * synchronously — at module load for the stored value, and inside `setLang`
+ * for a change — NOT in an effect: a child component's data-fetching effect
+ * runs before its parent's, so an effect here would let the first request of
+ * the session go out unlabelled.
  */
 
 const STORAGE_KEY = 'hirenet.lang'
@@ -48,15 +57,23 @@ function interpolate(template, vars) {
   ))
 }
 
+// Module load is the earliest point anything can fetch, so the API layer
+// learns the stored language here rather than waiting for a render.
+setApiLang(readStoredLang())
+
 export function LanguageProvider({ children }) {
   const [lang, setLangState] = useState(readStoredLang)
 
   useEffect(() => {
     document.documentElement.lang = lang
+    // Belt and braces: `setLang` already does this synchronously, so this
+    // only matters if the state is ever seeded some other way.
+    setApiLang(lang)
   }, [lang])
 
   const setLang = useCallback((next) => {
     if (next !== 'en' && next !== 'zh') return
+    setApiLang(next)
     setLangState(next)
     writeStoredLang(next)
   }, [])
