@@ -10,7 +10,7 @@
   background: var(--bg-content);
   border-radius: 20px;
   box-shadow: var(--elev-sm);
-  transition: all 0.3s ease;
+  transition: box-shadow 0.3s ease, transform 0.3s ease;
   /* 注意：board 内含 position:fixed 的 NavBar，禁止在此用 transform 动画
      （transform 会劫持 fixed 元素的包含块），只做透明度淡入 */
   animation: none;

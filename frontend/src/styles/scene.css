@@ -8,6 +8,12 @@
   height: 100vh;
   overflow-y: auto;
   overflow-x: hidden;
+  /* 滚动条槽位常驻：内容高度跨过一屏时不再横向跳 6px */
+  scrollbar-gutter: stable;
+  /* 原本误写在 .scene__content 上（非滚动容器，不生效），移到真正的滚动容器。
+     scroll-behavior 一并删除：唯一的平滑滚动是 AnalysisChat 里显式传
+     behavior:'smooth' 的 scrollIntoView，不依赖这条声明。 */
+  overflow-anchor: auto;
   z-index: 0;
   /* 多层背景：h3 / h2 / h1 三座椭圆草丘叠在天空渐变之上 */
   background:
@@ -27,11 +33,17 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  scroll-behavior: smooth;
-  overflow-anchor: auto;
 }
 
 /* ── 飘落的树叶 ── */
+/* 叶子放进这一层裁切，掉到视口以下时不再撑高 .scene 的 scrollHeight */
+.fleaf-layer {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+}
+
 .fleaf {
   position: absolute;
   top: -30px;
