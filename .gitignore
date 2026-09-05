@@ -18,6 +18,7 @@ __pycache__/
 *.jpg
 *.mp4
 *.png
+!docs/images/*.png
 *.pyc
 *.pyd
 *.pyo

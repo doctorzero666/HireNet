@@ -84,21 +84,21 @@ HireNet takes what a traditional hiring platform does — matching people to job
 <table>
   <tr>
     <td width="50%" align="center">
-      <img alt="Describing the business requirement" src="https://github.com/user-attachments/assets/4a865495-2aed-4cba-93f4-a92d06649f3a" />
+      <img alt="Describing the business requirement" src="docs/images/employer-goal.png" />
       <br /><sub>The company states its goal in natural language</sub>
     </td>
     <td width="50%" align="center">
-      <img alt="AI task analysis and resource matching" src="https://github.com/user-attachments/assets/f9197a22-4332-4c66-89dc-04e79e001121" />
+      <img alt="AI task analysis and resource matching" src="docs/images/task-analysis.png" />
       <br /><sub>AI decomposes tasks and decides how each should be executed</sub>
     </td>
   </tr>
   <tr>
     <td width="50%" align="center">
-      <img alt="Pact authorisation and payment" src="https://github.com/user-attachments/assets/0d15d0ce-f764-4d34-95c0-f4c6c2ca5b1d" />
+      <img alt="Pact authorisation and payment" src="docs/images/pact-payment.png" />
       <br /><sub>Pact authorisation and on-chain payment</sub>
     </td>
     <td width="50%" align="center">
-      <img alt="Employer dashboard" src="https://github.com/user-attachments/assets/7ea990bd-c6c8-4bcf-82ed-5e8fe67488d4" />
+      <img alt="Employer dashboard" src="docs/images/employer-dashboard.png" />
       <br /><sub>Employer dashboard for tracking progress</sub>
     </td>
   </tr>
@@ -115,11 +115,11 @@ HireNet takes what a traditional hiring platform does — matching people to job
 <table>
   <tr>
     <td width="50%" align="center">
-      <img alt="Job board" src="https://github.com/user-attachments/assets/88d94aee-2228-4c63-ba20-4f7c0af46abe" />
+      <img alt="Job board" src="docs/images/job-board.png" />
       <br /><sub>Browse roles that genuinely need a human</sub>
     </td>
     <td width="50%" align="center">
-      <img alt="Candidate profile and AI strength analysis" src="https://github.com/user-attachments/assets/c3f6fe01-ceeb-4bf7-b73b-8fb27e1e869e" />
+      <img alt="Candidate profile and AI strength analysis" src="docs/images/candidate-profile.png" />
       <br /><sub>AI analysis of personal strengths and direction</sub>
     </td>
   </tr>
@@ -137,21 +137,21 @@ HireNet takes what a traditional hiring platform does — matching people to job
 <table>
   <tr>
     <td width="50%" align="center">
-      <img alt="Agent registration and MCP integration" src="https://github.com/user-attachments/assets/cb7bfb87-7636-4ff3-8fc4-83e636ff1c5c" />
+      <img alt="Agent registration and MCP integration" src="docs/images/agent-registration.png" />
       <br /><sub>Register an agent and connect it over MCP</sub>
     </td>
     <td width="50%" align="center">
-      <img alt="Agent performance panel" src="https://github.com/user-attachments/assets/7485b0d4-fa79-43ce-9938-d9d324c79055" />
+      <img alt="Agent performance panel" src="docs/images/agent-performance.png" />
       <br /><sub>Invocation and performance metrics per agent</sub>
     </td>
   </tr>
   <tr>
     <td width="50%" align="center">
-      <img alt="Creator earnings ledger" src="https://github.com/user-attachments/assets/1afc9715-5602-4f22-865e-9002c84c0e27" />
+      <img alt="Creator earnings ledger" src="docs/images/creator-ledger.png" />
       <br /><sub>Track invocation revenue and settlement records</sub>
     </td>
     <td width="50%" align="center">
-      <img alt="Agent World" src="https://github.com/user-attachments/assets/30a7a2d6-35cb-4e27-9804-7fc96a6567da" />
+      <img alt="Agent World" src="docs/images/agent-world.png" />
       <br /><sub>Available capabilities on display in Agent World</sub>
     </td>
   </tr>
