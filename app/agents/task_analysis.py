@@ -796,7 +796,11 @@ class TaskAnalysisAgent:
 
     def _pool(self) -> list[dict]:
         if self._resource_pool is None:
-            self._resource_pool = candidate_profile.get_all_resources()
+            # WP-I18N-2: the pool is built in the session's language so
+            # `resource_name` (which the decision reason quotes verbatim) is
+            # not Chinese in an English session. `self.lang` absent -> the
+            # Chinese pool, i.e. unchanged.
+            self._resource_pool = candidate_profile.get_all_resources(self.lang)
         return self._resource_pool
 
     def _chat(self, stage: str, messages: list[dict], temperature: float) -> dict:

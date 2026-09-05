@@ -18,7 +18,7 @@ from app.storage.agent_runs import (
     confirm_settlement,
     list_agent_runs_by_caller,
 )
-from app.storage.skill_assets import list_skill_assets
+from app.storage.skill_assets import backfill_display_en, list_skill_assets
 
 # zhao_design 的数据分析 Agent — 字段集与 U3 注册路径接受的形状一致；split_rule 三方
 # 求和 = 10000 bp（U2 校验）。price 用 USD 基点（$40 = 4000 bp/单位时长），与
@@ -98,6 +98,41 @@ DEMO_SEO_AGENT: dict = {
     "wallet_address": DEMO_SEO_AGENT_WALLET,
 }
 
+# WP-I18N-2 / D-C：预设 Agent 的展示用英文文案，按 asset 的 name 索引。
+#
+# 单独放在这里而不是塞进上面两个 dict：那两个 dict 就是注册 payload
+# （register_skill_asset 拒未知字段），而且 compute_content_hash 与下面的
+# expected 幂等匹配必须继续只看今天这套字段 —— 任一处加了 *_en，线上已存在的
+# 行下次启动就不再匹配，会被当成新资产再插一条。英文文案由
+# backfill_display_en 事后单独 UPDATE 到同一行上。
+DISPLAY_EN_BY_NAME: dict[str, dict[str, str]] = {
+    "数据分析助手": {
+        "name": "Data Analysis Assistant",
+        "description": (
+            "zhao_design's data-analysis Agent: upload business data and get "
+            "key metrics, trends and anomaly alerts back, with a short insight "
+            "summary to support the decision."
+        ),
+    },
+    "SEO 优化 Agent": {
+        "name": "SEO Optimization Agent",
+        "description": (
+            "zhang_ai's SEO Agent: give it target keywords and a page URL and "
+            "it returns the title, meta description, H1/H2 structure and "
+            "internal-link suggestions, ready to paste in."
+        ),
+    },
+}
+
+
+def _backfill_en(db_path: str, asset_dict: dict, skill_id: str) -> None:
+    """Write `DISPLAY_EN_BY_NAME[asset_dict["name"]]` onto the row, if we have it."""
+    display = DISPLAY_EN_BY_NAME.get(asset_dict["name"])
+    if display is None:
+        return
+    backfill_display_en(db_path, skill_id, display["name"], display["description"])
+
+
 # (Agent 数据, 创作者 id) 元组列表 —— bootstrap_demo_extra_assets 直接迭代。
 # 数据分析 Agent 不在这里（它由 bootstrap_demo_data_analyst_asset 单独管，因为还要
 # 绑历史调用）。
@@ -144,9 +179,11 @@ def bootstrap_demo_data_analyst_asset(db_path: str, creator_id: str = "zhao_desi
     }
     for existing in list_skill_assets(db_path):
         if all(existing.get(key) == value for key, value in expected.items()):
+            _backfill_en(db_path, DEMO_DATA_ANALYST, existing["id"])
             return existing["id"]
 
     result = register_skill_asset(db_path, dict(DEMO_DATA_ANALYST), creator_id)
+    _backfill_en(db_path, DEMO_DATA_ANALYST, result["skill_id"])
     return result["skill_id"]
 
 
@@ -188,9 +225,11 @@ def bootstrap_demo_extra_assets(db_path: str) -> list[str]:
             None,
         )
         if existing is not None:
+            _backfill_en(db_path, asset_dict, existing["id"])
             asset_ids.append(existing["id"])
             continue
         result = register_skill_asset(db_path, dict(asset_dict), creator_id)
+        _backfill_en(db_path, asset_dict, result["skill_id"])
         asset_ids.append(result["skill_id"])
     return asset_ids
 

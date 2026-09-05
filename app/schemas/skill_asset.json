@@ -9,6 +9,8 @@
     "creator_id":     { "type": "string",  "minLength": 1 },
     "name":           { "type": "string",  "minLength": 1 },
     "description":    { "type": "string",  "minLength": 1 },
+    "name_en":        { "type": ["string", "null"], "minLength": 1 },
+    "description_en": { "type": ["string", "null"], "minLength": 1 },
     "type":           { "type": "string",  "enum": ["skill", "agent", "endpoint"] },
     "endpoint_url":   { "type": ["string", "null"] },
     "io_schema":      { "type": "object" },

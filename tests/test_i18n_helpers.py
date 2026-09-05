@@ -207,3 +207,73 @@ class TestLocalize:
         assert localize(7, "en") == 7
         assert localize(None, "en") is None
         assert localize("plain", "en") == "plain"
+
+
+# ─── Shared assertions, imported by the route-level i18n tests ────────────────
+
+import json as _json  # noqa: E402  (kept next to the helpers that use it)
+import re as _re  # noqa: E402
+
+#: The CJK Unified Ideographs block plus the CJK punctuation the seed data
+#: uses ("，", "：", "、", "（", "）", "；"). A response that is supposed to be
+#: English must contain none of it.
+CJK_PATTERN = _re.compile(r"[　-〿一-鿿＀-￯]")
+
+
+def iter_strings(value, path="$"):
+    """Yield `(json path, string)` for every string anywhere inside `value`."""
+    if isinstance(value, str):
+        yield path, value
+    elif isinstance(value, dict):
+        for key, item in value.items():
+            yield from iter_strings(item, f"{path}.{key}")
+    elif isinstance(value, list):
+        for index, item in enumerate(value):
+            yield from iter_strings(item, f"{path}[{index}]")
+
+
+def assert_no_cjk(payload, label=""):
+    """Fail with the offending JSON path if any string carries CJK text."""
+    offenders = [
+        (path, text) for path, text in iter_strings(payload)
+        if CJK_PATTERN.search(text)
+    ]
+    assert not offenders, (
+        f"{label or 'payload'} still contains CJK in English mode:\n"
+        + "\n".join(f"  {path} = {text!r}" for path, text in offenders)
+    )
+
+
+def iter_nodes(value, path="$"):
+    """Yield `(json path, node)` for every dict/list node inside `value`."""
+    yield path, value
+    if isinstance(value, dict):
+        for key, item in value.items():
+            yield from iter_nodes(item, f"{path}.{key}")
+    elif isinstance(value, list):
+        for index, item in enumerate(value):
+            yield from iter_nodes(item, f"{path}[{index}]")
+
+
+def assert_no_bilingual_nodes(payload, label=""):
+    """Fail if a `{"zh": ..., "en": ...}` seed node leaked into a response.
+
+    This is the guardrail for the "missed read site" failure mode: forget one
+    `pick()` and the UI renders the literal string `{'zh': '…', 'en': '…'}`.
+    """
+    offenders = [
+        (path, node) for path, node in iter_nodes(payload)
+        if isinstance(node, dict) and set(node) == {"zh", "en"}
+    ]
+    assert not offenders, (
+        f"{label or 'payload'} leaked an unresolved bilingual seed node:\n"
+        + "\n".join(f"  {path} = {node!r}" for path, node in offenders)
+    )
+
+
+def assert_clean_english(response, label=""):
+    """Both guardrails at once, on a Flask test-client response."""
+    payload = _json.loads(response.get_data(as_text=True))
+    assert_no_cjk(payload, label)
+    assert_no_bilingual_nodes(payload, label)
+    return payload

@@ -10,65 +10,114 @@ import uuid
 from datetime import datetime
 from openai import OpenAI
 
+from app.agents.lang_support import localize, pick
+
 
 # ─── In-memory application store (demo) ───────────────────────────────────────
 
 _applications: list[dict] = []
 
-# Demo jobs to show on candidate side when no company session exists
+# Demo jobs to show on candidate side when no company session exists.
+#
+# WP-I18N-2 / D-B: every user-facing string is a `{"zh": ..., "en": ...}` node;
+# ids (`job_id`), enum-ish values (`work_type`, `source`) and numbers stay
+# plain. `get_demo_jobs(lang)` resolves them — with no `lang` it returns
+# byte-identically what it returned before this change.
 DEMO_JOBS = [
     {
         "job_id": "demo_job_1",
-        "job_title": "全栈工程师",
-        "core_responsibilities": [
-            "负责前端 React 页面开发与维护",
-            "设计并实现 Node.js 后端 API",
-            "参与系统架构设计和技术选型",
-        ],
+        "job_title": {"zh": "全栈工程师", "en": "Full-stack Engineer"},
+        "core_responsibilities": {
+            "zh": [
+                "负责前端 React 页面开发与维护",
+                "设计并实现 Node.js 后端 API",
+                "参与系统架构设计和技术选型",
+            ],
+            "en": [
+                "Build and maintain the React frontend",
+                "Design and implement the Node.js backend API",
+                "Contribute to system architecture and technology choices",
+            ],
+        },
         "required_skills": ["React", "Node.js", "TypeScript", "RESTful API"],
         "nice_to_have_skills": ["Docker", "PostgreSQL", "AWS"],
-        "experience_range": {"min": 2, "max": 5, "unit": "年"},
-        "salary_range": {"min": 20000, "max": 35000, "unit": "元/月"},
+        "experience_range": {"min": 2, "max": 5, "unit": {"zh": "年", "en": "years"}},
+        "salary_range": {"min": 20000, "max": 35000, "unit": {"zh": "元/月", "en": "CNY/month"}},
         "work_type": "full-time",
         "water_score": 85,
-        "water_analysis": "需求明确，职责具体，技能要求合理",
-        "company": "某科技创业公司",
+        "water_analysis": {
+            "zh": "需求明确，职责具体，技能要求合理",
+            "en": "Clear requirement, concrete responsibilities, reasonable skill bar",
+        },
+        "company": {"zh": "某科技创业公司", "en": "A technology startup"},
         "source": "demo",
     },
     {
         "job_id": "demo_job_2",
-        "job_title": "AI 产品经理",
-        "core_responsibilities": [
-            "负责 AI 功能的产品规划和需求文档",
-            "协调研发、设计团队推动产品迭代",
-            "分析用户数据，驱动产品决策",
-        ],
-        "required_skills": ["PRD 写作", "需求分析", "数据分析", "AI 产品设计"],
-        "nice_to_have_skills": ["Prompt Engineering", "用户研究", "A/B 测试"],
-        "experience_range": {"min": 2, "max": 4, "unit": "年"},
-        "salary_range": {"min": 18000, "max": 30000, "unit": "元/月"},
+        "job_title": {"zh": "AI 产品经理", "en": "AI Product Manager"},
+        "core_responsibilities": {
+            "zh": [
+                "负责 AI 功能的产品规划和需求文档",
+                "协调研发、设计团队推动产品迭代",
+                "分析用户数据，驱动产品决策",
+            ],
+            "en": [
+                "Own product planning and requirement docs for AI features",
+                "Coordinate engineering and design to drive product iterations",
+                "Analyse user data and turn it into product decisions",
+            ],
+        },
+        "required_skills": {
+            "zh": ["PRD 写作", "需求分析", "数据分析", "AI 产品设计"],
+            "en": ["PRD writing", "Requirements analysis", "Data analysis", "AI product design"],
+        },
+        "nice_to_have_skills": {
+            "zh": ["Prompt Engineering", "用户研究", "A/B 测试"],
+            "en": ["Prompt Engineering", "User research", "A/B testing"],
+        },
+        "experience_range": {"min": 2, "max": 4, "unit": {"zh": "年", "en": "years"}},
+        "salary_range": {"min": 18000, "max": 30000, "unit": {"zh": "元/月", "en": "CNY/month"}},
         "work_type": "full-time",
         "water_score": 78,
-        "water_analysis": "职责清晰，AI 方向有加分项但非强制",
-        "company": "AI 应用公司",
+        "water_analysis": {
+            "zh": "职责清晰，AI 方向有加分项但非强制",
+            "en": "Responsibilities are clear; AI background is a plus, not a hard requirement",
+        },
+        "company": {"zh": "AI 应用公司", "en": "An applied-AI company"},
         "source": "demo",
     },
     {
         "job_id": "demo_job_3",
-        "job_title": "数据分析师",
-        "core_responsibilities": [
-            "建立和维护业务数据看板",
-            "进行用户行为分析和漏斗分析",
-            "输出数据洞察报告支持业务决策",
-        ],
-        "required_skills": ["Python", "SQL", "数据可视化", "统计分析"],
-        "nice_to_have_skills": ["机器学习", "Tableau", "Spark"],
-        "experience_range": {"min": 1, "max": 4, "unit": "年"},
-        "salary_range": {"min": 15000, "max": 25000, "unit": "元/月"},
+        "job_title": {"zh": "数据分析师", "en": "Data Analyst"},
+        "core_responsibilities": {
+            "zh": [
+                "建立和维护业务数据看板",
+                "进行用户行为分析和漏斗分析",
+                "输出数据洞察报告支持业务决策",
+            ],
+            "en": [
+                "Build and maintain the business metrics dashboards",
+                "Run user-behaviour and funnel analysis",
+                "Publish insight reports that support business decisions",
+            ],
+        },
+        "required_skills": {
+            "zh": ["Python", "SQL", "数据可视化", "统计分析"],
+            "en": ["Python", "SQL", "Data visualisation", "Statistical analysis"],
+        },
+        "nice_to_have_skills": {
+            "zh": ["机器学习", "Tableau", "Spark"],
+            "en": ["Machine learning", "Tableau", "Spark"],
+        },
+        "experience_range": {"min": 1, "max": 4, "unit": {"zh": "年", "en": "years"}},
+        "salary_range": {"min": 15000, "max": 25000, "unit": {"zh": "元/月", "en": "CNY/month"}},
         "work_type": "full-time",
         "water_score": 90,
-        "water_analysis": "需求描述与实际职责高度一致，无夸大要求",
-        "company": "电商平台",
+        "water_analysis": {
+            "zh": "需求描述与实际职责高度一致，无夸大要求",
+            "en": "The posting matches the actual responsibilities closely, with no inflated requirements",
+        },
+        "company": {"zh": "电商平台", "en": "An e-commerce platform"},
         "source": "demo",
     },
 ]
@@ -152,11 +201,19 @@ def generate_cover_letter(candidate_profile: dict, job_design: dict) -> dict:
 
 # ─── Application Store ─────────────────────────────────────────────────────────
 
+#: The one status an application is created with. Resolved at write time —
+#: the record is stored, so localising it later would need a per-reader pass
+#: over a demo store that also freezes `candidate_name` / `job_title` in the
+#: language the application was submitted in.
+APPLIED_STATUS = {"zh": "已投递", "en": "Submitted"}
+
+
 def apply_to_job(
     candidate_id: str,
     candidate_profile: dict,
     job_design: dict,
     cover_letter_result: dict,
+    lang: str | None = None,
 ) -> dict:
     """Record an application and return the application record."""
     app = {
@@ -167,7 +224,7 @@ def apply_to_job(
         "job_title": job_design.get("job_title", ""),
         "company": job_design.get("company", ""),
         "applied_at": datetime.now().strftime("%Y-%m-%d %H:%M"),
-        "status": "已投递",
+        "status": pick(APPLIED_STATUS, lang),
         "cover_letter": cover_letter_result.get("cover_letter", ""),
         "subject": cover_letter_result.get("subject", ""),
         "key_match_points": cover_letter_result.get("key_match_points", []),
@@ -184,6 +241,11 @@ def get_applications(candidate_id: str = None) -> list[dict]:
     return list(_applications)
 
 
-def get_demo_jobs() -> list[dict]:
-    """Return demo jobs for candidate-side matching."""
-    return DEMO_JOBS
+def get_demo_jobs(lang: str | None = None) -> list[dict]:
+    """Return demo jobs for candidate-side matching, resolved into one language.
+
+    `lang` absent -> the Chinese literals, byte-identical to the pre-i18n
+    return value. Always a fresh list of fresh dicts (`localize` rebuilds
+    containers), so a caller that mutates a job cannot corrupt the seed.
+    """
+    return [localize(job, lang) for job in DEMO_JOBS]

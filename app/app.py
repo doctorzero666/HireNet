@@ -14,7 +14,7 @@ from dotenv import load_dotenv
 
 from app.agents.agents import RequirementAnalysisAgent, decompose_tasks, run_resource_decision, CareerStrategyAgent
 from app.agents.job_design import generate_jd_report
-from app.agents.lang_support import normalize_lang
+from app.agents.lang_support import localize, normalize_lang, pick, resolve_request_lang
 from app.agents.task_analysis import TaskAnalysisAgent
 from app.services.auth import login_required
 from app.storage.analysis_traces import build_trace, insert_trace
@@ -68,16 +68,76 @@ EXP_PER_LEVEL = 500
 # identity here as the caller — any endpoint that needs caller_id / creator_id
 # should resolve through get_current_identity() so identity-switching in the UI
 # changes what the user sees (jobs they posted, royalties they earn).
+# WP-I18N-2 / D-G: `name` is a `{"zh", "en"}` node — IdentitySwitcher is
+# mounted globally, so a Chinese name here is visible on every screen of the
+# English demo. ids / roles / avatars are unchanged: they are identifiers, and
+# `_seed_demo_users` (app/storage/db.py) keys the `users` rows on the same ids.
 DEMO_IDENTITIES = {
-    "li_boss":    {"id": "li_boss",    "name": "李老板", "role": "enterprise", "avatar": "🏢"},
-    "zhang_ai":   {"id": "zhang_ai",   "name": "张AI",   "role": "creator",    "avatar": "🤖"},
-    "wang_dev":   {"id": "wang_dev",   "name": "王工",    "role": "jobseeker",  "avatar": "👤"},
-    "zhao_design":{"id": "zhao_design","name": "赵设计", "role": "creator",    "avatar": "🎨"},
+    "li_boss":    {"id": "li_boss",    "name": {"zh": "李老板", "en": "Boss Li"},       "role": "enterprise", "avatar": "🏢"},
+    "zhang_ai":   {"id": "zhang_ai",   "name": {"zh": "张AI",   "en": "AI Zhang"},      "role": "creator",    "avatar": "🤖"},
+    "wang_dev":   {"id": "wang_dev",   "name": {"zh": "王工",    "en": "Engineer Wang"}, "role": "jobseeker",  "avatar": "👤"},
+    "zhao_design":{"id": "zhao_design","name": {"zh": "赵设计", "en": "Designer Zhao"}, "role": "creator",    "avatar": "🎨"},
 }
 
 
-def get_current_identity(default_id: str | None = None) -> dict:
+# ─── Fixed route strings (WP-I18N-2 / D-B) ────────────────────────────────────
+#
+# Not LLM prose and not seed data: short literals the routes emit themselves.
+# Same `{"zh", "en"}` shape as the seed literals so `pick()` is the only thing
+# a call site needs, and `pick(x, None)` still yields the exact Chinese string
+# these were before.
+
+#: The `reason` a v1 route puts on an evaluation when the LLM call blew up.
+#: Byte-identical duplicate of `app.agents.task_analysis.EVALUATION_FALLBACK_REASON`
+#: (the v2 constant); the two are unified when the decision policy goes bilingual.
+EVALUATION_TIMEOUT_REASON = {
+    "zh": "评估超时，使用默认分数",
+    "en": "Evaluation timed out — using a default score",
+}
+
+#: `capability_summary` when building a candidate profile raised.
+NO_PROFILE_DETAIL = {"zh": "暂无详细信息", "en": "No details available yet"}
+
+#: `/api/my-match` scores a generic, un-named visitor.
+GENERIC_JOBSEEKER_NAME = {"zh": "求职者", "en": "Job seeker"}
+
+#: `POST /api/jobs/publish` default when the client sends no `job_title`.
+DEMO_JOB_TITLE_FALLBACK = {"zh": "Demo 岗位", "en": "Demo role"}
+
+
+def asset_display_field(asset: dict, field: str, lang: str | None = None) -> str:
+    """`name` / `description` of a `skill_assets` row in the requested language.
+
+    The English side lives in the nullable `<field>_en` column added by
+    `_migrate` and backfilled by the demo bootstraps (WP-I18N-2 / D-C). It is
+    deliberately NOT part of `compute_content_hash` nor of the bootstrap
+    idempotency match, so a row registered through `POST /api/skills/register`
+    simply has NULL there and falls back to the original text.
+    """
+    if lang == "en":
+        return asset.get(f"{field}_en") or asset[field]
+    return asset[field]
+
+
+def user_display_name(row: dict, lang: str | None = None) -> str:
+    """Display name for a `users` row, honouring the optional `name_en` column.
+
+    `name_en` is nullable (added by `_migrate`, backfilled by
+    `_seed_demo_users`), so a row that predates the migration — or a user who
+    registered through /api/auth/register — falls back to `name`. With `lang`
+    absent this is exactly `row["name"]`, i.e. today's behaviour.
+    """
+    if lang == "en":
+        return row.get("name_en") or row["name"]
+    return row["name"]
+
+
+def get_current_identity(default_id: str | None = None, lang: str | None = None) -> dict:
     """Resolve the current identity from the request.
+
+    `lang` (WP-I18N-2) only affects the returned `name`; `id` / `role` /
+    `avatar` are language-independent. Absent -> the Chinese name, which is
+    what every caller that only reads `["id"]` has always seen.
 
     Lookup order:
       1. JWT Bearer token (real auth — server-derived, client cannot spoof)
@@ -106,7 +166,7 @@ def get_current_identity(default_id: str | None = None) -> dict:
             avatar = DEMO_IDENTITIES.get(row["id"], {}).get("avatar", "👤")
             return {
                 "id": row["id"],
-                "name": row["name"],
+                "name": user_display_name(row, lang),
                 "role": row["role"],
                 "avatar": avatar,
             }
@@ -118,7 +178,7 @@ def get_current_identity(default_id: str | None = None) -> dict:
     if raw:
         raw = raw.strip()
         if raw in DEMO_IDENTITIES:
-            return DEMO_IDENTITIES[raw]
+            return localize(DEMO_IDENTITIES[raw], lang)
 
     # 4. Phase 1 stub fallback
     fallback_id = default_id or current_app.config.get("PHASE1_CALLER_ID", "phase1_stub_employer")
@@ -563,10 +623,11 @@ def list_candidates():
     """List demo candidates with their profiles"""
     from app.agents.candidate_profile import DEMO_CANDIDATES, build_candidate_profile
 
+    lang = resolve_request_lang(request)
     candidates = []
     for cid in DEMO_CANDIDATES:
         try:
-            profile = build_candidate_profile(cid)
+            profile = build_candidate_profile(cid, lang)
             candidates.append(profile)
         except Exception as e:
             candidates.append({"id": cid, "error": str(e)})
@@ -587,7 +648,8 @@ def match_candidates():
     from app.agents.candidate_profile import get_all_resources
     from app.agents.agents import evaluate_resource_for_task
 
-    resources = get_all_resources()
+    lang = resolve_request_lang(request)
+    resources = get_all_resources(lang)
     human_resources = [r for r in resources if r["type"] == "human"]
 
     task = {
@@ -603,10 +665,14 @@ def match_candidates():
     matches = []
     for resource in human_resources:
         try:
-            eval_result = evaluate_resource_for_task(resource, task)
+            eval_result = evaluate_resource_for_task(resource, task, lang=lang)
         except Exception as e:
             print(f"Evaluation failed for {resource.get('id')}: {e}")
-            eval_result = {"confidence": 0.5, "reason": "评估超时，使用默认分数", "strengths": []}
+            eval_result = {
+                "confidence": 0.5,
+                "reason": pick(EVALUATION_TIMEOUT_REASON, lang),
+                "strengths": [],
+            }
         matches.append({
             "candidate": resource,
             "evaluation": eval_result,
@@ -626,8 +692,9 @@ def get_candidate_profile(candidate_id):
     from app.agents.candidate_profile import build_candidate_profile, DEMO_CANDIDATES
     if candidate_id not in DEMO_CANDIDATES:
         return jsonify({"error": "Unknown candidate"}), 404
+    lang = resolve_request_lang(request)
     try:
-        profile = build_candidate_profile(candidate_id)
+        profile = build_candidate_profile(candidate_id, lang)
         return jsonify({"profile": profile})
     except Exception as e:
         # Return static fallback if token not configured
@@ -636,13 +703,13 @@ def get_candidate_profile(candidate_id):
         return jsonify({"profile": {
             "id": candidate_id,
             "type": "human",
-            "name": meta["name"],
+            "name": pick(meta["name"], lang),
             "role_hint": meta["role_hint"],
             "skills": [],
             "experience": [],
             "preferences": [],
             "bio": "",
-            "capability_summary": "暂无详细信息",
+            "capability_summary": pick(NO_PROFILE_DETAIL, lang),
         }})
 
 
@@ -657,6 +724,7 @@ def list_jobs():
     """
     from app.agents.application_agent import get_demo_jobs
 
+    lang = resolve_request_lang(request)
     extra_jobs = []
     for sess in analysis_sessions.values():
         jd_report = sess.get("jd_report")
@@ -665,7 +733,7 @@ def list_jobs():
 
     seen_ids: set = set()
     jobs: list = []
-    for job in get_demo_jobs() + extra_jobs + list(published_jobs):
+    for job in get_demo_jobs(lang) + extra_jobs + list(published_jobs):
         jid = job.get("job_id")
         # Jobs without job_id keep the legacy "always include" behaviour so
         # demo data doesn't suddenly disappear if it ever lacks the field.
@@ -690,15 +758,16 @@ def candidate_match():
     if candidate_id not in DEMO_CANDIDATES:
         return jsonify({"error": "Unknown candidate"}), 404
 
+    lang = resolve_request_lang(request)
     try:
-        profile = build_candidate_profile(candidate_id)
+        profile = build_candidate_profile(candidate_id, lang)
     except Exception:
         meta = DEMO_CANDIDATES[candidate_id]
-        profile = {"id": candidate_id, "type": "human", "name": meta["name"],
+        profile = {"id": candidate_id, "type": "human", "name": pick(meta["name"], lang),
                    "role_hint": meta["role_hint"], "skills": [], "experience": [],
                    "capability_summary": meta["role_hint"]}
 
-    jobs = get_demo_jobs()
+    jobs = get_demo_jobs(lang)
     results = []
     for job in jobs:
         task = {
@@ -711,10 +780,14 @@ def candidate_match():
             "estimated_hours": 160,
         }
         try:
-            eval_result = evaluate_resource_for_task(profile, task)
+            eval_result = evaluate_resource_for_task(profile, task, lang=lang)
         except Exception as e:
             print(f"Evaluation failed for job {job.get('job_id')}: {e}")
-            eval_result = {"confidence": 0.5, "reason": "评估超时，使用默认分数", "strengths": []}
+            eval_result = {
+                "confidence": 0.5,
+                "reason": pick(EVALUATION_TIMEOUT_REASON, lang),
+                "strengths": [],
+            }
         results.append({
             "job": job,
             "match_score": round(eval_result.get("confidence", 0) * 100),
@@ -732,10 +805,11 @@ def my_match():
     from app.agents.application_agent import get_demo_jobs
     from app.agents.agents import evaluate_resource_for_task
 
-    profile = {"id": "current_user", "type": "human", "name": "求职者",
+    lang = resolve_request_lang(request)
+    profile = {"id": "current_user", "type": "human", "name": pick(GENERIC_JOBSEEKER_NAME, lang),
                "capabilities": [], "capability_summary": ""}
 
-    all_jobs = get_demo_jobs() + published_jobs
+    all_jobs = get_demo_jobs(lang) + published_jobs
     results = []
     for job in all_jobs:
         task = {
@@ -748,9 +822,13 @@ def my_match():
             "estimated_hours": 160,
         }
         try:
-            eval_result = evaluate_resource_for_task(profile, task)
+            eval_result = evaluate_resource_for_task(profile, task, lang=lang)
         except Exception:
-            eval_result = {"confidence": 0.5, "reason": "评估超时，使用默认分数", "strengths": []}
+            eval_result = {
+                "confidence": 0.5,
+                "reason": pick(EVALUATION_TIMEOUT_REASON, lang),
+                "strengths": [],
+            }
         results.append({
             "job": job,
             "match_score": round(eval_result.get("confidence", 0) * 100),
@@ -784,11 +862,12 @@ def apply_to_job():
     if candidate_id not in DEMO_CANDIDATES:
         return jsonify({"error": "Unknown candidate"}), 404
 
+    lang = resolve_request_lang(request)
     try:
-        profile = build_candidate_profile(candidate_id)
+        profile = build_candidate_profile(candidate_id, lang)
     except Exception:
         meta = DEMO_CANDIDATES[candidate_id]
-        profile = {"id": candidate_id, "type": "human", "name": meta["name"],
+        profile = {"id": candidate_id, "type": "human", "name": pick(meta["name"], lang),
                    "role_hint": meta["role_hint"], "skills": [], "experience": [],
                    "capability_summary": ""}
 
@@ -797,7 +876,7 @@ def apply_to_job():
     except Exception as e:
         return jsonify({"error": f"Cover letter generation failed: {e}"}), 500
 
-    application = _apply(candidate_id, profile, job_design, cover_letter_result)
+    application = _apply(candidate_id, profile, job_design, cover_letter_result, lang=lang)
 
     # Store jd_report reference in analysis_sessions for job listing
     session_id = data.get("session_id")
@@ -1006,7 +1085,11 @@ def auth_login():
     token = create_token(row["id"], row["role"])
     return jsonify({
         "token": token,
-        "user": {"id": row["id"], "name": row["name"], "role": row["role"]},
+        "user": {
+            "id": row["id"],
+            "name": user_display_name(row, resolve_request_lang(request)),
+            "role": row["role"],
+        },
     })
 
 
@@ -1067,7 +1150,11 @@ def auth_me():
     if row is None:
         return jsonify({"error": "User no longer exists"}), 401
     return jsonify({
-        "user": {"id": row["id"], "name": row["name"], "role": row["role"]},
+        "user": {
+            "id": row["id"],
+            "name": user_display_name(row, resolve_request_lang(request)),
+            "role": row["role"],
+        },
     })
 
 
@@ -1076,9 +1163,10 @@ def auth_me():
 @main.route("/api/demo/identities", methods=["GET"])
 def list_demo_identities():
     """Return the 4 hard-coded Demo identities + the current selection."""
+    lang = resolve_request_lang(request)
     return jsonify({
-        "identities": list(DEMO_IDENTITIES.values()),
-        "current": get_current_identity(),
+        "identities": [localize(i, lang) for i in DEMO_IDENTITIES.values()],
+        "current": get_current_identity(lang=lang),
     })
 
 
@@ -1097,7 +1185,7 @@ def set_demo_identity():
     if identity_id not in DEMO_IDENTITIES:
         return jsonify({"error": f"Unknown identity_id: {identity_id}"}), 400
 
-    identity = DEMO_IDENTITIES[identity_id]
+    identity = localize(DEMO_IDENTITIES[identity_id], resolve_request_lang(request))
     resp = make_response(jsonify({"success": True, "identity": identity}))
     resp.set_cookie(
         "demo_identity", identity_id,
@@ -1131,17 +1219,18 @@ def get_demo_agent():
     if asset is None:
         return jsonify({"error": "Demo asset record missing"}), 404
 
+    lang = resolve_request_lang(request)
     creator_id = asset["creator_id"]
     creator_row = get_user(current_app.config["DATABASE_PATH"], creator_id)
-    creator_name = creator_row["name"] if creator_row else creator_id
+    creator_name = user_display_name(creator_row, lang) if creator_row else creator_id
 
     # Anvil 默认账户 1，公开的本地测试地址（见 .env 注释），仅作展示。
     wallet = os.getenv("ANVIL_TO_ADDRESS", "0x70997970C51812dc3A010C7d01b50e0d17dc79C8")
 
     return jsonify({
         "asset_id": asset_id,
-        "name": asset["name"],
-        "description": asset["description"],
+        "name": asset_display_field(asset, "name", lang),
+        "description": asset_display_field(asset, "description", lang),
         "creator_id": creator_id,
         "creator_name": creator_name,
         "price_per_hour": asset["price_amount"] / 100,  # USD 基点 → 美元
@@ -1203,7 +1292,8 @@ def publish_job():
     if not jd:
         return jsonify({"error": "jd is required"}), 400
 
-    identity = get_current_identity()
+    lang = resolve_request_lang(request)
+    identity = get_current_identity(lang=lang)
     job_id = (data.get("job_id") or "").strip() if isinstance(data.get("job_id"), str) else ""
     if not job_id:
         job_id = "demo_job_" + secrets.token_hex(4)
@@ -1215,7 +1305,7 @@ def publish_job():
         company = identity["name"]
     job_title = (data.get("job_title") or "").strip() if isinstance(data.get("job_title"), str) else ""
     if not job_title:
-        job_title = "Demo 岗位"
+        job_title = pick(DEMO_JOB_TITLE_FALLBACK, lang)
 
     # Structured fields — feed the candidate-side apply flow. Without them,
     # generate_cover_letter falls through to empty lists (LLM gets no signal)

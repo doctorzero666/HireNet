@@ -400,9 +400,12 @@ def run_resource_decision(tasks: list[dict], lang: str | None = None) -> dict:
     Returns decision result for each task.
 
     `lang`: WP-I18N / I2, threaded down to every `evaluate_resource_for_task`
-    call this makes.
+    call this makes. WP-I18N-2 also uses it to pick which side of the
+    bilingual demo fixtures the pool is built from, so `resource_name` — which
+    ends up verbatim inside `recommendation.reason` — is in the session's
+    language. Absent -> the Chinese pool, byte-identical to before.
     """
-    resources = get_all_resources()
+    resources = get_all_resources(lang)
     decisions = []
 
     for task in tasks:

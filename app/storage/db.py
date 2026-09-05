@@ -31,6 +31,13 @@ def _create_tables(conn: sqlite3.Connection) -> None:
             creator_id      TEXT    NOT NULL,
             name            TEXT    NOT NULL,
             description     TEXT    NOT NULL,
+            -- WP-I18N-2 / D-C: optional English display text. Nullable on
+            -- purpose: an asset registered through POST /api/skills/register
+            -- has no English side, and the API layer falls back to name /
+            -- description. NOT part of content_hash (provenance would break)
+            -- and NOT part of the bootstrap idempotency match.
+            name_en         TEXT,
+            description_en  TEXT,
             type            TEXT    NOT NULL,
             endpoint_url    TEXT,
             io_schema       TEXT    NOT NULL,
@@ -103,6 +110,9 @@ def _create_tables(conn: sqlite3.Connection) -> None:
         CREATE TABLE IF NOT EXISTS users (
             id            TEXT    PRIMARY KEY,
             name          TEXT    NOT NULL,
+            -- WP-I18N-2 / D-C: English display name for the seeded demo
+            -- identities. Nullable — a self-registered user has only `name`.
+            name_en       TEXT,
             role          TEXT    NOT NULL CHECK (role IN ('enterprise', 'creator', 'jobseeker')),
             password_hash TEXT    NOT NULL,
             created_at    TEXT    NOT NULL
@@ -245,6 +255,16 @@ def _migrate(conn: sqlite3.Connection) -> None:
     unknown outcome can be left at 'settling' WITH a reconciliation record
     instead of being reset and re-signed.
 
+    WP-I18N-2 / D-C: skill_assets gains name_en + description_en and users
+    gains name_en — three nullable TEXT columns, no SQL default and no
+    backfill here. NULL means "no English text for this row", which the API
+    layer renders as the original `name` / `description`. The English strings
+    for the bootstrapped demo rows are written by the bootstraps themselves
+    (`UPDATE ... WHERE name_en IS NULL`), NOT here and NOT through
+    `compute_content_hash` or the bootstrap `expected` idempotency match —
+    putting them in either would fork every already-deployed row into a
+    duplicate on the next boot.
+
     Crash-safety: every ALTER + backfill UPDATE runs inside a single explicit
     transaction. Python's sqlite3 module auto-commits before DDL by default,
     which would otherwise leave the DB in a half-migrated state if a later
@@ -264,6 +284,11 @@ def _migrate(conn: sqlite3.Connection) -> None:
     audit_cols = {
         row[1] for row in conn.execute("PRAGMA table_info(audit_log)").fetchall()
     }
+    # Same "empty set = table absent" gate as `pact_cols` below: a hand-built
+    # pre-users database must not blow up on an ALTER of a missing table.
+    user_cols = {
+        row[1] for row in conn.execute("PRAGMA table_info(users)").fetchall()
+    }
     # Empty set = the table does not exist yet. _migrate always runs after
     # _create_tables (see init_db), so that only happens when a caller migrates
     # a hand-built pre-WP-G database; ALTERing a missing table would explode,
@@ -277,6 +302,18 @@ def _migrate(conn: sqlite3.Connection) -> None:
     pact_wpr_columns = [
         column for column in ("last_error", "payment_pending")
         if pact_cols and column not in pact_cols
+    ]
+
+    # WP-I18N-2 / D-C: plain nullable ADD COLUMNs, no backfill, no CHECK to
+    # widen. `skill_cols` is never empty here (skill_assets is the one table
+    # every legacy database has), `user_cols` is gated like `pact_cols`.
+    i18n_skill_columns = [
+        column for column in ("name_en", "description_en")
+        if skill_cols and column not in skill_cols
+    ]
+    i18n_user_columns = [
+        column for column in ("name_en",)
+        if user_cols and column not in user_cols
     ]
 
     # Stage 2 / WP-D: agent_runs.settlement_meta, audit_log.network and the
@@ -308,6 +345,8 @@ def _migrate(conn: sqlite3.Connection) -> None:
         or rebuild_agent_runs
         or rebuild_ledger
         or bool(pact_wpr_columns)
+        or bool(i18n_skill_columns)
+        or bool(i18n_user_columns)
     )
     if not pending:
         return
@@ -498,6 +537,16 @@ def _migrate(conn: sqlite3.Connection) -> None:
                 # as a parameter, and no caller-supplied value reaches here.
                 conn.execute(f"ALTER TABLE pacts ADD COLUMN {column} TEXT")
 
+            # WP-I18N-2 / D-C. Same f-string posture as the pacts clause
+            # above: the interpolated names are the hardcoded literals in the
+            # two lists, never anything caller-supplied. No backfill UPDATE —
+            # NULL is the correct value for every pre-existing row, and the
+            # demo bootstraps fill in the rows they own.
+            for column in i18n_skill_columns:
+                conn.execute(f"ALTER TABLE skill_assets ADD COLUMN {column} TEXT")
+            for column in i18n_user_columns:
+                conn.execute(f"ALTER TABLE users ADD COLUMN {column} TEXT")
+
             conn.execute("COMMIT")
         except Exception:
             conn.execute("ROLLBACK")
@@ -531,33 +580,48 @@ def _seed_demo_users(conn: sqlite3.Connection) -> None:
 
     # password=None means "hash 'demo123' lazily" so we don't burn ~200ms per
     # PBKDF2 call on every app startup when all rows already exist.
+    # WP-I18N-2 / D-C: `name_en` is the English display name; it must match
+    # DEMO_IDENTITIES[*]["name"]["en"] in app/app.py, which is what the demo
+    # cookie / header path renders. None for the two Phase 1 stubs — their
+    # names are already English.
     seed_users = [
-        ("li_boss",              "李老板",                 "enterprise", None),
-        ("zhang_ai",             "张AI",                   "creator",    None),
-        ("wang_dev",             "王工",                   "jobseeker",  None),
-        ("zhao_design",          "赵设计",                 "creator",    None),
-        ("phase1_stub_creator",  "Phase 1 Stub Creator",  "creator",    DISABLED_HASH),
-        ("phase1_stub_employer", "Phase 1 Stub Employer", "enterprise", DISABLED_HASH),
+        ("li_boss",              "李老板",                 "Boss Li",       "enterprise", None),
+        ("zhang_ai",             "张AI",                   "AI Zhang",      "creator",    None),
+        ("wang_dev",             "王工",                   "Engineer Wang", "jobseeker",  None),
+        ("zhao_design",          "赵设计",                 "Designer Zhao", "creator",    None),
+        ("phase1_stub_creator",  "Phase 1 Stub Creator",  None,            "creator",    DISABLED_HASH),
+        ("phase1_stub_employer", "Phase 1 Stub Employer", None,            "enterprise", DISABLED_HASH),
     ]
     # Defensive check: the seeded stub ids must stay in sync with the
     # register-route guard.
-    assert {uid for uid, _, _, ph in seed_users if ph == DISABLED_HASH} == set(RESERVED_USER_IDS), \
+    assert {uid for uid, _, _, _, ph in seed_users if ph == DISABLED_HASH} == set(RESERVED_USER_IDS), \
         "seeded stub ids must match RESERVED_USER_IDS"
 
-    existing = {row[0] for row in conn.execute("SELECT id FROM users").fetchall()}
-    if existing.issuperset(uid for uid, *_ in seed_users):
-        return
-
     now = datetime.now(timezone.utc).isoformat()
-    for uid, name, role, pw_hash in seed_users:
-        if uid in existing:
+    existing = {row[0] for row in conn.execute("SELECT id FROM users").fetchall()}
+    if not existing.issuperset(uid for uid, *_ in seed_users):
+        for uid, name, name_en, role, pw_hash in seed_users:
+            if uid in existing:
+                continue
+            # Lazy: demo passwords get hashed only for the row we're inserting.
+            resolved_hash = pw_hash if pw_hash is not None else hash_password("demo123")
+            conn.execute(
+                "INSERT OR IGNORE INTO users (id, name, name_en, role, password_hash, created_at) "
+                "VALUES (?, ?, ?, ?, ?, ?)",
+                (uid, name, name_en, role, resolved_hash, now),
+            )
+
+    # Backfill the English names onto rows that already existed before the
+    # WP-I18N-2 migration. `WHERE name_en IS NULL` keeps this idempotent and
+    # keeps it from overwriting a name someone changed on purpose; it runs
+    # every boot (cheap: 4 no-op UPDATEs) rather than only on the insert path,
+    # because the insert path short-circuits as soon as all 6 rows exist.
+    for uid, _name, name_en, _role, _ph in seed_users:
+        if name_en is None:
             continue
-        # Lazy: demo passwords get hashed only for the row we're inserting.
-        resolved_hash = pw_hash if pw_hash is not None else hash_password("demo123")
         conn.execute(
-            "INSERT OR IGNORE INTO users (id, name, role, password_hash, created_at) "
-            "VALUES (?, ?, ?, ?, ?)",
-            (uid, name, role, resolved_hash, now),
+            "UPDATE users SET name_en = ? WHERE id = ? AND name_en IS NULL",
+            (name_en, uid),
         )
     conn.commit()
 

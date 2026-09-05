@@ -71,3 +71,35 @@ def list_skill_assets(db_path: str, creator_id: str | None = None) -> list[dict]
         item["split_rule"] = json.loads(item["split_rule"])
         results.append(item)
     return results
+
+
+def backfill_display_en(
+    db_path: str,
+    skill_id: str,
+    name_en: str | None,
+    description_en: str | None,
+) -> int:
+    """Write the English display text onto one asset row. Returns rows changed.
+
+    WP-I18N-2 / D-C. Deliberately separate from `insert_skill_asset`:
+
+    * `name_en` / `description_en` are NOT part of `compute_content_hash`
+      (adding them would change the content_hash of every existing asset — a
+      provenance break, CLAUDE.md TIER 1 §2), and NOT part of the bootstraps'
+      `expected` idempotency match (adding them there would stop every
+      already-deployed row from matching and fork it into a duplicate on the
+      next boot).
+    * `WHERE name_en IS NULL` makes this idempotent across restarts and stops
+      a redeploy from overwriting text someone edited on purpose.
+
+    Nothing else about the row is touched — not the hash, not the price, not
+    the split rule.
+    """
+    with closing(_open(db_path)) as conn:
+        with conn:
+            cursor = conn.execute(
+                "UPDATE skill_assets SET name_en = ?, description_en = ? "
+                "WHERE id = ? AND name_en IS NULL",
+                (name_en, description_en, skill_id),
+            )
+    return cursor.rowcount

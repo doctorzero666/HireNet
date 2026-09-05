@@ -27,7 +27,9 @@ def get_user(db_path: str, user_id: str) -> dict | None:
         return None
     with _open(db_path) as conn:
         row = conn.execute(
-            "SELECT id, name, role, password_hash, created_at FROM users WHERE id = ?",
+            # name_en (WP-I18N-2 / D-C) is nullable; callers render it through
+            # `app.app.user_display_name`, which falls back to `name`.
+            "SELECT id, name, name_en, role, password_hash, created_at FROM users WHERE id = ?",
             (user_id,),
         ).fetchone()
     return dict(row) if row else None

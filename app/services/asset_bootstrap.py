@@ -14,7 +14,11 @@ Nothing here recomputes splits or touches the DB schema.
 """
 from app.services.agent_run_recording import record_agent_run
 from app.services.skill_registration import compute_content_hash, register_skill_asset
-from app.storage.skill_assets import get_skill_asset, list_skill_assets
+from app.storage.skill_assets import (
+    backfill_display_en,
+    get_skill_asset,
+    list_skill_assets,
+)
 
 # The existing Job Design Agent (app/agents/job_design.py) described as a SkillAsset.
 # Field set is exactly what the U3 registration path accepts; split_rule keeps the
@@ -47,6 +51,22 @@ JOB_DESIGN_ASSET: dict = {
     "price_currency": "USD",
     "price_chain": None,
     "split_rule": {"creator": 7000, "platform": 3000},
+}
+
+# WP-I18N-2 / D-C: display-only English text for the row above. Kept in its
+# OWN constant rather than as `name_en` / `description_en` keys on
+# JOB_DESIGN_ASSET, because that dict IS the registration payload —
+# `register_skill_asset` rejects unknown fields, and `compute_content_hash` /
+# the `expected` reuse match below must keep seeing exactly the field set they
+# see today (adding to either forks every deployed row into a duplicate on the
+# next boot). Written onto the row afterwards by `backfill_display_en`.
+JOB_DESIGN_ASSET_EN: dict = {
+    "name": "Job Design Agent",
+    "description": (
+        "HireNet's job-design Agent: turns a clarified requirement into a "
+        "de-fluffed job definition, then scores how much the original vague "
+        "description was inflated compared with the final JD."
+    ),
 }
 
 
@@ -94,6 +114,12 @@ def bootstrap_job_design_asset(db_path: str, creator_id: str) -> str:
     }
     for existing in list_skill_assets(db_path):
         if all(existing.get(key) == value for key, value in expected.items()):
+            backfill_display_en(
+                db_path,
+                existing["id"],
+                JOB_DESIGN_ASSET_EN["name"],
+                JOB_DESIGN_ASSET_EN["description"],
+            )
             return existing["id"]
 
     # TODO(③ concurrency): this is a check-then-insert with no UNIQUE(content_hash)
@@ -102,6 +128,12 @@ def bootstrap_job_design_asset(db_path: str, creator_id: str) -> str:
     # single-process startup; revisit (DB unique constraint / advisory lock) before
     # multi-worker deploy.
     result = register_skill_asset(db_path, dict(JOB_DESIGN_ASSET), creator_id)
+    backfill_display_en(
+        db_path,
+        result["skill_id"],
+        JOB_DESIGN_ASSET_EN["name"],
+        JOB_DESIGN_ASSET_EN["description"],
+    )
     return result["skill_id"]
 
 

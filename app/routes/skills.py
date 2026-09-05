@@ -1,7 +1,13 @@
 import jsonschema
 from flask import Blueprint, current_app, jsonify, request
 
-from app.app import DEMO_IDENTITIES, get_current_identity
+from app.agents.lang_support import pick, resolve_request_lang
+from app.app import (
+    DEMO_IDENTITIES,
+    asset_display_field,
+    get_current_identity,
+    user_display_name,
+)
 from app.services.skill_registration import register_skill_asset
 from app.storage.agent_runs import count_runs_by_asset
 from app.storage.skill_assets import list_skill_assets
@@ -38,21 +44,24 @@ def register_skill():
     return jsonify(result), 201
 
 
-def _resolve_creator_name(db_path: str, creator_id: str, cache: dict[str, str]) -> str:
+def _resolve_creator_name(
+    db_path: str, creator_id: str, cache: dict[str, str], lang: str | None = None
+) -> str:
     """Best-effort creator display name. Falls back to creator_id when unknown.
 
     Lookup order: in-request cache → DEMO_IDENTITIES (Demo identities don't
     necessarily have a users row) → users table → raw id. Cache is mutated so
-    one /api/skills/list call reads each user/identity at most once.
+    one /api/skills/list call reads each user/identity at most once — it is
+    per-request, so caching a language-specific name is safe.
     """
     if creator_id in cache:
         return cache[creator_id]
     demo = DEMO_IDENTITIES.get(creator_id)
     if demo is not None:
-        cache[creator_id] = demo["name"]
-        return demo["name"]
+        cache[creator_id] = pick(demo["name"], lang)
+        return cache[creator_id]
     row = get_user(db_path, creator_id)
-    name = row["name"] if row is not None else creator_id
+    name = user_display_name(row, lang) if row is not None else creator_id
     cache[creator_id] = name
     return name
 
@@ -69,17 +78,21 @@ def list_skills():
     leak the creator's commercial terms.
     """
     db_path = current_app.config["DATABASE_PATH"]
+    lang = resolve_request_lang(request)
     assets = list_skill_assets(db_path)
     counts = count_runs_by_asset(db_path)
     name_cache: dict[str, str] = {}
     skills = [
         {
             "id": asset["id"],
-            "name": asset["name"],
-            "description": asset["description"],
+            # WP-I18N-2 / D-C: the English side lives in the nullable
+            # name_en / description_en columns; NULL falls back to the
+            # original text, so an asset registered by a user is unaffected.
+            "name": asset_display_field(asset, "name", lang),
+            "description": asset_display_field(asset, "description", lang),
             "type": asset["type"],
             "creator_id": asset["creator_id"],
-            "creator_name": _resolve_creator_name(db_path, asset["creator_id"], name_cache),
+            "creator_name": _resolve_creator_name(db_path, asset["creator_id"], name_cache, lang),
             "price_amount": asset["price_amount"],
             "price_currency": asset["price_currency"],
             "mcp_endpoint": asset.get("endpoint_url"),
