@@ -64,6 +64,11 @@ export default function JobDetail() {
   // though `job` is already populated.
   const [loadedLang, setLoadedLang] = useState(() => (location.state?.job ? lang : null))
   const loading = loadedLang !== lang
+  // Only the very first load blanks the page for a spinner. On a language
+  // switch the previously-fetched data stays on screen until the re-fetch
+  // resolves (same as AgentPerformance / CreatorLedger), so the list no
+  // longer unmounts and collapses the page height.
+  const showSpinner = loading && loadedLang === null
 
   useEffect(() => {
     if (loadedLang === lang) return
@@ -149,7 +154,7 @@ export default function JobDetail() {
           <Ribbon color="app-yellow" size={20}>📜 {t('jobDetail.title')}</Ribbon>
         </div>
 
-        {loading && (
+        {showSpinner && (
           <div className="generating">
             <div className="spinner" />
             <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--text-muted)' }}>
@@ -158,11 +163,11 @@ export default function JobDetail() {
           </div>
         )}
 
-        {!loading && error && (
+        {!showSpinner && error && (
           <div className="chat-error" style={{ marginBottom: 16 }}>{error}</div>
         )}
 
-        {!loading && !error && job && (
+        {!showSpinner && !error && job && (
           <>
             <div style={{
               background: '#f7f3df',

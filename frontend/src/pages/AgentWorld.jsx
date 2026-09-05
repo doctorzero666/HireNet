@@ -53,6 +53,11 @@ export default function AgentWorld() {
   // skills list on hand was fetched for the current language.
   const [loadedLang, setLoadedLang] = useState(null)
   const loading = loadedLang !== lang
+  // Only the very first load blanks the page for a spinner. On a language
+  // switch the previously-fetched data stays on screen until the re-fetch
+  // resolves (same as AgentPerformance / CreatorLedger), so the list no
+  // longer unmounts and collapses the page height.
+  const showSpinner = loading && loadedLang === null
 
   // Skill name/description/creator fields are localised server-side, so
   // switching languages must re-fetch the listing.
@@ -86,23 +91,23 @@ export default function AgentWorld() {
           {t('agentWorld.intro')}
         </p>
 
-        {loading && <div className="agent-loading">⌛ {t('agentWorld.loading')}</div>}
+        {showSpinner && <div className="agent-loading">⌛ {t('agentWorld.loading')}</div>}
 
-        {!loading && error && (
+        {!showSpinner && error && (
           <div className="agent-empty">
             <span className="agent-empty__icon">🪨</span>
             {t('agentWorld.loadFailedPrefix')}{error}
           </div>
         )}
 
-        {!loading && !error && skills.length === 0 && (
+        {!showSpinner && !error && skills.length === 0 && (
           <div className="agent-empty">
             <span className="agent-empty__icon">🏝️</span>
             {t('agentWorld.empty')}
           </div>
         )}
 
-        {!loading && !error && skills.length > 0 && (
+        {!showSpinner && !error && skills.length > 0 && (
           <div className="agent-grid">
             {skills.map((s) => <AgentCard key={s.id} skill={s} />)}
           </div>

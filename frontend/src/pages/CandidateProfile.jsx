@@ -36,6 +36,11 @@ export default function CandidateProfile() {
   // calls setState synchronously on its own body.
   const [loadedLang, setLoadedLang] = useState(null)
   const loading = loadedLang !== lang
+  // Only the very first load blanks the page for a spinner. On a language
+  // switch the previously-fetched data stays on screen until the re-fetch
+  // resolves (same as AgentPerformance / CreatorLedger), so the list no
+  // longer unmounts and collapses the page height.
+  const showSpinner = loading && loadedLang === null
   const [analysis, setAnalysis] = useState(null)
   const [analyzing, setAnalyzing] = useState(false)
   const [analyzeError, setAnalyzeError] = useState('')
@@ -85,7 +90,7 @@ export default function CandidateProfile() {
           <Ribbon color="app-pink" size={20}>🪪 {t('candidateProfile.title')}</Ribbon>
         </div>
 
-        {loading && (
+        {showSpinner && (
           <div className="generating">
             <div className="spinner" />
             <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--text-muted)' }}>
@@ -94,11 +99,11 @@ export default function CandidateProfile() {
           </div>
         )}
 
-        {!loading && error && (
+        {!showSpinner && error && (
           <div className="chat-error" style={{ marginBottom: 16 }}>{error}</div>
         )}
 
-        {!loading && !error && (
+        {!showSpinner && !error && (
           <>
             <div style={{
               background: '#f7f3df',

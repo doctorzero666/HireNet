@@ -57,6 +57,11 @@ export default function JobSeekerHome() {
   // the effect body itself.
   const [loadedLang, setLoadedLang] = useState(null)
   const loading = loadedLang !== lang
+  // Only the very first load blanks the page for a spinner. On a language
+  // switch the previously-fetched data stays on screen until the re-fetch
+  // resolves (same as AgentPerformance / CreatorLedger), so the list no
+  // longer unmounts and collapses the page height.
+  const showSpinner = loading && loadedLang === null
 
   // Jobs are localised server-side (WP-I18N-2), so a language toggle must
   // re-fetch, not just re-render with stale strings. `cancelled` guards
@@ -100,7 +105,7 @@ export default function JobSeekerHome() {
           {t('jobSeekerHome.subtitle')}
         </p>
 
-        {loading && (
+        {showSpinner && (
           <div className="generating">
             <div className="spinner" />
             <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--text-muted)' }}>
@@ -109,13 +114,13 @@ export default function JobSeekerHome() {
           </div>
         )}
 
-        {!loading && error && (
+        {!showSpinner && error && (
           <div className="chat-error" style={{ marginBottom: 16 }}>
             {error}
           </div>
         )}
 
-        {!loading && !error && jobs.length === 0 && (
+        {!showSpinner && !error && jobs.length === 0 && (
           <div style={{
             textAlign: 'center',
             padding: '40px 20px',
@@ -134,7 +139,7 @@ export default function JobSeekerHome() {
           </div>
         )}
 
-        {!loading && !error && jobs.length > 0 && (
+        {!showSpinner && !error && jobs.length > 0 && (
           <div style={{
             display: 'flex',
             flexDirection: 'column',
@@ -197,11 +202,9 @@ function JobCard({ title, company, salary, desc, matchScore, onClick }) {
         color: 'var(--text-body)',
       }}
       onMouseEnter={(e) => {
-        e.currentTarget.style.transform = 'translateY(-2px)'
-        e.currentTarget.style.boxShadow = 'var(--elev-base)'
+        e.currentTarget.style.boxShadow = 'var(--elev-lg)'
       }}
       onMouseLeave={(e) => {
-        e.currentTarget.style.transform = 'translateY(0)'
         e.currentTarget.style.boxShadow = 'var(--elev-sm)'
       }}
     >
