@@ -13,7 +13,7 @@
 ![Python](https://img.shields.io/badge/Python-3.11-blue?style=flat-square&logo=python)
 ![Flask](https://img.shields.io/badge/Flask-3.x-lightgrey?style=flat-square&logo=flask)
 ![React](https://img.shields.io/badge/React-18-61DAFB?style=flat-square&logo=react)
-![Tests](https://img.shields.io/badge/tests-1387_passed-brightgreen?style=flat-square)
+![Tests](https://img.shields.io/badge/tests-1616_passed-brightgreen?style=flat-square)
 ![Hackathon](https://img.shields.io/badge/AI×Web3-Hackathon-orange?style=flat-square)
 
 </div>
@@ -182,7 +182,7 @@ HireNet 将传统招聘平台的“岗位匹配”，扩展成了更前置的**�
 | 链上结算 | Mock / Anvil 本地链 / Sepolia 测试网 / x402（Base Sepolia USDC，pay-at-invocation），Provider 接口可插拔 |
 | Agent 协议 | MCP (Model Context Protocol) |
 | 鉴权 | JWT + pbkdf2 |
-| 测试 | pytest 1387 passed |
+| 测试 | pytest 1616 passed |
 
 ```text
 HireNet/
@@ -192,7 +192,7 @@ HireNet/
 │   ├── services/      # 结算提供者/auth/bootstrap
 │   └── storage/       # SQLite DAO
 ├── frontend/          # React SPA（15 个页面）
-├── tests/             # pytest 1387 passed
+├── tests/             # pytest 1616 passed
 ├── docs/              # PRD/UX Spec/Demo 配音脚本
 ├── evals/             # 黄金用例集 + 打分器 + 评测报告
 └── start.sh           # 一键启动
@@ -200,7 +200,21 @@ HireNet/
 
 ### 语言 / Language
 
-前端默认展示英文界面，顶部导航栏提供一个切换按钮（中文 / EN），选择结果保存在浏览器本地。需求分析 API 额外接受一个可选的 `lang` 参数（`en` | `zh`，默认 `zh`），用来控制 LLM 生成内容使用的语言。演示数据（Agent、候选人姓名等种子数据）目前仍是中文，暂未做多语言处理。
+前端默认展示英文界面，顶部导航栏提供一个切换按钮（中文 / EN），选择结果保存在浏览器本地。
+
+选择结果会随每一次请求发给后端：GET 走查询参数 `?lang=`，POST 同时写进请求体的 `lang` 字段（`en` | `zh`；缺省为 `zh`，即改造前的行为）。后端据此决定整个响应用哪种语言，包括三类内容：
+
+| 内容 | 机制 |
+| --- | --- |
+| LLM 生成的文字 | 请求时在 system prompt 末尾追加一行语言指令（`app/agents/lang_support.with_lang_messages`），prompt 常量本身不改。覆盖需求分析、岗位设计、投递材料、职业策略、求职者优势、资源评估。 |
+| 种子 / 演示数据 | 候选人、Agent、岗位、演示身份的每条文案都是 `{"zh": ..., "en": ...}`，在序列化时用 `pick` / `localize` 取一侧；`skill_assets` / `users` 另有可空的 `name_en` / `description_en` 列（不参与 `content_hash`）。 |
+| 后端固定文案 | 决策引擎的 `reason` / `cost_hint`、`summary.verdict`、JD 报告结论、MCP 演示话术，均由后端直接产出对应语言。前端不再做任何"把中文翻回英文"的映射。 |
+
+演示数据现在是双语的：英文模式下 `GET /api/candidates`、`/api/jobs`、`/api/skills/list`、`/api/demo/identities` 等路由返回的姓名、岗位、能力描述全部是英文。`tests/test_i18n_no_cjk_sweep.py` 会遍历 SPA 调用的**每一个** JSON 路由（路由清单直接从 `frontend/src/services/api.js` 解析得出），断言 `lang=en` 时响应里不含任何中日韩字符。
+
+两个 MCP 演示服务（`app/mcp_servers/`）同样各有一套英文话术，由 `tools/call` 的 `arguments.lang` 或 `?lang=` 选择。
+
+不带 `lang` 时所有输出与改造前逐字节一致 —— `tests/test_prompts.py` 与 `tests/test_i18n_lang_param.py` 守住这条红线。仍未处理的是服务端渲染的旧页面 `GET /creator/earnings`（`app/templates/creator_earnings.html`），它不在 SPA 路由树内，始终显示中文。
 
 ### 需求分析流水线：两条实现与它们的评测
 
