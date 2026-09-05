@@ -1,5 +1,7 @@
 # HireNet 演示与测试手册
 
+**版本**：2026-09-05，对应 main 合并 `feature/i18n-data`（种子数据双语化 + 全路由 `lang` 透传）之后的版本。
+
 本手册供两个用途：一是产品负责人自测所有功能是否按预期工作；二是在澳大利亚向他人演示产品，界面语言为英文。所有引用的界面按钮文案均以反引号标出，并逐条核对与 `frontend/src/i18n/en.json` 中键值一致，方便照文案在屏幕上找到对应按钮。
 
 文中所有结论均来自对代码的直接阅读（`app/app.py`、`frontend/src/`、`docs/x402-settlement.md` 等），而非产品记忆或历史演示脚本——仓库里的 `docs/demo-script.md` / `docs/demo-voiceover.md` 是黑客松时期的旧稿，其中提到的 Cobo 支付已在 2026-09 移除，仅作历史参考，不可按其操作。
@@ -25,7 +27,9 @@
 - 切换按钮固定悬浮在页面右上角（`frontend/src/App.jsx` 里作为 `LanguageToggle className="lang-toggle--floating"` 全局挂载一次），在有导航栏的页面里也会出现在 `NavBar` 内。
 - 按钮显示的是"切换到的目标语言"：英文界面下按钮显示"中文"，中文界面下按钮显示 `EN`。这是刻意设计（见 `frontend/src/i18n/LanguageToggle.jsx` 注释），演示时不要误以为按钮显示的是"当前语言"。
 - 语言选择保存在浏览器 `localStorage`，键名 `hirenet.lang`，值为 `en` 或 `zh`。
-- **默认语言已经是英文**（`frontend/src/i18n/LanguageProvider.jsx` 中 `DEFAULT_LANG = 'en'`），面向澳大利亚观众演示时通常不需要做任何切换动作；只有在清空过浏览器数据、或想现场展示"切换语言"这个功能点时才需要点它（见第 4 节）。
+- **默认语言已经是英文**（`frontend/src/i18n/LanguageProvider.jsx` 中 `DEFAULT_LANG = 'en'`）——对任何第一次访问、浏览器里还没有 `hirenet.lang` 记录的访客，生产环境看到的都是英文，不需要任何切换动作；只有在清空过浏览器数据、或想现场展示"切换语言"这个功能点时才需要点它（见第 4 节）。
+
+**关于测试规模**：本仓库的 pytest 总数会随每次改动增减，具体数字以 `README.md` 顶部的 `Tests` 徽章（`![Tests](https://img.shields.io/badge/tests-..._passed-...)`）为准，本手册不写死这个数字，避免和代码脱节。
 
 **演示前 30 秒自检清单**
 
@@ -85,6 +89,7 @@
 - **背后发生了什么**：每条追问都是 `POST /api/analyze/reply`；后端用固定标记 `[REQUIREMENT_COMPLETE]` 判断需求是否收集完整（`app/agents/agents.py`）。**默认路径（v1）没有轮次上限**——如果 AI 一直不给出该标记，对话会无限问下去，这是已知设计（`docs/stage1-task-analysis-spec.md` 审计风险 3）。仓库里还有一条实验性的 v2 实现（`TaskAnalysisAgent`，`HIRENET_TASK_AGENT=v2` 开启），带 `max_turns`（默认 6，可用 `HIRENET_TASK_AGENT_MAX_TURNS` 覆盖）强制在达到上限时抽取一次结构化需求；但 v2 在 20 个黄金用例上的结构分低于 v1（0.8500 对 0.8829，见 `evals/reports/2026-09-04-v1-vs-v2.md`），**没有切换为默认**，公开演示环境跑的就是 v1。若要现场展示 v2 的逐步轨迹回放，需要在本地设置 `HIRENET_TASK_AGENT=v2` 后自己跑一遍，再用 `python scripts/replay_trace.py <session_id>` 回放；公开的 Railway 后端不会自动记录轨迹。
 - **讲解要点**：可以主动提一句"这一步没有轮次上限，是已知的待改进点，也正是我们在做结构化评测的原因"，显得诚实、专业。
 - **常见坑**：AI 有时会把系统提示词模板"回声"出来（尤其在故意输入很怪的内容时），v1 对此没有专门防御，只是靠更严格的 JSON 解析偶然规避；v2 专门修了这个问题（见 `README.md`「需求分析流水线」一节），但 v2 不是默认。演示时避免刻意输入 prompt injection 类文本。
+- **常见坑（语言）**：一个分析 session 的语言在 `POST /api/analyze/start` 那一刻就定型（写进 `analysis_sessions[sid]["lang"]`），之后每次 `/reply` 若不显式传新的 `lang` 就沿用这个值。也就是说，如果开场是在中文界面下点的 `Start analysis`，中途才切到英文，**已经发生的追问历史和已经生成的报告不会被回译**，只有下一次真正发起的 LLM 调用才会跟随新语言——演示时避免在同一个 session 中途切换语言，否则报告会中英文混杂，容易被误当成 bug。想看纯英文效果，从头开始一个新 session 之前先把界面切到英文。
 
 **④ 报告页**
 
@@ -114,13 +119,13 @@
 - **讲解要点**：这一整套是"先出示预算上限和过期时间，再授权，再结算"的三段式，对应 AP2 风格的授权心智模型，即使底层这次走的不是真区块链也要讲清楚这个流程本身的设计意图。
 - **常见坑（重要）**：
   1. 公开的 Railway 后端目前配置的结算 provider 是 **`sepolia`**（以太坊 Sepolia 测试网，走"平台事后代付"的旧结算路径），**不是 x402**。x402（Base Sepolia USDC、by-invocation 付费）目前只在本地/测试网下用脚本演示过，见第 5 节；公开环境点 `Confirm authorization` 走的是 sepolia 路径，交易在真实的以太坊 Sepolia 测试网上广播，是异步的——结算响应可能直接带回 `tx_hash`，但链上确认（进而在创作者账本里从"待结算"变"已结算"）需要额外一次 `GET /api/royalty/status/<run_id>` 轮询，前端目前**没有自动轮询这一步**，所以刚结算完的创作者账本页仍可能显示 `Pending`，属于正常现象，不是 bug（详见第 7 节）。
-  2. Pact 弹窗里的 `Transaction hash` 链接（走的是 `explorer_url`，后端给什么链接就是什么链接）是可信的；但下一页 `ExecutionPage` 上的 `View on Etherscan` 按钮**硬编码链接到 `sepolia.etherscan.io`**（`frontend/src/pages/ExecutionPage.jsx`），不会根据实际结算链动态调整。只要当前 provider 就是以太坊 Sepolia，这个链接是对的；但如果现场临时切换到 x402（Base Sepolia），这个按钮的链接会指向错误的链，交易查不到——演示 x402 时请改用 Pact 弹窗里那个正确的链接，不要点 ExecutionPage 上的按钮。
-  3. 弹窗里显示的 Agent 名称、创作者、钱包地址来自 `GET /api/demo/agent`，返回的其实是种子数据里的"数据分析助手"（`zhao_design` 名下，$40/单位时长），而不是 `en.json` 里兜底文案写的 "Customer Service Script Generator"／"@Li Si"——那两个字符串只在 `/api/demo/agent` 返回 404 时才会被用到（例如测试环境）。正常演示下，弹窗顶部 Agent 名称会显示中文"数据分析助手"，这属于第 4 节讲的"种子数据尚未双语化"，可以提前打好预防针。
+  2. **explorer 链接已按结算轨道修好**：`ExecutionPage`（`frontend/src/pages/ExecutionPage.jsx` 的 `explorerHref()`）不再硬编码 `sepolia.etherscan.io`——优先使用后端返回的 `explorer_url`（x402 结算时由 `X402_EXPLORER_TX_URL` 生成），缺失时按 `settlement_method`/`chain` 自行判断：x402（Base Sepolia）指向 `https://sepolia.basescan.org/tx/<hash>`，sepolia 指向 `https://sepolia.etherscan.io/tx/<hash>`；对没有公开浏览器的轨道（anvil、mock、demo bootstrap 预置的 `demo-preset-...` 假哈希）则**不显示链接**，而不是显示一个查不到交易的坏链接。按钮文案也从 `View on Etherscan` 改成了语言中立的 `View on explorer`（`en.json` 键 `executionPage.viewOnExplorer`）。之前"硬编码以太坊 Sepolia、临时切到 x402 会指错链"的问题已经修复，演示两条结算路径时都可以直接点这个按钮，不需要再改用 Pact 弹窗里的链接。
+  3. **Agent 名称已双语化，不再固定显示中文**：弹窗顶部的 Agent 名称、创作者名、钱包地址来自 `GET /api/demo/agent`，现在会按请求的 `lang`（`api.js` 在英文界面下自动带 `?lang=en`）解析——返回 `asset_display_field(asset, "name", lang)` 和 `user_display_name(creator_row, lang)`：中文模式显示"数据分析助手" / 创作者"赵设计"，英文模式显示 "Data Analysis Assistant" / 创作者 "Designer Zhao"。这与 `en.json` 里兜底文案写的 "Customer Service Script Generator"／"@Li Si" 是两回事——那两个字符串只在 `/api/demo/agent` 返回 404 时才会被用到（例如 demo 资产未 bootstrap 的测试环境），演示时基本不会遇到。钱包地址本身不受语言影响，仍是 `ANVIL_TO_ADDRESS` 占位地址。
 
 **⑥ 结算结果页**
 
 - **点什么**：Pact 弹窗结算完成后点 `Done`。
-- **看到什么**：跳转到 `ExecutionPage`，显示 `Task Complete`、`Cost Breakdown`（$总额 → 创作者份额 + 平台份额 + 税费份额，70/20/10 演示分账比例）、`Royalty record` 编号；若有交易哈希则显示 `Verifiable on-chain (Sepolia)` 卡片和 `View on Etherscan` 链接（见上一步的坑）；最后可点 `Confirm acceptance`。
+- **看到什么**：跳转到 `ExecutionPage`，显示 `Task Complete`、`Cost Breakdown`（$总额 → 创作者份额 + 平台份额 + 税费份额，70/20/10 演示分账比例）、`Royalty record` 编号；若有交易哈希则显示 `Verifiable on-chain` 卡片和 `View on explorer` 链接（按结算轨道指向对应的区块浏览器，见上一步的说明）；最后可点 `Confirm acceptance`。
 - **背后发生了什么**：`Confirm acceptance` 会调用 `POST /api/royalty/settle`（若还没有 tx_hash 就再触发一次结算尝试，接口是幂等的：对已经 `settled` 的 run 重复调用直接返回原结果，`settled_count: 0`）。
 - **讲解要点**：可以强调分账比例目前是"验证闭环用的模拟规则"，README 里也明确写了"不代表正式商业定价"。
 - **常见坑**：`Download script` 与 `Preview` 两个按钮只弹一个 `alert`，没有真实文件下载/预览，属于占位功能，别在演示里点开期待真实内容。
@@ -139,20 +144,20 @@
 
 - **点什么**：点某张岗位卡的 `View details`。
 - **看到什么**：`JobDetail` 页显示 `Job Description` / `Requirements` / `Key Skills`。
-- **讲解要点**：**默认能看到的 3 条 demo 岗位（全栈工程师 / AI 产品经理 / 数据分析师，公司名"某科技创业公司"等）目前是中文种子数据**，即使切到英文界面标题栏、按钮文案是英文，这三条岗位内容也不会跟着翻译——这是第 4 节要讲的已知限制，不是 bug。企业侧刚生成/发布的 JD 如果是在英文会话里做的，则会是英文（因为 JD 生成走的是真实 LLM 调用，受 `lang` 参数控制）。
+- **讲解要点**：默认能看到的 3 条 demo 岗位（`app/agents/application_agent.py` 的 `DEMO_JOBS`）现在是**双语种子数据**——`GET /api/jobs` 按请求的 `lang` 解析，英文模式下会看到 `Full-stack Engineer` / `AI Product Manager` / `Data Analyst`，公司名也是英文（如 `A technology startup`）；中文模式下和以前一样是"全栈工程师"等。注意这是**下次拉取列表时**才生效的（见第 4 节的数据语言矩阵）：如果你已经停在 Job Board 页面，此时才点右上角切换语言，列表不会立即刷新，需要重新进入 `/jobseeker`（或刷新页面）才会用新语言重新请求 `/api/jobs`。企业侧刚生成/发布的 JD 如果是在英文会话里做的，也会是英文（JD 生成走真实 LLM 调用，受 `lang` 参数控制）。
 
 **③ 投递**
 
 - **点什么**：`One-click apply`。
 - **看到什么**：跳转 `ApplicationResult`，显示 `Match score`（百分比）和 `Cover letter drafted by AI` 里 AI 生成的求职信正文。
 - **背后发生了什么**：`POST /api/apply`；候选人固定取 `GET /api/candidates` 返回列表的**第一个**（`candidate_a`，"张伟（全栈工程师）"）——**无论当前用哪个身份在浏览，投递用的候选人档案都是同一个，不会跟着身份切换变化**，这是当前实现的限制，讲解时说明一下即可。
-- **常见坑**：`generate_cover_letter`（求职信生成）**不接受 `lang` 参数，提示词全程中文**，所以无论界面语言是什么，`Cover letter drafted by AI` 里的正文**永远是中文**。这不属于"种子数据未双语化"，而是这条 LLM 调用链路本身没有接入 i18n，是比种子数据更深一层的缺口，建议在讲解时明确区分这两类问题（见第 4 节）。
+- **讲解要点（语言）**：`generate_cover_letter`（求职信生成）现在也接受可选的 `lang` 参数（`app/agents/application_agent.py`），通过 `with_lang_messages` 在英文会话下给系统提示词追加英文输出指令；`api.js` 会在英文界面下自动把 `lang: "en"` 带进 `POST /api/apply`，所以英文模式下投递生成的 `Cover letter drafted by AI` 正文、`key_match_points`、`subject` 都会是英文，中文模式下和以前一样是中文。这条链路之前是仅有的两条完全不受 `lang` 影响、写死中文的 LLM 调用之一，现在已经修复；另一条（候选人优势分析）见下一步④。
 
 **④ 我的档案**
 
 - **点什么**：`View my profile card` → `CandidateProfile`；点 `AI: analyze my strengths`。
 - **看到什么**：展示技能标签、经历，AI 给出的 3-5 条优势。
-- **背后发生了什么**：`POST /api/candidate/analyze`；同样**不接受 `lang`，提示词写死"用中文输出"**，所以这里的优势分析文字也永远是中文，原因同上。
+- **背后发生了什么**：`POST /api/candidate/analyze`。提示词里原本写死的"用中文输出"一句已经删掉，现在和其它 LLM 调用一样通过 `resolve_request_lang` + `with_lang_messages` 走统一的语言机制，所以英文模式下（`api.js` 自动带 `lang=en`）这里的 3-5 条优势会是英文，中文模式下是中文——不再是"永远中文"。
 - **常见坑**：`Edit profile` 按钮只弹 `Demo: profile editing is coming soon 🚧`，没有真实编辑功能。
 
 ---
@@ -162,7 +167,7 @@
 **① 进入创作者角色，并切换到正确的演示身份**
 
 - **点什么**：首页点 `I'm a Creator` 的 `Enter`，进入 `/creator`（`Creator Workshop`）。
-- **重要前置动作**：页面左下角有一个悬浮胶囊（`IdentitySwitcher`），默认显示某个匿名/占位身份。**创作者相关的所有数据（已注册的 Agent、收益账本）都是按当前身份过滤的**，种子数据挂在 `赵设计`（zhao_design）和 `张AI`（zhang_ai）两个身份名下。演示前请点开胶囊，切换到 `赵设计`，再看 Creator Workshop / Earnings Ledger，才能看到预置的历史调用记录；如果不切换，看到的会是空列表或另一个 stub 身份下的数据。
+- **重要前置动作**：页面左下角有一个悬浮胶囊（`IdentitySwitcher`），默认显示某个匿名/占位身份。**创作者相关的所有数据（已注册的 Agent、收益账本）都是按当前身份过滤的**，种子数据挂在 `赵设计`（zhao_design，英文名 Designer Zhao）和 `张AI`（zhang_ai，英文名 AI Zhang）两个身份名下——`DEMO_IDENTITIES` 现在也是双语的，胶囊在英文界面下会显示英文名。演示前请点开胶囊，切换到 `赵设计`，再看 Creator Workshop / Earnings Ledger，才能看到预置的历史调用记录；如果不切换，看到的会是空列表或另一个 stub 身份下的数据。
 - **背后发生了什么**：胶囊切换调用 `POST /api/demo/identity`，把身份写入一个 cookie，随后整页刷新。**这一套身份机制和 `/login` 页面的 JWT 登录是两套并行系统**——一旦用 JWT 登录过（`hasJwtToken()` 为真），胶囊会直接隐藏，此时创作者数据按 JWT 里的用户身份取，不再理会胶囊；两者不要混用，混用容易让人以为身份切换失效。
 
 **② 查看已注册的 Agent 与收益**
@@ -195,25 +200,22 @@
 
 ## 4. 语言切换演示
 
-演示这一功能点时，建议先切到中文走一遍企业分析流程，再切回英文，讲清楚三层内容的不同表现：
+HireNet 现在的口径是：**每一个 SPA 会调用的 JSON 路由都认识 `lang`**（GET 用 `?lang=`，POST 用请求体 `lang` 字段；`frontend/src/services/api.js` 的 `setApiLang` / `apiUrl` / `withLang` 保证每一次请求都会带上当前界面语言，缺省时后端按 `zh` 处理）。`tests/test_i18n_no_cjk_sweep.py` 会把 `frontend/src/services/api.js` 里出现的每一个 `apiUrl(...)` 路由都跑一遍英文请求，断言响应树里不含任何中日韩字符——这条测试是"英文模式下处处英文"这句承诺的机器验证，而不只是这份手册的一家之言。
 
-**第一层：界面文案（Chrome）** — `frontend/src/i18n/en.json` / `zh.json` 里的所有按钮、标题、提示语。切换语言**立即生效**，无需刷新、无需重新请求后端，覆盖全部 15 个页面。这一层是完整双语的。
+演示这一功能点时，建议先切到中文走一遍企业分析流程，再切回英文重新走一遍，对照下面这张表讲清楚：切换语言按钮那一下点击，**哪些内容跟着立即变、哪些内容要等到下一次请求或下一次进入页面才变、哪些内容根本不受影响**。
 
-**第二层：后端的固定策略字串** — `app/agents/decision_policy.py`（以及旧版 `app/agents/agents.py` 里同样写死的几句）产出的少数几条**固定中文句子**，例如任务卡上的 `cost_hint`（"需要评估薪资" / "混合成本" / "未知"）、hybrid 任务的理由（"建议人机协同：Agent 完成基础部分，人工处理复杂判断"）。这些不是 LLM 生成的自由文本，而是代码里的常量，因此前端用一份精确的模式匹配表（`frontend/src/i18n/backendStrings.json`，同一份数据也被 `tests/test_i18n_backend_strings.py` 拿去和 Python 侧常量比对，保证两边不会走漏）在英文模式下逐条替换成对应英文，例如"需要评估薪资"→"Salary to be assessed"。**这一层也是完整覆盖的**，但仅限于这几条被登记在案的固定句子；如果后端未来新增一条固定策略文案却忘了同步登记到这份 JSON，英文界面下会原样漏出中文——可以作为回归测试点。
+### 数据语言矩阵
 
-**第三层：LLM 生成内容** — 由请求里的 `lang` 参数控制（`en` | `zh`，未传默认 `zh`）。前端在英文模式下，`POST /api/analyze/start`、`/reply`、内部驱动的任务拆解与 JD 生成都会带上 `lang: "en"`，后端往对应系统提示词末尾追加一行 `Output language: respond and produce all JSON string values in English.`（`app/agents/lang_support.py`），因此需求澄清对话、任务描述、生成的 JD 内容，在英文模式下发起的分析会话里，**从头到尾都是英文**；在中文模式下发起的则从头到尾是中文。**注意是"按发起会话时的语言"决定的**——如果一个会话是在中文模式下开始，中途切换到英文，已经发生的对话历史不会被翻译，只有下一次请求会跟随新语言（因为 `lang` 写在 session 里，`/reply` 时如果显式传了新值会覆盖）。
+| 内容类型 | 存放/生成位置 | 切换语言后的表现 | 生效时机 |
+|---|---|---|---|
+| **界面文案（Chrome）** | `frontend/src/i18n/en.json` / `zh.json`，`useLang()` 的 `t()` | 全部 15 个页面的按钮、标题、提示语完整双语 | **立即生效**：点击切换按钮的同一渲染周期内就变了，不刷新、不发任何请求 |
+| **后端固定策略字串** | `app/agents/decision_policy.py`（`cost_hint`、`reason`）、`app/app.py` 的 `VERDICT_*`（`summary.verdict`）、`app/agents/job_design.py` 的 `NO_HIRING_MESSAGE` / `water_interpretation` | 现在是后端原生双语的 `{"zh","en"}` 常量，由 `pick(value, lang)` 在响应组装时直接选边——前端曾经用来把中文正则替换成英文的 `backendStrings.json` 映射层已经删除，这条路径不再存在两套并行机制 | **下一次响应立即生效**：任何带上新 `lang` 的请求，返回体里这几处字符串就是对应语言；不需要等页面刷新，但需要真的发一次新请求（比如重新走一遍分析流程），已经渲染在屏幕上的旧响应内容不会被就地翻译 |
+| **种子/演示数据** | `app/agents/candidate_profile.py`（`DEMO_CANDIDATES`/`MOCK_PROFILES`）、`app/agents/application_agent.py`（`DEMO_JOBS`）、`app/app.py`（`DEMO_IDENTITIES`）、`app/services/demo_bootstrap.py` + `asset_bootstrap.py`（SkillAsset 的 `name_en`/`description_en`）——统一由 `pick()` / `localize()` 按 `lang` 解析 | 完整双语：`GET /api/jobs`、`/api/candidates`、`/api/skills/list`、`/api/demo/identities`、`/api/demo/agent` 等路由按请求的 `lang` 返回对应语言的名字/描述/公司名 | **下一次拉取列表时**才生效，**不是**点切换按钮那一刻。原因：`JobSeekerHome`/`CandidateProfile`/`AgentWorld`/`CreatorLedger` 等页面组件都是 `useEffect(() => {...}, [])`——只在组件**挂载**时发一次请求，不监听语言变化。所以：已经停在某页面时切换语言，页面上显示的旧数据不会变；要看到新语言，需要重新导航进入该页面（触发一次新的挂载 + 请求）或整页刷新。`api.js` 的 `currentLang` 是模块级状态，切换按钮点击后是同步更新的，所以"下一次挂载"用的一定是新语言，不会有竞态 |
+| **LLM 生成内容** | 需求澄清对话、任务拆解、JD 生成（`design_job`）、`generate_cover_letter`、`/api/candidate/analyze`、`CareerStrategyAgent`、`/api/mcp` 的模型工具 | 由发起该次调用时的 `lang` 决定：`en` 时后端给系统提示词追加一行 `Output language: respond and produce all JSON string values in English.`（`app/agents/lang_support.py` 的 `with_lang_messages`），生成内容整段是英文 | **生成时就定型，之后不会被动态翻译**：一次分析在英文模式下发起，从首轮追问到最终报告全程英文；`lang` 是写进 `analysis_sessions[sid]["lang"]` 的，之后的 `/reply` 沿用同一个值，除非显式传新值覆盖——历史消息不会因为界面语言切换而回译（另见第 3.1③ 节的"常见坑（语言）"） |
+| **MCP 执行结果预览** | `app/mcp_servers/customer_service.py` / `app/mcp_servers/data_analysis.py` 的双语 canned 内容（问候语、FAQ、投诉话术、趋势、异常、报告摘要），`ExecutionPage` 的 `Agent Output Preview`（`executionPage.mcp.outputPreview`） | `POST /api/pact/settle/<id>` 结算成功后会调用 MCP 工具，把 `resolve_request_lang(request)` 的结果当 `lang` 传进去；预览内容是英文还是中文取决于**结算发生那一刻**请求携带的语言 | **结算（settle）那次调用的语言决定**，不是查看页面时的语言；如果结算发生在中文模式下，之后切到英文再回来看这条记录，预览内容仍是结算时生成的那份（中文） |
+| **旧版创作者收益页** | `app/templates/creator_earnings.html`（服务端渲染，`GET /creator/earnings` HTML 页） | **始终中文**，不受 `lang` 影响 | 不适用——这个页面不在 SPA 路由树内，正常演示路径（首页→角色卡→前端路由）永远走不到它，只有直接在地址栏输入这个 URL 才会看到，只作历史/后端专用路由参考（见第 6 节 B12） |
 
-**完全不受 `lang` 影响、目前仍固定输出中文的两条 LLM 调用**（这是比"种子数据未双语化"更深一层的、独立的缺口，值得单独说明）：
-- 求职者端"AI: analyze my strengths"（`POST /api/candidate/analyze`）：提示词写死"用中文输出"；
-- 求职者端投递生成的 `Cover letter drafted by AI`（内部 `generate_cover_letter`）：提示词全程中文，且函数签名里根本没有 `lang` 参数。
-
-**种子/演示数据 — 目前仍是中文，待修**：以下内容是写在 Python 源码里的静态字符串，不随语言切换、也不受 `lang` 参数影响：
-- 3 个 SkillAsset 名称与描述（"数据分析助手""SEO 优化 Agent""Job Design Agent"）；
-- 3 条 demo 岗位（全栈工程师 / AI 产品经理 / 数据分析师）及其公司名；
-- 3 个 demo 候选人姓名与简介（张伟 / 李娜 / 王芳）；
-- 4 个 demo 身份的显示名（李老板 / 张AI / 王工 / 赵设计）。
-
-> TODO（占位，种子数据双语化后回来更新本节）：以上四类数据一旦支持双语，需要重新核对本节表述、以及第 3 节里"数据分析助手仍是中文"这类具体坑点是否还成立。
+**一句话总结**：界面文案和后端固定策略字串是"请求级"生效——发一次带新 `lang` 的请求就变；种子数据是"挂载级"生效——要等页面重新加载数据；LLM 生成内容和 MCP 预览是"生成时刻"生效——已经生成的内容不会被回译；旧版创作者收益页完全在体系外，永远中文。
 
 ---
 
@@ -303,9 +305,9 @@ python scripts/x402_e2e.py --mode pact
 | J2 | 查看岗位列表 | 至少 3 条 demo 岗位（全栈工程师 / AI 产品经理 / 数据分析师） | ☐ | ☐ |
 | J3 | 点某岗位 `View details` | 跳转 `JobDetail`，显示描述 / Requirements / Key Skills | ☐ | ☐ |
 | J4 | 点 `One-click apply` | 跳转 `ApplicationResult`，显示 Match score | ☐ | ☐ |
-| J5 | 查看 `Cover letter drafted by AI` | 有正文（固定中文，非 bug） | ☐ | ☐ |
-| J6 | 点 `View my profile card` | 跳转 `CandidateProfile`，显示张伟档案 | ☐ | ☐ |
-| J7 | 点 `AI: analyze my strengths` | 显示 3-5 条优势（固定中文，非 bug） | ☐ | ☐ |
+| J5 | 查看 `Cover letter drafted by AI` | 有正文；正文语言跟随投递时的界面语言（`generate_cover_letter` 已接入 `lang`，见第 3.2③ 节） | ☐ | ☐ |
+| J6 | 点 `View my profile card` | 跳转 `CandidateProfile`，显示张伟档案（英文模式为 Wei Zhang） | ☐ | ☐ |
+| J7 | 点 `AI: analyze my strengths` | 显示 3-5 条优势；语言跟随当前界面语言（`/api/candidate/analyze` 已接入 `lang`，不再写死中文，见第 3.2④ 节） | ☐ | ☐ |
 | J8 | 点 `Edit profile` | 弹出 "coming soon" 提示，无实际编辑 | ☐ | ☐ |
 
 ### 创作者端
@@ -332,7 +334,13 @@ python scripts/x402_e2e.py --mode pact
 | L1 | 任意页面点浮动语言按钮（英文下显示"中文"） | 界面文案切为中文 | ☐ | ☐ |
 | L2 | 刷新页面 | 语言保持为上一步选择的语言 | ☐ | ☐ |
 | L3 | 再点按钮（中文下显示 `EN`） | 切回英文 | ☐ | ☐ |
-| L4 | 英文模式下走一遍企业分析流程 | summary 与任务卡理由为英文；Demo Agent 名称、种子岗位/候选人仍为中文 | ☐ | ☐ |
+| L4 | 英文模式下走一遍企业分析流程 | summary、任务卡理由、JD 内容均为英文；Demo Agent 名称（`GET /api/demo/agent`）、种子岗位/候选人姓名也随之变为英文，因为它们现在都按请求的 `lang` 解析（见第 4 节数据语言矩阵） | ☐ | ☐ |
+| L5 | 浏览器打开 `https://web-production-9c710.up.railway.app/api/jobs?lang=en` | 返回 JSON 里 `job_title` / `company` / `core_responsibilities` 等字段全是英文，找不到中文字符 | ☐ | ☐ |
+| L6 | 浏览器打开 `.../api/candidates?lang=en` | 返回的候选人 `name` / `bio` / `capability_summary` 全是英文（如 "Wei Zhang (Full-stack Engineer)"） | ☐ | ☐ |
+| L7 | 浏览器打开 `.../api/skills/list?lang=en` | 返回的 SkillAsset `name` / `description` / `creator_name` 全是英文（如 "Data Analysis Assistant" / "Designer Zhao"） | ☐ | ☐ |
+| L8 | 英文模式下完整走一遍 Pact 结算，在 `ExecutionPage` 查看 `Agent Output Preview` | 预览内容（问候语 / FAQ / 趋势 / 异常等 canned 文本）是英文，不是中文（第 4 节"MCP 执行结果预览"一行） | ☐ | ☐ |
+| L9 | 英文模式下本地完成一次 x402 结算（第 5 节），在 `ExecutionPage` 点击 `View on explorer` | 链接指向 `sepolia.basescan.org/tx/<hash>`，能打开对应 Base Sepolia 交易，而不是 404 的 Etherscan 链接 | ☐ | ☐ |
+| L10（仅限本地） | 本地设置 `HIRENET_TASK_AGENT=v2` 且 `HIRENET_TASK_AGENT_MAX_TURNS=1`，英文模式下发起分析并让 v2 触发强制抽取失败 | 返回的失败提示是英文、使用半角标点（不是旧版"抱歉，我没能……请换一种说法……"那种全角中文句子）；公开 Railway 环境跑的是 v1，这一行不适用于公开环境 | ☐ | ☐ |
 
 ### 登录与身份
 
@@ -374,7 +382,7 @@ python scripts/x402_e2e.py --mode pact
 | B11 | `GET /api/audit/run/<run_id>`（需 `Authorization: Bearer <JWT>`） | 结算审计轨迹 + 链上对账 | ☐ | ☐ |
 | B12 | `GET /creator/earnings`（HTML 模板页，非 JSON） | 服务端渲染的创作者收益页 | ☐ | ☐ |
 
-以上共 **17 + 8 + 12 + 4 + 3 + 10 + 12 = 66** 行。
+以上共 **17 + 8 + 12 + 10 + 3 + 10 + 12 = 72** 行。
 
 ---
 
@@ -441,30 +449,46 @@ python scripts/x402_e2e.py --mode pact
 | `HIRENET_DB_PATH` | 后端与独立 MCP server 共用的 SQLite 文件路径 |
 | `APP_PORT` / `MCP_PORT` / `ANVIL_PORT` / `PORT` | `start.sh` 与 `wsgi.py` 使用的本地端口 |
 
-### 8.2 演示数据一览（目前均为中文，见第 4 节）
+### 8.2 演示数据一览（中英双语）
+
+自 `feature/i18n-data` 起，下列种子数据在 Python 源码里都是 `{"zh": ..., "en": ...}` 节点，由 `pick()` / `localize()` 按请求的 `lang` 解析；英文名来自各自的 `*_EN` 常量或 `name_en`/`description_en` 列（详见第 4 节数据语言矩阵）。
 
 **SkillAsset（可在 Agent World 看到）**
 
-| 名称 | 创作者 | 定价 | 说明 |
-|---|---|---|---|
-| Job Design Agent | `phase1_stub_creator`（stub） | $1.00/次 | 每次成功生成 JD 计费一次；Pact 未指定 `asset_id` 时的兜底资产 |
-| 数据分析助手 | 赵设计（`zhao_design`） | $40/单位时长 | `GET /api/demo/agent` 返回的就是它；企业端 Pact 演示默认用的是这一个 |
-| SEO 优化 Agent | 张AI（`zhang_ai`） | $25/单位时长 | endpoint 指向真实跑着的 customer_service MCP（:5002） |
+| 名称（zh） | 名称（en） | 创作者 | 定价 | 说明 |
+|---|---|---|---|---|
+| Job Design Agent | Job Design Agent（中英同名） | `phase1_stub_creator`（stub） | $1.00/次 | 每次成功生成 JD 计费一次；Pact 未指定 `asset_id` 时的兜底资产；英文描述见 `app/services/asset_bootstrap.py` 的 `JOB_DESIGN_ASSET_EN` |
+| 数据分析助手 | Data Analysis Assistant | 赵设计 / Designer Zhao（`zhao_design`） | $40/单位时长 | `GET /api/demo/agent` 返回的就是它；企业端 Pact 演示默认用的是这一个 |
+| SEO 优化 Agent | SEO Optimization Agent | 张AI / AI Zhang（`zhang_ai`） | $25/单位时长 | endpoint 指向真实跑着的 customer_service MCP（:5002） |
 
-**demo 候选人（`GET /api/candidates`）**：张伟（全栈工程师）、李娜（产品经理）、王芳（数据分析师）——求职者端投递流程固定使用第一个（张伟）。
+**demo 候选人（`GET /api/candidates`）**：
 
-**demo 岗位（`get_demo_jobs()`）**：全栈工程师（某科技创业公司）、AI 产品经理（AI 应用公司）、数据分析师。
+| 姓名（zh） | 姓名（en） | 角色 |
+|---|---|---|
+| 张伟（全栈工程师） | Wei Zhang (Full-stack Engineer) | fullstack |
+| 李娜（产品经理） | Na Li (Product Manager) | product_manager |
+| 王芳（数据分析师） | Fang Wang (Data Analyst) | data_analyst |
 
-**决策引擎内部使用的虚拟资源（不会出现在 Agent World）**：代码生成 Agent、文案撰写 Agent、数据分析 Agent——仅用于需求分析报告页任务卡片里的"推荐使用 XX"文案，与上面注册在 Agent World 的真实 SkillAsset 是两套数据。
+求职者端投递流程固定使用第一个（张伟 / Wei Zhang），与当前身份无关。
+
+**demo 岗位（`DEMO_JOBS`）**：
+
+| 岗位（zh） | 岗位（en） | 公司（zh / en） |
+|---|---|---|
+| 全栈工程师 | Full-stack Engineer | 某科技创业公司 / A technology startup |
+| AI 产品经理 | AI Product Manager | AI 应用公司 / An applied-AI company |
+| 数据分析师 | Data Analyst | 电商平台 / An e-commerce platform |
+
+**决策引擎内部使用的虚拟资源（不会出现在 Agent World）**：代码生成 Agent、文案撰写 Agent、数据分析 Agent（`DEMO_AGENTS`）——仅用于需求分析报告页任务卡片里的"推荐使用 XX"文案，与上面注册在 Agent World 的真实 SkillAsset 是两套数据；这套虚拟资源的名字同样通过 `get_all_resources(lang)` 双语化。
 
 **demo 身份 / 登录账号（密码均为 `demo123`）**：
 
-| id | 姓名 | 角色 |
-|---|---|---|
-| `li_boss` | 李老板 | Enterprise |
-| `zhang_ai` | 张AI | Creator |
-| `wang_dev` | 王工 | Jobseeker |
-| `zhao_design` | 赵设计 | Creator |
+| id | 姓名（zh） | 姓名（en） | 角色 |
+|---|---|---|---|
+| `li_boss` | 李老板 | Boss Li | Enterprise |
+| `zhang_ai` | 张AI | AI Zhang | Creator |
+| `wang_dev` | 王工 | Engineer Wang | Jobseeker |
+| `zhao_design` | 赵设计 | Designer Zhao | Creator |
 
 ### 8.3 相关文档链接
 
